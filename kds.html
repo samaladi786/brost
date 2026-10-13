@@ -13,25 +13,25 @@
 
     /* ================= SHOP SELECTOR OVERLAY ================= */
     #kds-auth-overlay {
-      position: fixed; inset: 0; background: #0b1120; z-index: 9999;
+      position: fixed; inset: 0; background: rgba(11, 17, 32, 0.95); z-index: 9999;
       display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px;
     }
     .auth-card {
       background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 24px;
-      max-width: 600px; width: 100%; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+      max-width: 620px; width: 100%; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.6);
     }
     .shop-select-grid {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
       gap: 12px; margin: 20px 0; max-height: 50vh; overflow-y: auto;
     }
     .shop-btn-card {
       background: #0f172a; border: 2px solid #334155; border-radius: 12px; padding: 14px 10px;
       cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: space-between;
-      transition: all 0.15s ease; color: #fff;
+      transition: all 0.15s ease; color: #fff; min-height: 120px;
     }
-    .shop-btn-card:hover { border-color: #f59e0b; transform: translateY(-2px); }
-    .shop-btn-card img { width: 50px; height: 50px; object-fit: contain; margin-bottom: 8px; border-radius: 8px; }
-    .shop-btn-card h4 { font-size: 13px; line-height: 1.2; }
+    .shop-btn-card:hover { border-color: #f59e0b; transform: translateY(-2px); background: #1e293b; }
+    .shop-btn-card img { width: 48px; height: 48px; object-fit: contain; margin-bottom: 8px; border-radius: 8px; }
+    .shop-btn-card h4 { font-size: 13px; line-height: 1.2; font-weight: bold; }
     .pin-box { display: none; margin-top: 15px; }
     .pin-input {
       padding: 10px 14px; font-size: 18px; text-align: center; letter-spacing: 4px;
@@ -202,7 +202,7 @@
   <div id="history-view">
     <div class="history-toolbar">
       <input type="text" id="history-search-input" class="search-box" 
-        placeholder="🔍 ടോക്കൺ നമ്പർ (#05) അല്ലെങ്കിൽ മൊബൈൽ നമ്പർ തിരയുക..." oninput="filterHistoryList()">
+        placeholder="🔍 ടോക്കൺ നമ്പർ (#01) അല്ലെങ്കിൽ മൊബൈൽ നമ്പർ തിരയുക..." oninput="filterHistoryList()">
       <span style="color:#94a3b8; font-size:13px;" id="history-count-text"></span>
     </div>
     <div style="overflow-x:auto;">
@@ -224,6 +224,59 @@
   </div>
 
   <script>
+    // ================= BUILT-IN FALLBACK SHOPS =================
+    // config.js ലോഡ് ആവാൻ എന്തെങ്കിലും തടസ്സം വന്നാൽ ഉടൻ ഇത് പ്രവർത്തിക്കും
+    const FALLBACK_SHOPS = [
+      {
+        id: 'shop1',
+        name: 'NASSER BIN EID ALMAHMADI',
+        tagline: 'Main Supermarket Branch',
+        url: 'https://elubqoicerkldrufqcbj.supabase.co',
+        key: 'sb_publishable_zsEKreCmounELozZ5EQ3Lg_aXyut9EK',
+        pin: '1234',
+        logo: 'shop1.png'
+      },
+      {
+        id: 'shop2',
+        name: 'BOOFIYA',
+        tagline: 'Boofiya Restaurant & Cafeteria',
+        url: 'https://qkjcviszzdptssvpguwc.supabase.co',
+        key: 'sb_publishable_J0Z4b7NoP3VuDKdbC0WeIg_OQAlpnLQ',
+        pin: '1111',
+        logo: 'shop2.png'
+      },
+      {
+        id: 'shop3',
+        name: 'TAJ SPORTS',
+        tagline: 'TAJ SPORTS',
+        url: 'https://garpkohthpeirdhcwthk.supabase.co',
+        key: 'sb_publishable_TNhOZnpYuthYHmSJSlyhaw_R6RS1jcY',
+        pin: '3333',
+        logo: 'shop3.png'
+      },
+      {
+        id: 'shop4',
+        name: 'MUSAD SPORTS',
+        tagline: 'MUSAD SPORTS',
+        url: 'https://mwxbakqoipcwblhukrfs.supabase.co',
+        key: 'sb_publishable_OfuR1PeffNa4NWUhpwV3gg_pwqovQZT',
+        pin: '2222',
+        logo: 'shop4.png'
+      }
+    ];
+
+    function getAllAvailableShops() {
+      if (typeof window.SHOPS_CONFIG !== 'undefined' && Array.isArray(window.SHOPS_CONFIG) && window.SHOPS_CONFIG.length > 0) {
+        return window.SHOPS_CONFIG;
+      }
+      return FALLBACK_SHOPS;
+    }
+
+    function getMasterPinCode() {
+      if (typeof window.MASTER_PIN !== 'undefined') return window.MASTER_PIN;
+      return "0000";
+    }
+
     let currentShop = null;
     let selectedPendingShop = null;
     let supabaseClient = null;
@@ -233,7 +286,7 @@
 
     const localChannel = new BroadcastChannel('broast_pos_channel');
 
-    // --- Audio Alert Synthesizer (Chime, Buzzer, Double Beep) ---
+    // --- Audio Alert Synthesizer ---
     function triggerAlertSound() {
       const mode = document.getElementById('sound-type-select').value;
       if (mode === 'mute') return;
@@ -242,7 +295,6 @@
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
         if (mode === 'chime') {
-          // Classic 2-tone chime
           const osc1 = audioCtx.createOscillator();
           const gain1 = audioCtx.createGain();
           osc1.type = 'sine';
@@ -264,7 +316,6 @@
           }, 150);
 
         } else if (mode === 'buzzer') {
-          // Loud Kitchen Buzzer (Sawtooth wave)
           const osc = audioCtx.createOscillator();
           const gain = audioCtx.createGain();
           osc.type = 'sawtooth';
@@ -275,7 +326,6 @@
           osc.start(); osc.stop(audioCtx.currentTime + 0.5);
 
         } else if (mode === 'double_beep') {
-          // Double Digital Beep
           const playBeep = (delay) => {
             setTimeout(() => {
               const osc = audioCtx.createOscillator();
@@ -301,16 +351,17 @@
       localStorage.setItem('kds_sound_mode', mode);
     }
 
-    // --- Authentication & Shop Switching ---
+    // --- Authentication & Multi-Shop Flow ---
     function initKdsAuth() {
       const savedSound = localStorage.getItem('kds_sound_mode') || 'chime';
-      document.getElementById('sound-type-select').value = savedSound;
+      const soundSelect = document.getElementById('sound-type-select');
+      if (soundSelect) soundSelect.value = savedSound;
 
       const savedShopId = localStorage.getItem('kds_active_shop_id');
-      const shops = window.SHOPS_CONFIG || [];[cite: 3]
+      const shops = getAllAvailableShops();
 
       if (savedShopId && shops.length > 0) {
-        const found = shops.find(s => s.id === savedShopId);[cite: 3]
+        const found = shops.find(s => s.id === savedShopId);
         if (found) {
           activateKdsShop(found);
           return;
@@ -323,11 +374,14 @@
       const overlay = document.getElementById('kds-auth-overlay');
       const grid = document.getElementById('kds-shops-list');
       const pinBox = document.getElementById('kds-pin-box');
+      if (!overlay || !grid) return;
+
       overlay.style.display = 'flex';
-      pinBox.style.display = 'none';
+      if (pinBox) pinBox.style.display = 'none';
       grid.innerHTML = '';
 
-      const shops = window.SHOPS_CONFIG || [];[cite: 3]
+      const shops = getAllAvailableShops();
+
       shops.forEach(s => {
         const card = document.createElement('div');
         card.className = 'shop-btn-card';
@@ -343,7 +397,7 @@
 
     function promptKdsPin(s) {
       selectedPendingShop = s;
-      document.getElementById('kds-pin-title').innerText = `${s.name} PIN നൽകുക:`;[cite: 3]
+      document.getElementById('kds-pin-title').innerText = `${s.name} PIN നൽകുക:`;
       document.getElementById('kds-pin-box').style.display = 'block';
       const input = document.getElementById('kds-pin-input');
       input.value = '';
@@ -361,9 +415,9 @@
 
     function verifyAndLoginKDS() {
       const pin = document.getElementById('kds-pin-input').value.trim();
-      const masterPin = window.MASTER_PIN || "0000";[cite: 3]
+      const masterPin = getMasterPinCode();
 
-      if (selectedPendingShop && (pin === selectedPendingShop.pin || pin === masterPin)) {[cite: 3]
+      if (selectedPendingShop && (pin === selectedPendingShop.pin || pin === masterPin)) {
         activateKdsShop(selectedPendingShop);
       } else {
         alert("തെറ്റായ PIN നമ്പർ! വീണ്ടും ശ്രമിക്കുക.");
@@ -376,7 +430,7 @@
       currentShop = s;
       localStorage.setItem('kds_active_shop_id', s.id);
       document.getElementById('kds-auth-overlay').style.display = 'none';
-      document.getElementById('header-shop-name').innerText = `🍗 ${s.name} (KDS)`;[cite: 3]
+      document.getElementById('header-shop-name').innerText = `🍗 ${s.name} (KDS)`;
 
       // Load cache
       liveOrders = JSON.parse(localStorage.getItem(`kds_live_${s.id}`)) || [];
@@ -384,8 +438,8 @@
       renderLiveGrid();
 
       // Connect to Supabase
-      if (s.url && s.key && window.supabase) {[cite: 3]
-        supabaseClient = window.supabase.createClient(s.url, s.key);[cite: 3]
+      if (s.url && s.key && window.supabase) {
+        supabaseClient = window.supabase.createClient(s.url, s.key);
         fetchSupabaseOrders();
         listenSupabaseRealtime();
       }
@@ -400,11 +454,10 @@
       }
     }
 
-    // --- Supabase Sync & Realtime ---
+    // --- Supabase Orders Sync & Realtime ---
     async function fetchSupabaseOrders() {
       if (!supabaseClient) return;
       try {
-        // Fetch Live pending orders
         const { data: pendingData } = await supabaseClient
           .from('orders')
           .select('*')
@@ -417,7 +470,6 @@
           renderLiveGrid();
         }
 
-        // Fetch Recent Completed Orders for History
         const { data: doneData } = await supabaseClient
           .from('orders')
           .select('*')
@@ -468,7 +520,6 @@
         .subscribe();
     }
 
-    // --- Local Fallback Broadcast ---
     localChannel.onmessage = function(e) {
       if (e.data && e.data.type === 'NEW_ORDER') {
         const newOrder = e.data.order;
@@ -490,12 +541,11 @@
       }
     }
 
-    // --- 1-Click Order Complete ---
+    // --- 1-Click Complete Action ---
     async function completeOrderSingleClick(orderId) {
       const order = liveOrders.find(o => o.id === orderId);
       if (!order) return;
 
-      // Move locally
       order.status = 'completed';
       order.completed_at = new Date().toLocaleTimeString();
       liveOrders = liveOrders.filter(o => o.id !== orderId);
@@ -503,7 +553,6 @@
       saveLocalKdsState();
       renderLiveGrid();
 
-      // Cloud Update
       if (supabaseClient) {
         try {
           await supabaseClient
@@ -547,7 +596,7 @@
       alert(`${order.token} വീണ്ടും ലൈവ് കിച്ചനിലേക്ക് തിരികെ മാറ്റി!`);
     }
 
-    // --- UI View Switching (Live vs History) ---
+    // --- UI View Switching ---
     function switchView(view) {
       currentView = view;
       document.getElementById('tab-live').classList.toggle('active', view === 'live');
@@ -564,7 +613,7 @@
       }
     }
 
-    // --- Render Live Orders Grid ---
+    // --- Render Live Orders ---
     function renderLiveGrid() {
       const container = document.getElementById('kds-orders-container');
       document.getElementById('live-count').innerText = liveOrders.length;
@@ -586,7 +635,7 @@
         const elapsedSec = Math.floor((now - order.id) / 1000);
         const mins = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
         const secs = String(elapsedSec % 60).padStart(2, '0');
-        const isLate = elapsedSec > 600; // 10 minutes warning
+        const isLate = elapsedSec > 600;
 
         const custPhone = order.customer_phone || order.phone || '';
 
@@ -673,7 +722,6 @@
       renderHistoryTable();
     }
 
-    // Live Timers update every second
     setInterval(() => {
       if (currentView !== 'live') return;
       const now = Date.now();
@@ -689,8 +737,12 @@
       });
     }, 1000);
 
-    // Launch
-    initKdsAuth();
+    // Initialize KDS
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initKdsAuth);
+    } else {
+      initKdsAuth();
+    }
   </script>
 </body>
 </html>
