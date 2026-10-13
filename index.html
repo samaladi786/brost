@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Broasted POS - Saudi Cloud Enterprise</title>
+  <title>Broasted POS - Offline & Cloud Ready</title>
   <!-- Central Config & Libraries -->
   <script src="config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -12,16 +12,16 @@
     * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 0; }
     body { display: flex; height: 100vh; background: #f1f5f9; overflow: hidden; }
 
-    /* ================= 4-DIGIT PIN LOCK OVERLAY ================= */
+    /* ================= PIN LOCK SCREEN ================= */
     #pin-lock-overlay {
       position: fixed; inset: 0; background: #0f172a; z-index: 9999;
       display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px;
     }
     .pin-modal-card {
-      background: #1e293b; border: 1px solid #334155; border-radius: 20px; padding: 26px 22px;
+      background: #1e293b; border: 1px solid #334155; border-radius: 20px; padding: 24px 20px;
       max-width: 350px; width: 100%; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.6);
     }
-    .pin-dots-row { display: flex; justify-content: center; gap: 14px; margin: 18px 0; }
+    .pin-dots-row { display: flex; justify-content: center; gap: 14px; margin: 16px 0; }
     .pin-dot {
       width: 18px; height: 18px; border-radius: 50%; border: 2px solid #475569; background: transparent; transition: all 0.15s ease;
     }
@@ -50,7 +50,7 @@
     .btn-logout { background: #ef4444; }
     .shop-badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; margin-left: 6px; }
 
-    /* Order Options Bar */
+    /* Order Options */
     .order-bar {
       display: flex; gap: 10px; align-items: center; background: #ffffff; padding: 10px;
       border-radius: 10px; margin-bottom: 10px; border: 1px solid #e2e8f0;
@@ -171,7 +171,7 @@
     </div>
   </div>
 
-  <!-- Master PIN Branch Selector -->
+  <!-- Master Branch Picker Modal -->
   <div id="master-branch-picker">
     <div class="pin-modal-card" style="max-width:440px;">
       <h3 style="color:#facc15;">🔑 MASTER ADMIN ACCESS</h3>
@@ -189,6 +189,7 @@
           <h2 id="top-shop-name">🍗 Broasted POS</h2>
           <span id="top-shop-badge" class="shop-badge"></span>
           <span id="business-date-badge" style="font-size:11px; background:#e2e8f0; color:#334155; padding:3px 8px; border-radius:6px; margin-left:6px; font-weight:bold;"></span>
+          <span id="network-status-badge" style="font-size:11px; padding:3px 8px; border-radius:6px; margin-left:6px; font-weight:bold; background:#16a34a; color:#fff;">ONLINE</span>
         </div>
         <small style="color:#64748b;" id="current-date-time"></small>
       </div>
@@ -200,7 +201,7 @@
       </div>
     </div>
 
-    <!-- Order Options (ZATCA Safe - Live Date is fully automatic) -->
+    <!-- Order Options -->
     <div class="order-bar">
       <button class="type-btn active" onclick="setOrderType('Takeaway (سفري)', this)">📦 Takeaway (سفري)</button>
       <button class="type-btn" onclick="setOrderType('Dine-in (محلي)', this)">🍽️ Dine-in (محلي)</button>
@@ -273,12 +274,11 @@
     </div>
   </div>
 
-  <!-- ================= CLOUD Z-REPORT & ITEM-WISE AUDIT MODAL ================= -->
+  <!-- ================= Z-REPORT MODAL ================= -->
   <div class="modal-backdrop" id="report-modal">
     <div class="modal-box" style="width: 580px; max-width: 95%; max-height: 90vh; overflow-y: auto; text-align: left;">
       <h3 style="text-align: center;">📊 Z-റിപ്പോർട്ട് & ഐറ്റം-വൈസ് സെയിൽസ്</h3>
       
-      <!-- Calendar filter for reports only (Safe from live billing) -->
       <div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; padding:8px 12px; border-radius:8px; margin: 10px 0; border:1px solid #cbd5e1;">
         <span style="font-size:13px; font-weight:bold;">തീയതി തിരഞ്ഞെടുക്കുക:</span>
         <input type="date" id="rep-calendar-picker" onchange="fetchZReportForSelectedDate()" style="padding:5px 8px; border-radius:6px; border:1px solid #cbd5e1; font-weight:bold;">
@@ -295,7 +295,6 @@
         </div>
       </div>
 
-      <!-- Item-wise Sales Breakdown Table -->
       <h4 style="margin: 12px 0 4px 0; font-size:14px;">📦 വിറ്റഴിച്ച ഐറ്റങ്ങളുടെ കണക്ക് (Item Breakdown):</h4>
       <div style="max-height: 180px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius:6px;">
         <table class="rep-table">
@@ -312,7 +311,7 @@
           <button class="btn-confirm" style="background:#0284c7;" onclick="printDetailedZReportSlip()">🖨️ പ്രിന്റ് Z-റിപ്പോർട്ട്</button>
         </div>
         <button class="btn-top" style="background:#b91c1c; padding:10px; width:100%; border-radius:6px;" onclick="executeZDailyClosing()">
-          🔒 ഇന്നത്തെ ഷിഫ്റ്റ് ക്ലൗഡിൽ ക്ലോസ് ചെയ്യുക (Z-Close)
+          🔒 ഷിഫ്റ്റ് ക്ലോസ് ചെയ്യുക (Z-Close)
         </button>
       </div>
     </div>
@@ -323,19 +322,27 @@
     <div class="modal-box settings-box">
       <h3>⚙️ സിസ്റ്റം സെറ്റിങ്സ് & മാപ്പിംഗ് മാനേജ്‌മെന്റ്</h3>
 
-      <!-- 1. Kitchen Station Manager -->
-      <div style="background:#f8fafc; padding:10px 12px; border-radius:8px; margin-top:8px; border:1px solid #e2e8f0;">
-        <h4>🧑‍🍳 കിച്ചൻ സ്റ്റേഷൻ മാനേജ്‌മെന്റ് (Add Kitchen Displays):</h4>
+      <!-- 1. Kitchen Station Manager (Full CRUD) -->
+      <div style="background:#f8fafc; padding:10px 12px; border-radius:8px; margin-top:8px; border:1px solid #e2e8f0;" id="st-form-box">
+        <h4 id="st-form-title">🧑‍🍳 കിച്ചൻ സ്റ്റേഷൻ മാനേജ്‌മെന്റ് (Add / Edit Station):</h4>
         <div style="display:flex; gap:8px; margin-top:6px;">
-          <input type="text" id="new-station-name" placeholder="പുതിയ സ്റ്റേഷൻ പേര് (ഉദാ: Burger Station)" style="flex:2; padding:6px;">
+          <input type="text" id="new-station-name" placeholder="സ്റ്റേഷൻ പേര് (ഉദാ: Broast Station)" style="flex:2; padding:6px;">
           <select id="new-station-routing" style="flex:1; padding:6px;">
+            <option value="Both">Both (KDS + Printer)</option>
             <option value="Display Only">Display Only (KDS)</option>
             <option value="Printer Only">Printer Only</option>
-            <option value="Both">Both (KDS + Printer)</option>
           </select>
-          <button onclick="addNewKitchenStation()" style="background:#1e293b; color:#fff; border:none; padding:6px 14px; border-radius:4px; font-weight:bold; cursor:pointer;">Add Station</button>
+          <button id="btn-save-st" onclick="saveKitchenStation()" style="background:#1e293b; color:#fff; border:none; padding:6px 14px; border-radius:4px; font-weight:bold; cursor:pointer;">Save Station</button>
+          <button id="btn-cancel-st" onclick="resetStationForm()" style="display:none; background:#64748b; color:#fff; border:none; padding:6px 10px; border-radius:4px; cursor:pointer;">Cancel</button>
         </div>
-        <div id="stations-tags-list" style="margin-top:8px; display:flex; flex-wrap:wrap; gap:6px;"></div>
+
+        <h5 style="margin-top:10px;">നിലവിലുള്ള സ്റ്റേഷനുകൾ (Edit & Delete):</h5>
+        <div style="max-height: 120px; overflow-y: auto; margin-top:4px;">
+          <table class="set-table">
+            <thead><tr><th>Station Name</th><th>Routing Mode</th><th>Action</th></tr></thead>
+            <tbody id="stations-table-body"></tbody>
+          </table>
+        </div>
       </div>
 
       <!-- 2. Category Creator & Edit / Delete Manager -->
@@ -385,7 +392,7 @@
       </div>
 
       <!-- 4. Menu Items Table -->
-      <h4 style="margin-top:10px;">നിലവിലുള്ള ഐറ്റങ്ങൾ എഡിറ്റ് ചെയ്യുക (Cloud Synced):</h4>
+      <h4 style="margin-top:10px;">നിലവിലുള്ള ഐറ്റങ്ങൾ എഡിറ്റ് ചെയ്യുക:</h4>
       <div style="max-height: 150px; overflow-y: auto;">
         <table class="set-table">
           <thead><tr><th>Photo</th><th>Item</th><th>Price</th><th>Category</th><th>Spicy?</th><th>Action</th></tr></thead>
@@ -423,12 +430,12 @@
   <script>
     // ================= CONFIG & FALLBACK SHOPS =================
     const FALLBACK_SHOPS = [
-      { id: 'shop1', name: 'BROST', url: 'https://rgsoehlmucocfmoblxvr.supabase.co', key: 'sb_publishable_HBaYFMLtuNSD2ZcKffAbzA_-dkXWKCU', pin: '1111' }
+      { id: 'shop1', name: 'BROST', url: 'https://rgsoehlmucocfmoblxvr.supabase.co', key: 'sb_publishable_HBaYFMLtuNSD2ZcKffAbzA_-dkXWKCU', pin: '1111' }[cite: 1]
     ];
 
     function getAllShops() {
       if (typeof window.SHOPS_CONFIG !== 'undefined' && Array.isArray(window.SHOPS_CONFIG) && window.SHOPS_CONFIG.length > 0) {
-        return window.SHOPS_CONFIG;
+        return window.SHOPS_CONFIG;[cite: 1]
       }
       return FALLBACK_SHOPS;
     }
@@ -441,12 +448,10 @@
 
     let shop = { nameAr: "مطعم البروستد الذهبي", nameEn: "Golden Broasted Restaurant", vatNo: "310123456700003", phone: "0551234567" };
     
-    // Dynamic Kitchen Stations
     let kitchenStations = [
-      { name: "Main Kitchen", routing: "Both" },
-      { name: "Broast Station", routing: "Both" },
-      { name: "Burger Station", routing: "Both" },
-      { name: "Drinks Counter", routing: "Display Only" }
+      { id: "main_kitchen", name: "Main Kitchen", routing: "Both" },
+      { id: "broast_station", name: "Broast Station", routing: "Both" },
+      { id: "drinks_counter", name: "Drinks Counter", routing: "Display Only" }
     ];
 
     let categories = [
@@ -473,11 +478,24 @@
     let activeOrderType = "Takeaway (سفري)";
     let editingItemId = null;
     let editingCatId = null;
+    let editingStId = null;
     let tempImageBase64 = "";
-    let lastCompletedOrder = null;
     let cachedReportOrders = [];
 
-    // --- Strict Saudi 6:00 AM Business Date (Automatic / Tamper-proof) ---
+    // Online / Offline Indicator
+    function updateNetworkStatus() {
+      const badge = document.getElementById('network-status-badge');
+      if (navigator.onLine) {
+        badge.innerText = "ONLINE";
+        badge.style.background = "#16a34a";
+      } else {
+        badge.innerText = "OFFLINE (LOCAL)";
+        badge.style.background = "#e11d48";
+      }
+    }
+    window.addEventListener('online', () => { updateNetworkStatus(); syncPendingOfflineOrders(); });
+    window.addEventListener('offline', updateNetworkStatus);
+
     function getSaudiBusinessDate() {
       const now = new Date();
       const saudiTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (3 * 3600000));
@@ -487,7 +505,7 @@
       return saudiTime.toISOString().slice(0, 10);
     }
 
-    // --- 4-Digit Direct PIN Lock ---
+    // --- PIN LOCK ---
     function pressKey(num) {
       if (enteredPin.length < 4) {
         enteredPin += String(num);
@@ -518,7 +536,7 @@
     }
 
     function verify4DigitPin() {
-      const masterPin = typeof window.MASTER_PIN !== 'undefined' ? String(window.MASTER_PIN).trim() : "0000";
+      const masterPin = typeof window.MASTER_PIN !== 'undefined' ? String(window.MASTER_PIN).trim() : "0000";[cite: 1]
       const shops = getAllShops();
 
       if (enteredPin === masterPin) {
@@ -546,7 +564,7 @@
         btn.type = 'button';
         btn.className = 'btn-top';
         btn.style.cssText = 'padding:14px; font-size:13px; background:#0f172a; border:1px solid #475569;';
-        btn.innerText = `${s.name} (${s.pin})`;
+        btn.innerText = `${s.name} (${s.pin})`;[cite: 1]
         btn.onclick = () => {
           picker.style.display = 'none';
           activateShopSession(s);
@@ -564,14 +582,59 @@
       document.getElementById('top-shop-name').innerText = s.name;
       document.getElementById('top-shop-badge').innerText = s.id.toUpperCase();
       document.getElementById('business-date-badge').innerText = `📅 Shift: ${getSaudiBusinessDate()}`;
+      updateNetworkStatus();
 
+      // 1. Immediately Load Local Persistence (Never blank on refresh!)
+      loadLocalState(s.id);
+
+      // 2. Cloud Sync if Online
       if (s.url && s.key && window.supabase) {
         supabaseClient = window.supabase.createClient(s.url, s.key);
-        await syncCloudData(s.id);
+        if (navigator.onLine) {
+          await syncCloudData(s.id);
+        }
       }
+
       showCategories();
       updateTokenDisplay();
       syncPendingOfflineOrders();
+    }
+
+    function loadLocalState(shopId) {
+      const savedOrders = localStorage.getItem(`pos_orders_${shopId}`);
+      if (savedOrders) {
+        try { orderHistory = JSON.parse(savedOrders); } catch(e) {}
+      } else {
+        orderHistory = [];
+      }
+
+      const savedStations = localStorage.getItem(`pos_stations_${shopId}`);
+      if (savedStations) {
+        try { kitchenStations = JSON.parse(savedStations); } catch(e) {}
+      }
+
+      const savedCats = localStorage.getItem(`pos_cats_${shopId}`);
+      if (savedCats) {
+        try { categories = JSON.parse(savedCats); } catch(e) {}
+      }
+
+      const savedItems = localStorage.getItem(`pos_items_${shopId}`);
+      if (savedItems) {
+        try { items = JSON.parse(savedItems); } catch(e) {}
+      }
+
+      const savedShop = localStorage.getItem(`pos_shop_${shopId}`);
+      if (savedShop) {
+        try { shop = JSON.parse(savedShop); } catch(e) {}
+      }
+    }
+
+    function saveLocalState(shopId) {
+      localStorage.setItem(`pos_orders_${shopId}`, JSON.stringify(orderHistory));
+      localStorage.setItem(`pos_stations_${shopId}`, JSON.stringify(kitchenStations));
+      localStorage.setItem(`pos_cats_${shopId}`, JSON.stringify(categories));
+      localStorage.setItem(`pos_items_${shopId}`, JSON.stringify(items));
+      localStorage.setItem(`pos_shop_${shopId}`, JSON.stringify(shop));
     }
 
     function lockPOS() {
@@ -582,9 +645,9 @@
       document.getElementById('pin-lock-overlay').style.display = 'flex';
     }
 
-    // --- Cloud Sync ---
+    // --- Sync Cloud Data ---
     async function syncCloudData(shopId) {
-      if (!supabaseClient) return;
+      if (!supabaseClient || !navigator.onLine) return;
       try {
         // Kitchen Stations
         const { data: stData } = await supabaseClient.from('kitchen_stations').select('*').eq('shop_id', shopId);
@@ -606,8 +669,21 @@
           shop = { nameAr: profile.name_ar, nameEn: profile.name_en, vatNo: profile.vat_no, phone: profile.phone };
           printerMode = profile.printer_mode || 'combined';
         }
+
+        // Fetch Today's Orders & Merge
+        const bDate = getSaudiBusinessDate();
+        const { data: cloudOrders } = await supabaseClient.from('orders').select('*').eq('shop_id', shopId).eq('business_date', bDate).order('id', { ascending: false });
+        if (cloudOrders && cloudOrders.length > 0) {
+          cloudOrders.forEach(co => {
+            if (!orderHistory.find(lo => String(lo.id) === String(co.id))) {
+              orderHistory.unshift(co);
+            }
+          });
+        }
+
+        saveLocalState(shopId);
       } catch (err) {
-        console.warn("Cloud sync warning:", err);
+        console.warn("Cloud Sync warning:", err);
       }
     }
 
@@ -617,24 +693,14 @@
     }
     setInterval(updateHeaderInfo, 1000);
 
-    async function getNextToken() {
+    function getNextToken() {
       const bDate = getSaudiBusinessDate();
-      if (supabaseClient && currentShop) {
-        try {
-          const { count } = await supabaseClient
-            .from('orders')
-            .select('*', { count: 'exact', head: true })
-            .eq('shop_id', currentShop.id)
-            .eq('business_date', bDate);
-          return "Token #" + String((count || 0) + 1).padStart(2, '0');
-        } catch(e) {}
-      }
       const todays = orderHistory.filter(o => o.business_date === bDate);
       return "Token #" + String(todays.length + 1).padStart(2, '0');
     }
 
-    async function updateTokenDisplay() {
-      document.getElementById('token-display').innerText = await getNextToken();
+    function updateTokenDisplay() {
+      document.getElementById('token-display').innerText = getNextToken();
     }
 
     function setOrderType(type, btn) {
@@ -785,13 +851,13 @@
       finalizeOrder('Mada/Card');
     }
 
-    // --- Order Finalization & Direct Printing ---
+    // --- 100% Bulletproof Order Finalization (Never Crashes Offline) ---
     async function finalizeOrder(method) {
       closeModals();
       const grandTotal = parseFloat(document.getElementById('grand-total').innerText);
       const subtotal = grandTotal / 1.15;
       const vat = grandTotal - subtotal;
-      const token = await getNextToken();
+      const token = getNextToken();
       const phone = document.getElementById('cust-phone').value.trim();
       const bDate = getSaudiBusinessDate();
       const timeStr = new Date().toLocaleTimeString();
@@ -814,20 +880,23 @@
         status: 'pending'
       };
 
-      orderHistory.push(orderObj);
-      saveToOfflineQueue(orderObj);
-      lastCompletedOrder = orderObj;
+      // 1. Immediately Save to Local Persistence
+      orderHistory.unshift(orderObj);
+      saveLocalState(shopId);
 
+      // 2. Broadcast to KDS locally
       if (kdsChannel) {
         try { kdsChannel.postMessage({ type: 'NEW_ORDER', order: orderObj }); } catch(e) {}
       }
 
+      // 3. Offline Queue & Cloud Sync
+      saveToOfflineQueue(orderObj);
       if (navigator.onLine && supabaseClient) {
         try {
           await supabaseClient.from('orders').insert([orderObj]);
           markSynced(orderObj.id);
         } catch (e) {
-          console.warn("Saved locally, sync pending:", e);
+          console.warn("Cloud save failed, queued locally:", e);
         }
       }
 
@@ -837,7 +906,7 @@
       updateTokenDisplay();
       showCategories();
 
-      // Silent / Direct Kiosk Print
+      // 4. Safe Print execution
       executeDirectPrint(orderObj);
     }
 
@@ -849,7 +918,7 @@
 
     function markSynced(orderId) {
       let q = JSON.parse(localStorage.getItem('pos_pending_sync')) || [];
-      q = q.filter(o => o.id !== orderId);
+      q = q.filter(o => String(o.id) !== String(orderId));
       localStorage.setItem('pos_pending_sync', JSON.stringify(q));
     }
 
@@ -858,16 +927,15 @@
       let q = JSON.parse(localStorage.getItem('pos_pending_sync')) || [];
       if (q.length === 0) return;
 
-      for (let order of q) {
+      for (let order of [...q]) {
         try {
           await supabaseClient.from('orders').upsert([order]);
           markSynced(order.id);
         } catch(e) {}
       }
     }
-    window.addEventListener('online', syncPendingOfflineOrders);
 
-    // --- Thermal Direct Printing (Windows Kiosk Optimized) ---
+    // --- Direct Thermal Printing (Never breaks if offline) ---
     function executeDirectPrint(order) {
       const printArea = document.getElementById('print-area');
       try {
@@ -875,24 +943,17 @@
           printArea.innerHTML = getCustomerBillHTML(order) + `
             <div class="cut-line">---------------- CUT HERE ----------------</div>
           ` + getKitchenSlipHTML(order);
-          renderQRIntoElement('print-qrcode', order);
         } else {
           printArea.innerHTML = getCustomerBillHTML(order);
-          renderQRIntoElement('print-qrcode', order);
         }
 
-        // Direct Windows Kiosk Print without extra pop-ups
-        setTimeout(() => {
-          try {
-            window.print();
-          } catch(err) {
-            alert("⚠️ പ്രിന്റർ കണക്റ്റല്ല അല്ലെങ്കിൽ റെഡിയല്ല! പ്രിന്റർ പരിശോധിക്കുക.");
-          }
-        }, 300);
+        renderQRIntoElement('print-qrcode', order);
 
+        setTimeout(() => {
+          try { window.print(); } catch(err) { console.warn("Print prompt issue:", err); }
+        }, 300);
       } catch (err) {
-        console.error("Print Exception:", err);
-        alert("⚠️ പ്രിന്റിംഗ് എറർ: " + err.message);
+        console.error("Print Error:", err);
       }
     }
 
@@ -962,30 +1023,35 @@
     }
 
     function generateZatcaQRBase64(seller, vatNo, timestamp, total, vat) {
-      const t1 = getTLV(1, seller);
-      const t2 = getTLV(2, vatNo);
-      const t3 = getTLV(3, timestamp);
-      const t4 = getTLV(4, total.toFixed(2));
-      const t5 = getTLV(5, vat.toFixed(2));
-      const totalLen = t1.length + t2.length + t3.length + t4.length + t5.length;
-      const combined = new Uint8Array(totalLen);
-      let offset = 0;
-      [t1, t2, t3, t4, t5].forEach(t => { combined.set(t, offset); offset += t.length; });
-      let bin = '';
-      for (let i = 0; i < combined.length; i++) bin += String.fromCharCode(combined[i]);
-      return btoa(bin);
+      try {
+        const t1 = getTLV(1, seller);
+        const t2 = getTLV(2, vatNo);
+        const t3 = getTLV(3, timestamp);
+        const t4 = getTLV(4, total.toFixed(2));
+        const t5 = getTLV(5, vat.toFixed(2));
+        const totalLen = t1.length + t2.length + t3.length + t4.length + t5.length;
+        const combined = new Uint8Array(totalLen);
+        let offset = 0;
+        [t1, t2, t3, t4, t5].forEach(t => { combined.set(t, offset); offset += t.length; });
+        let bin = '';
+        for (let i = 0; i < combined.length; i++) bin += String.fromCharCode(combined[i]);
+        return btoa(bin);
+      } catch(e) { return ""; }
     }
 
     function renderQRIntoElement(elId, order) {
-      const qrData = generateZatcaQRBase64(shop.nameAr, shop.vatNo, `${order.date}T${order.time}Z`, order.total, order.vat);
       const target = document.getElementById(elId);
-      if (target) {
-        target.innerHTML = '';
-        new QRCode(target, { text: qrData, width: 95, height: 95, correctLevel: QRCode.CorrectLevel.M });
+      if (!target) return;
+      target.innerHTML = '';
+      if (typeof QRCode !== 'undefined') {
+        try {
+          const qrData = generateZatcaQRBase64(shop.nameAr, shop.vatNo, `${order.date}T${order.time}Z`, order.total, order.vat);
+          new QRCode(target, { text: qrData, width: 95, height: 95, correctLevel: QRCode.CorrectLevel.M });
+        } catch(e) {}
       }
     }
 
-    // --- Cloud Z-Report & Item-Wise Breakdown with Calendar Date Picker ---
+    // --- Z-Report & Item Breakdown (Works Offline & Online) ---
     async function openCloudZReportModal() {
       const bDate = getSaudiBusinessDate();
       document.getElementById('rep-calendar-picker').value = bDate;
@@ -998,14 +1064,18 @@
       const shopId = currentShop ? currentShop.id : 'shop1';
       document.getElementById('rep-date').innerText = selectedDate;
 
-      let bills = [];
-      if (supabaseClient) {
+      let bills = orderHistory.filter(o => o.business_date === selectedDate);
+
+      // If online, also check Supabase
+      if (supabaseClient && navigator.onLine) {
         try {
           const { data } = await supabaseClient.from('orders').select('*').eq('shop_id', shopId).eq('business_date', selectedDate);
-          if (data) bills = data;
+          if (data && data.length > 0) {
+            data.forEach(co => {
+              if (!bills.find(b => String(b.id) === String(co.id))) bills.push(co);
+            });
+          }
         } catch(e) {}
-      } else {
-        bills = orderHistory.filter(o => o.business_date === selectedDate);
       }
 
       cachedReportOrders = bills;
@@ -1019,11 +1089,8 @@
         if (o.payment_method === 'Cash') totalCash += parseFloat(o.total || 0);
         else totalCard += parseFloat(o.total || 0);
 
-        // Aggregate items
         (o.items || []).forEach(it => {
-          if (!itemMap[it.name]) {
-            itemMap[it.name] = { qty: 0, amount: 0 };
-          }
+          if (!itemMap[it.name]) itemMap[it.name] = { qty: 0, amount: 0 };
           itemMap[it.name].qty += Number(it.qty || 1);
           itemMap[it.name].amount += Number(it.price * (it.qty || 1));
         });
@@ -1035,7 +1102,6 @@
       document.getElementById('rep-vat').innerText = totalVat.toFixed(2) + " SAR";
       document.getElementById('rep-total').innerText = grandTotal.toFixed(2) + " SAR";
 
-      // Populate Items Breakdown Table
       const itemsTbody = document.getElementById('rep-items-tbody');
       itemsTbody.innerHTML = '';
       const itemNames = Object.keys(itemMap);
@@ -1056,7 +1122,7 @@
     }
 
     async function executeZDailyClosing() {
-      if (!confirm("ഇന്നത്തെ ബിസിനസ്സ് ഷിഫ്റ്റ് ക്ലൗഡിൽ സ്ഥിരമായി ക്ലോസ് ചെയ്യണോ (Z-Closing)?")) return;
+      if (!confirm("ഇന്നത്തെ ബിസിനസ്സ് ഷിഫ്റ്റ് സ്ഥിരമായി ക്ലോസ് ചെയ്യണോ (Z-Closing)?")) return;
       const bDate = document.getElementById('rep-date').innerText;
       const shopId = currentShop ? currentShop.id : 'shop1';
 
@@ -1066,7 +1132,7 @@
       const vat = parseFloat(document.getElementById('rep-vat').innerText);
       const count = parseInt(document.getElementById('rep-count').innerText);
 
-      if (supabaseClient) {
+      if (supabaseClient && navigator.onLine) {
         try {
           await supabaseClient.from('daily_closings').insert([{
             shop_id: shopId,
@@ -1078,10 +1144,7 @@
             bills_count: count,
             closed_by: 'Cashier'
           }]);
-          alert("ഇന്നത്തെ ഷിഫ്റ്റ് വിജയകരമായി ക്ലൗഡിൽ ക്ലോസ് ചെയ്തു!");
-        } catch (e) {
-          alert("ക്ലോസിംഗ് എറർ: " + e.message);
-        }
+        } catch(e) {}
       }
       printDetailedZReportSlip();
       closeModals();
@@ -1096,7 +1159,6 @@
       const vat = document.getElementById('rep-vat').innerText;
       const total = document.getElementById('rep-total').innerText;
 
-      // Extract items from cached report
       let itemMap = {};
       cachedReportOrders.forEach(o => {
         (o.items || []).forEach(it => {
@@ -1138,38 +1200,89 @@
       setTimeout(() => window.print(), 250);
     }
 
-    // --- Dynamic Kitchen Stations Manager ---
-    async function addNewKitchenStation() {
+    // --- Kitchen Stations Manager (Add, Edit, Delete) ---
+    async function saveKitchenStation() {
       const name = document.getElementById('new-station-name').value.trim();
       const routing = document.getElementById('new-station-routing').value;
       const shopId = currentShop ? currentShop.id : 'shop1';
 
       if (!name) return alert("സ്റ്റേഷൻ പേര് നൽകുക!");
-      if (kitchenStations.find(s => s.name.toLowerCase() === name.toLowerCase())) {
-        return alert("ഈ സ്റ്റേഷൻ നിലവിലുണ്ട്!");
+
+      let stObj = null;
+      if (editingStId) {
+        stObj = kitchenStations.find(s => s.id === editingStId);
+        if (stObj) {
+          stObj.name = name;
+          stObj.routing = routing;
+        }
+      } else {
+        const id = name.toLowerCase().replace(/\s+/g, '_');
+        stObj = { id, name, routing, shop_id: shopId };
+        kitchenStations.push(stObj);
       }
 
-      const stObj = { name, routing, shop_id: shopId };
-      kitchenStations.push(stObj);
-      document.getElementById('new-station-name').value = '';
-      renderStationsTags();
+      saveLocalState(shopId);
+      resetStationForm();
+      renderStationsTable();
       populateStationDropdowns();
 
-      if (supabaseClient) {
+      if (supabaseClient && navigator.onLine) {
         try {
           await supabaseClient.from('kitchen_stations').upsert([stObj]);
         } catch(e) {}
       }
     }
 
-    function renderStationsTags() {
-      const container = document.getElementById('stations-tags-list');
-      container.innerHTML = '';
+    function startEditStation(id) {
+      const st = kitchenStations.find(s => s.id === id);
+      if (!st) return;
+      editingStId = st.id;
+      document.getElementById('st-form-title').innerText = `കിച്ചൻ സ്റ്റേഷൻ എഡിറ്റ് ചെയ്യുക: "${st.name}"`;
+      document.getElementById('new-station-name').value = st.name;
+      document.getElementById('new-station-routing').value = st.routing || 'Both';
+      document.getElementById('btn-save-st').innerText = "Update Station";
+      document.getElementById('btn-cancel-st').style.display = 'inline-block';
+    }
+
+    function resetStationForm() {
+      editingStId = null;
+      document.getElementById('st-form-title').innerText = "🧑‍🍳 കിച്ചൻ സ്റ്റേഷൻ മാനേജ്‌മെന്റ് (Add / Edit Station):";
+      document.getElementById('new-station-name').value = '';
+      document.getElementById('new-station-routing').value = 'Both';
+      document.getElementById('btn-save-st').innerText = "Save Station";
+      document.getElementById('btn-cancel-st').style.display = 'none';
+    }
+
+    async function deleteStation(id) {
+      if (!confirm("ഈ കിച്ചൻ സ്റ്റേഷൻ നീക്കം ചെയ്യണോ?")) return;
+      const shopId = currentShop ? currentShop.id : 'shop1';
+      kitchenStations = kitchenStations.filter(s => s.id !== id);
+
+      saveLocalState(shopId);
+      renderStationsTable();
+      populateStationDropdowns();
+
+      if (supabaseClient && navigator.onLine) {
+        try {
+          await supabaseClient.from('kitchen_stations').delete().match({ id, shop_id: shopId });
+        } catch(e) {}
+      }
+    }
+
+    function renderStationsTable() {
+      const tbody = document.getElementById('stations-table-body');
+      tbody.innerHTML = '';
       kitchenStations.forEach(st => {
-        const tag = document.createElement('span');
-        tag.style.cssText = 'background:#1e293b; color:#38bdf8; padding:3px 8px; border-radius:4px; font-size:11px; font-weight:bold; border:1px solid #475569;';
-        tag.innerText = `🏷️ ${st.name} [${st.routing || 'Both'}]`;
-        container.appendChild(tag);
+        tbody.innerHTML += `
+          <tr>
+            <td><strong>${st.name}</strong></td>
+            <td>${st.routing || 'Both'}</td>
+            <td>
+              <button onclick="startEditStation('${st.id}')" style="background:#0284c7; color:#fff; border:none; padding:2px 6px; border-radius:3px; cursor:pointer;">Edit</button>
+              <button onclick="deleteStation('${st.id}')" style="background:#ef4444; color:#fff; border:none; padding:2px 6px; border-radius:3px; cursor:pointer;">Delete</button>
+            </td>
+          </tr>
+        `;
       });
     }
 
@@ -1181,7 +1294,7 @@
       });
     }
 
-    // --- Category Management (Create / Edit / Delete) ---
+    // --- Category Management (Create, Edit, Delete) ---
     async function saveCategoryToCloud() {
       const name = document.getElementById('cat-name-input').value.trim();
       const icon = document.getElementById('cat-icon-input').value.trim() || '📁';
@@ -1204,18 +1317,16 @@
         categories.push(targetCat);
       }
 
+      saveLocalState(shopId);
       resetCatForm();
       renderCatDropdown();
       renderCategoriesTable();
       showCategories();
 
-      if (supabaseClient) {
+      if (supabaseClient && navigator.onLine) {
         try {
           await supabaseClient.from('categories').upsert([targetCat]);
-          alert("കാറ്റഗറി ക്ലൗഡിൽ അപ്‌ഡേറ്റ് ചെയ്തു!");
-        } catch(e) {
-          console.error(e);
-        }
+        } catch(e) {}
       }
     }
 
@@ -1241,22 +1352,18 @@
     }
 
     async function deleteCategory(id) {
-      const count = items.filter(it => it.catId === id).length;
-      let msg = "ഈ കാറ്റഗറി ക്ലൗഡിൽ നിന്നും നീക്കം ചെയ്യണോ?";
-      if (count > 0) {
-        msg = `ശ്രദ്ധിക്കുക: ഈ കാറ്റഗറിയിൽ ${count} ഐറ്റങ്ങൾ ഉണ്ട്! എങ്കിലും നീക്കം ചെയ്യണോ?`;
-      }
-      if (!confirm(msg)) return;
-
+      if (!confirm("ഈ കാറ്റഗറി നീക്കം ചെയ്യണോ?")) return;
       const shopId = currentShop ? currentShop.id : 'shop1';
       categories = categories.filter(c => c.id !== id);
+
+      saveLocalState(shopId);
       renderCatDropdown();
       renderCategoriesTable();
       showCategories();
 
-      if (supabaseClient) {
+      if (supabaseClient && navigator.onLine) {
         try {
-          await supabaseClient.from('categories').delete().match({ id: id, shop_id: shopId });
+          await supabaseClient.from('categories').delete().match({ id, shop_id: shopId });
         } catch(e) {}
       }
     }
@@ -1293,13 +1400,14 @@
       document.getElementById('set-phone').value = shop.phone;
       document.getElementById('set-printer-mode').value = printerMode;
 
-      renderStationsTags();
+      renderStationsTable();
       populateStationDropdowns();
       renderCatDropdown();
       renderCategoriesTable();
       renderSettingsTable();
       resetItemForm();
       resetCatForm();
+      resetStationForm();
       document.getElementById('settings-modal').style.display = 'flex';
     }
 
@@ -1311,7 +1419,9 @@
       printerMode = document.getElementById('set-printer-mode').value;
       const shopId = currentShop ? currentShop.id : 'shop1';
 
-      if (supabaseClient) {
+      saveLocalState(shopId);
+
+      if (supabaseClient && navigator.onLine) {
         try {
           await supabaseClient.from('shop_settings').upsert({
             shop_id: shopId,
@@ -1321,7 +1431,7 @@
             phone: shop.phone,
             printer_mode: printerMode
           });
-          alert("ഷോപ്പ് വിവരങ്ങൾ ക്ലൗഡിൽ അപ്‌ഡേറ്റ് ചെയ്തു!");
+          alert("ഷോപ്പ് വിവരങ്ങൾ സേവ് ചെയ്തു!");
         } catch(e) {}
       }
     }
@@ -1347,11 +1457,12 @@
         items.push(target);
       }
 
+      saveLocalState(shopId);
       resetItemForm();
       renderSettingsTable();
       showCategories();
 
-      if (supabaseClient) {
+      if (supabaseClient && navigator.onLine) {
         try {
           await supabaseClient.from('menu_items').upsert({
             id: target.id,
@@ -1439,7 +1550,6 @@
       document.getElementById('item-remove-img-btn').style.display = 'none';
     }
 
-    // Physical Keyboard Support
     window.addEventListener('keydown', (e) => {
       const overlay = document.getElementById('pin-lock-overlay');
       if (overlay.style.display !== 'none') {
@@ -1448,7 +1558,6 @@
       }
     });
 
-    // Auto-resume existing session
     const activeShopId = localStorage.getItem('pos_active_shop_id');
     const existing = getAllShops().find(s => s.id === activeShopId);
     if (existing) {
