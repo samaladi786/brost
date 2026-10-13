@@ -1,5 +1,5 @@
 // ==========================================================
-// POS CORE ENGINE - BILINGUAL (EN / AR), BILLING & PRINTING
+// POS CORE ENGINE - BILINGUAL, SPLIT PAY, STICKY PILLS & VOID
 // ==========================================================
 
 const FALLBACK_SHOPS = [
@@ -25,23 +25,26 @@ const i18n = {
     masterText: "Select Branch to Open:",
     cancel: "Cancel",
     langToggle: "🌐 العربية",
-    kdsScreen: "📺 KDS Screen",
+    accounts: "💼 Accounts & HR",
+    recentBills: "🧾 Bills & Void",
+    pettyCash: "💸 Petty Cash",
+    kdsScreen: "📺 KDS",
     reports: "📊 Reports",
     settings: "⚙️ Settings",
     logout: "🔒 Logout",
     takeaway: "📦 Takeaway (سفري)",
     dinein: "🍽️ Dine-in (محلي)",
-    phoneOrder: "📞 Phone Order (هاتف)",
+    phoneOrder: "📞 Phone (هاتف)",
+    tablePlaceholder: "Table #",
     custPhonePlaceholder: "Customer Mobile (Optional)",
-    btnBack: "⬅️ Categories (Back)",
-    categoriesTitle: "Main Categories",
     cartTitle: "Order List",
     clearCart: "🗑️ Clear Cart",
     subtotal: "Subtotal:",
     vat: "VAT (15%):",
     total: "Total:",
     payCash: "💵 CASH (نقداً)",
-    payCard: "💳 MADA / CARD (شبكة)",
+    payCard: "💳 MADA (شبكة)",
+    paySplit: "🔀 Split (مقسم)",
     flavorTitle: "Select Flavor",
     flvNormal: "Normal (عادي)",
     flvSpicy: "Spicy 🌶️ (حار)",
@@ -50,6 +53,12 @@ const i18n = {
     billAmount: "Bill Amount:",
     changeDue: "Change Due:",
     printComplete: "Print & Complete",
+    splitTitle: "🔀 Split Payment (دفع مجزأ)",
+    splitCashLbl: "💵 Cash Amount (المبلغ النقدي):",
+    splitCardLbl: "💳 Mada/Card Balance (مبلغ الشبكة):",
+    splitConfirm: "Complete Split Bill",
+    recentBillsTitle: "🧾 Recent Bills, Reprint & Void Log",
+    pettyTitle: "💸 Drawer Cash-Out (مصروفات درج النقدية)",
     online: "ONLINE",
     offline: "OFFLINE (LOCAL)"
   },
@@ -61,23 +70,26 @@ const i18n = {
     masterText: "اختر الفرع لفتحه:",
     cancel: "إلغاء",
     langToggle: "🌐 English",
+    accounts: "💼 الحسابات والرواتب",
+    recentBills: "🧾 الفواتير والإلغاء",
+    pettyCash: "💸 سحب من الدرج",
     kdsScreen: "📺 شاشة المطبخ",
     reports: "📊 التقارير",
     settings: "⚙️ الإعدادات",
     logout: "🔒 تسجيل خروج",
     takeaway: "📦 سفري (Takeaway)",
     dinein: "🍽️ محلي (Dine-in)",
-    phoneOrder: "📞 طلب هاتف (Phone)",
+    phoneOrder: "📞 هاتف (Phone)",
+    tablePlaceholder: "طاولة #",
     custPhonePlaceholder: "رقم جوال العميل (اختياري)",
-    btnBack: "⬅️ الأقسام (رجوع)",
-    categoriesTitle: "الأقسام الرئيسية",
     cartTitle: "قائمة الطلب",
     clearCart: "🗑️ إلغاء الطلب",
     subtotal: "المجموع الفرعي:",
     vat: "ضريبة القيمة المضافة (15%):",
     total: "الإجمالي النهائي:",
     payCash: "💵 نقداً (CASH)",
-    payCard: "💳 شبكة / مدى (MADA)",
+    payCard: "💳 شبكة (MADA)",
+    paySplit: "🔀 دفع مجزأ (Split)",
     flavorTitle: "اختر النكهة",
     flvNormal: "عادي (Normal)",
     flvSpicy: "حار 🌶️ (Spicy)",
@@ -86,6 +98,12 @@ const i18n = {
     billAmount: "مبلغ الفاتورة:",
     changeDue: "المبلغ المتبقي:",
     printComplete: "طباعة وإنهاء",
+    splitTitle: "🔀 دفع مجزأ (نقداً + شبكة)",
+    splitCashLbl: "💵 المبلغ النقدي (Cash):",
+    splitCardLbl: "💳 مبلغ الشبكة المتبقي (Mada):",
+    splitConfirm: "إتمام الفاتورة المجزأة",
+    recentBillsTitle: "🧾 سجل الفواتير، إعادة الطباعة والإلغاء",
+    pettyTitle: "💸 مصروفات درج النقدية (نثريات)",
     online: "متصل (ONLINE)",
     offline: "غير متصل (LOCAL)"
   }
@@ -111,6 +129,9 @@ function applyLanguage(lang) {
   setText('ui-master-select-text', t.masterText);
   setText('ui-master-cancel', t.cancel);
   setText('btn-lang-toggle', t.langToggle);
+  setText('ui-btn-accounts', t.accounts);
+  setText('ui-btn-recent-bills', t.recentBills);
+  setText('ui-btn-petty', t.pettyCash);
   setText('ui-btn-kds', t.kdsScreen);
   setText('ui-btn-reports', t.reports);
   setText('ui-btn-settings', t.settings);
@@ -118,11 +139,8 @@ function applyLanguage(lang) {
   setText('btn-type-takeaway', t.takeaway);
   setText('btn-type-dinein', t.dinein);
   setText('btn-type-phone', t.phoneOrder);
+  setPlaceholder('table-number-input', t.tablePlaceholder);
   setPlaceholder('cust-phone', t.custPhonePlaceholder);
-  setText('btn-back', t.btnBack);
-  if (currentView === 'categories') {
-    setText('current-title', t.categoriesTitle);
-  }
   setText('ui-cart-title', t.cartTitle);
   setText('ui-btn-clear-cart', t.clearCart);
   setText('ui-lbl-subtotal', t.subtotal);
@@ -130,6 +148,7 @@ function applyLanguage(lang) {
   setText('ui-lbl-total', t.total);
   setText('ui-btn-pay-cash', t.payCash);
   setText('ui-btn-pay-card', t.payCard);
+  setText('ui-btn-pay-split', t.paySplit);
   setText('flavor-modal-title', t.flavorTitle);
   setText('ui-flv-normal', t.flvNormal);
   setText('ui-flv-spicy', t.flvSpicy);
@@ -140,8 +159,16 @@ function applyLanguage(lang) {
   setText('ui-cash-lbl-change', t.changeDue);
   setText('ui-btn-cash-cancel', t.cancel);
   setText('ui-btn-cash-confirm', t.printComplete);
+  setText('ui-split-title', t.splitTitle);
+  setText('ui-split-lbl-cash', t.splitCashLbl);
+  setText('ui-split-lbl-card', t.splitCardLbl);
+  setText('ui-btn-split-cancel', t.cancel);
+  setText('ui-btn-split-confirm', t.splitConfirm);
+  setText('ui-recent-bills-title', t.recentBillsTitle);
+  setText('ui-petty-title', t.pettyTitle);
 
   updateNetworkStatus();
+  renderCategoryPills();
 }
 
 // Global POS State
@@ -175,11 +202,12 @@ let items = [
 ];
 
 let orderHistory = [];
+let pettyCashHistory = [];
 let printerMode = 'combined';
 let currentShiftNo = 1;
 
 let cart = [];
-let currentView = 'categories';
+let activeCatId = "broast";
 let selectedTempItem = null;
 let activeOrderType = "Takeaway";
 let editingItemId = null;
@@ -203,14 +231,40 @@ function updateNetworkStatus() {
 window.addEventListener('online', () => { updateNetworkStatus(); syncPendingOfflineOrders(); });
 window.addEventListener('offline', updateNetworkStatus);
 
-// --- Saudi 6:00 AM Restaurant Cut-off Date ---
+// --- Fixed Saudi Calendar Date & Smart 5-6 AM Z-Closing ---
+function formatDateYMD(d) {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 function getSaudiBusinessDate() {
   const now = new Date();
-  const saudiTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (3 * 3600000));
-  if (saudiTime.getHours() < 6) {
-    saudiTime.setDate(saudiTime.getDate() - 1);
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  const d = now.getDate();
+  const h = now.getHours();
+
+  const shopId = currentShop ? currentShop.id : 'shop1';
+  const lastClosedDate = localStorage.getItem(`pos_last_closed_date_${shopId}`);
+
+  let targetDate = new Date(y, m, d);
+
+  if (h < 6) {
+    let prevDate = new Date(y, m, d);
+    prevDate.setDate(prevDate.getDate() - 1);
+    const prevDateStr = formatDateYMD(prevDate);
+
+    // Smart Cut-off: If early Z-close was already executed between 5:00 and 6:00 AM
+    if (lastClosedDate === prevDateStr) {
+      targetDate = new Date(y, m, d); // Advance to new business day immediately
+    } else {
+      targetDate = prevDate; // Remain in previous business date
+    }
   }
-  return saudiTime.toISOString().slice(0, 10);
+
+  return formatDateYMD(targetDate);
 }
 
 // --- 4-Digit Direct PIN Authentication ---
@@ -289,7 +343,7 @@ function openMasterBranchPicker() {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'btn-top';
-    btn.style.cssText = 'padding:14px; font-size:13px; background:#0f172a; border:1px solid #475569;';
+    btn.style.cssText = 'padding:14px; font-size:12px; background:#0f172a; border:1px solid #475569;';
     btn.innerText = `${s.name} (${s.pin})`;
     btn.onclick = () => {
       picker.style.display = 'none';
@@ -323,14 +377,14 @@ async function activateShopSession(s) {
 
   // Apply Language & Render
   applyLanguage(currentLang);
-  showCategories();
+  renderCategoryPills();
   updateTokenDisplay();
 
   // Connect Supabase Cloud Sync
   if (s.url && s.key && window.supabase) {
     supabaseClient = window.supabase.createClient(s.url, s.key);
     syncCloudData(s.id).then(() => {
-      showCategories();
+      renderCategoryPills();
       updateTokenDisplay();
     });
   }
@@ -340,11 +394,10 @@ async function activateShopSession(s) {
 
 function loadLocalState(shopId) {
   const savedOrders = localStorage.getItem(`pos_orders_${shopId}`);
-  if (savedOrders) {
-    try { orderHistory = JSON.parse(savedOrders); } catch(e) {}
-  } else {
-    orderHistory = [];
-  }
+  orderHistory = savedOrders ? JSON.parse(savedOrders) : [];
+
+  const savedPetty = localStorage.getItem(`pos_petty_${shopId}`);
+  pettyCashHistory = savedPetty ? JSON.parse(savedPetty) : [];
 
   const savedShift = localStorage.getItem(`pos_shift_no_${shopId}`);
   currentShiftNo = savedShift ? parseInt(savedShift) : 1;
@@ -372,6 +425,7 @@ function loadLocalState(shopId) {
 
 function saveLocalState(shopId) {
   localStorage.setItem(`pos_orders_${shopId}`, JSON.stringify(orderHistory));
+  localStorage.setItem(`pos_petty_${shopId}`, JSON.stringify(pettyCashHistory));
   localStorage.setItem(`pos_shift_no_${shopId}`, currentShiftNo.toString());
   localStorage.setItem(`pos_stations_${shopId}`, JSON.stringify(kitchenStations));
   localStorage.setItem(`pos_cats_${shopId}`, JSON.stringify(categories));
@@ -433,7 +487,7 @@ setInterval(updateHeaderInfo, 1000);
 
 function getNextToken() {
   const bDate = getSaudiBusinessDate();
-  const todays = orderHistory.filter(o => o.business_date === bDate);
+  const todays = orderHistory.filter(o => o.business_date === bDate && o.status !== 'void');
   return "Token #" + String(todays.length + 1).padStart(2, '0');
 }
 
@@ -446,43 +500,50 @@ function setOrderType(type, btn) {
   activeOrderType = type;
   document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
+
+  const tblInput = document.getElementById('table-number-input');
+  if (tblInput) {
+    tblInput.style.display = type === 'Dine-in' ? 'inline-block' : 'none';
+    if (type !== 'Dine-in') tblInput.value = '';
+  }
 }
 
-// --- Menu Navigation & Cart Actions ---
-function showCategories() {
-  currentView = 'categories';
-  const backBtn = document.getElementById('btn-back');
-  if (backBtn) backBtn.style.display = 'none';
-  const title = document.getElementById('current-title');
-  if (title) title.innerText = i18n[currentLang].categoriesTitle;
+// --- STICKY TOP CAPSULE CATEGORIES BAR & ACTIVE ITEMS ---
+function renderCategoryPills() {
+  const pillsContainer = document.getElementById('cat-pills-bar');
+  if (!pillsContainer) return;
+  pillsContainer.innerHTML = '';
 
-  const grid = document.getElementById('pos-grid');
-  if (!grid) return;
-  grid.innerHTML = '';
+  if (categories.length === 0) return;
+
+  if (!categories.find(c => c.id === activeCatId)) {
+    activeCatId = categories[0].id;
+  }
 
   categories.forEach(cat => {
-    const card = document.createElement('div');
-    card.className = 'pos-card';
-    card.innerHTML = `
-      <div class="card-icon">${cat.icon || '📁'}</div>
-      <div class="card-info"><h4>${cat.name}</h4><small style="color:#64748b; font-size:10px;">${cat.station || ''}</small></div>
+    const pill = document.createElement('div');
+    pill.className = `cat-pill ${cat.id === activeCatId ? 'active' : ''}`;
+    pill.innerHTML = `
+      <span class="cat-pill-icon">${cat.icon || '📁'}</span>
+      <span>${cat.name}</span>
     `;
-    card.onclick = () => showItemsOfCategory(cat);
-    grid.appendChild(card);
+    pill.onclick = () => {
+      activeCatId = cat.id;
+      renderCategoryPills();
+    };
+    pillsContainer.appendChild(pill);
   });
+
+  renderActiveCategoryItems();
 }
 
-function showItemsOfCategory(cat) {
-  currentView = cat.id;
-  const backBtn = document.getElementById('btn-back');
-  if (backBtn) backBtn.style.display = 'block';
-  const title = document.getElementById('current-title');
-  if (title) title.innerText = `${cat.name}`;
-
+function renderActiveCategoryItems() {
   const grid = document.getElementById('pos-grid');
   if (!grid) return;
   grid.innerHTML = '';
-  const filtered = items.filter(it => it.catId === cat.id);
+
+  const activeCat = categories.find(c => c.id === activeCatId);
+  const filtered = items.filter(it => it.catId === activeCatId);
 
   filtered.forEach(item => {
     const card = document.createElement('div');
@@ -494,7 +555,7 @@ function showItemsOfCategory(cat) {
         <div class="price">${item.price.toFixed(2)} SAR</div>
       </div>
     `;
-    card.onclick = () => handleItemSelect(item, cat);
+    card.onclick = () => handleItemSelect(item, activeCat);
     grid.appendChild(card);
   });
 }
@@ -506,7 +567,6 @@ function handleItemSelect(item, cat) {
     document.getElementById('flavor-modal').style.display = 'flex';
   } else {
     addToCart(item.name, item.price, cat ? cat.station : 'Main Kitchen');
-    showCategories();
   }
 }
 
@@ -515,7 +575,6 @@ function confirmBroastFlavor() {
   const spiceLabel = spice === 'Spicy' ? '(حار / Spicy)' : '(عادي / Normal)';
   addToCart(`${selectedTempItem.name} ${spiceLabel}`, selectedTempItem.price, selectedTempItem.station);
   closeModals();
-  showCategories();
 }
 
 function closeModals() {
@@ -541,6 +600,8 @@ function clearCart() {
   if (confirm(msg)) {
     cart = [];
     document.getElementById('cust-phone').value = '';
+    const tblInput = document.getElementById('table-number-input');
+    if (tblInput) tblInput.value = '';
     updateCartUI();
   }
 }
@@ -577,6 +638,7 @@ function updateCartUI() {
   document.getElementById('grand-total').innerText = total.toFixed(2) + " SAR";
 }
 
+// --- PAYMENT HANDLING (CASH, CARD, SPLIT) ---
 function openCashPaymentModal() {
   if (cart.length === 0) return alert(currentLang === 'ar' ? "السلة فارغة!" : "Cart is empty!");
   const total = parseFloat(document.getElementById('grand-total').innerText);
@@ -599,14 +661,48 @@ function processCardPayment() {
   finalizeOrder('Mada/Card');
 }
 
-// --- Order Finalization with Clean Supabase Mapping ---
-async function finalizeOrder(method) {
+// Split Payment Modal Logic
+function openSplitPaymentModal() {
+  if (cart.length === 0) return alert(currentLang === 'ar' ? "السلة فارغة!" : "Cart is empty!");
+  const total = parseFloat(document.getElementById('grand-total').innerText);
+  document.getElementById('split-total-bill').innerText = total.toFixed(2) + " SAR";
+  document.getElementById('split-cash-input').value = "";
+  document.getElementById('split-card-input').value = total.toFixed(2);
+  document.getElementById('split-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('split-cash-input').focus(), 100);
+}
+
+function calculateSplitBalance() {
+  const total = parseFloat(document.getElementById('grand-total').innerText);
+  let cashEntered = parseFloat(document.getElementById('split-cash-input').value) || 0;
+  if (cashEntered < 0) cashEntered = 0;
+  if (cashEntered > total) cashEntered = total;
+  const cardRemaining = total - cashEntered;
+  document.getElementById('split-card-input').value = cardRemaining.toFixed(2);
+}
+
+function finalizeSplitOrder() {
+  const total = parseFloat(document.getElementById('grand-total').innerText);
+  const cashVal = parseFloat(document.getElementById('split-cash-input').value) || 0;
+  const cardVal = parseFloat(document.getElementById('split-card-input').value) || 0;
+
+  if (cashVal + cardVal !== total || cashVal <= 0 || cardVal <= 0) {
+    return alert(currentLang === 'ar' ? "يرجى تحديد مبالغ صحيحة للدفع المجزأ!" : "Enter valid split amounts for cash and mada!");
+  }
+
+  finalizeOrder('Split', { cash: cashVal, card: cardVal });
+}
+
+// --- ORDER FINALIZATION STRICTLY MAPPED TO SUPABASE ---
+async function finalizeOrder(method, splitDetails = null) {
   closeModals();
   const grandTotal = parseFloat(document.getElementById('grand-total').innerText);
   const subtotal = grandTotal / 1.15;
   const vat = grandTotal - subtotal;
   const token = getNextToken();
   const phone = document.getElementById('cust-phone').value.trim();
+  const tblInput = document.getElementById('table-number-input');
+  const tableNo = (tblInput && tblInput.value.trim()) ? tblInput.value.trim() : null;
   const bDate = getSaudiBusinessDate();
   const timeStr = new Date().toLocaleTimeString();
   const shopId = currentShop ? currentShop.id : 'shop1';
@@ -619,20 +715,22 @@ async function finalizeOrder(method) {
     time: timeStr,
     token: token,
     order_type: activeOrderType,
+    table_no: tableNo,
     customer_phone: phone,
     items: [...cart],
     subtotal: subtotal,
     vat: vat,
     total: grandTotal,
     payment_method: method,
+    split_details: splitDetails,
     status: 'pending'
   };
 
-  // 1. Local Storage
+  // 1. Immediately Save to Local Persistence
   orderHistory.unshift(orderObj);
   saveLocalState(shopId);
 
-  // 2. KDS Broadcast
+  // 2. KDS Broadcast via BroadcastChannel
   if (kdsChannel) {
     try { kdsChannel.postMessage({ type: 'NEW_ORDER', order: orderObj }); } catch(e) {}
   }
@@ -659,21 +757,15 @@ async function finalizeOrder(method) {
   if (navigator.onLine && supabaseClient) {
     try {
       const { error } = await supabaseClient.from('orders').insert([dbOrderPayload]);
-      if (!error) {
-        markSynced(orderObj.id);
-      } else {
-        console.warn("Supabase insert notice:", error);
-      }
-    } catch (e) {
-      console.warn("Saved offline, will sync:", e);
-    }
+      if (!error) markSynced(orderObj.id);
+    } catch (e) {}
   }
 
   cart = [];
   document.getElementById('cust-phone').value = '';
+  if (tblInput) tblInput.value = '';
   updateCartUI();
   updateTokenDisplay();
-  showCategories();
 
   executeDirectPrint(orderObj);
 }
@@ -703,18 +795,132 @@ async function syncPendingOfflineOrders() {
   }
 }
 
-// --- Bilingual Thermal Direct Kiosk Printing (ZATCA Compliant) ---
-function executeDirectPrint(order) {
+// --- RECENT BILLS, REPRINT & VOID/CANCEL LOG ---
+function openRecentBillsModal() {
+  const tbody = document.getElementById('recent-bills-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  const recent = orderHistory.slice(0, 15);
+  if (recent.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:15px; color:#64748b;">No bills found</td></tr>`;
+  } else {
+    recent.forEach(o => {
+      const isVoid = o.status === 'void';
+      tbody.innerHTML += `
+        <tr style="${isVoid ? 'background:#fee2e2; color:#991b1b; text-decoration:line-through;' : ''}">
+          <td><strong>${o.token}</strong></td>
+          <td>${o.time || '-'}</td>
+          <td><strong>${o.total.toFixed(2)} SAR</strong></td>
+          <td>${o.payment_method}</td>
+          <td>${isVoid ? 'VOID (ملغاة)' : 'Valid'}</td>
+          <td>
+            <button onclick="reprintOrder(${o.id})" style="background:#0284c7; color:#fff; border:none; padding:3px 7px; border-radius:4px; font-size:11px; cursor:pointer;">🖨️ Reprint</button>
+            ${!isVoid ? `<button onclick="voidOrder(${o.id})" style="background:#ef4444; color:#fff; border:none; padding:3px 7px; border-radius:4px; font-size:11px; cursor:pointer; margin-left:4px;">❌ Void</button>` : ''}
+          </td>
+        </tr>
+      `;
+    });
+  }
+
+  document.getElementById('recent-bills-modal').style.display = 'flex';
+}
+
+function reprintOrder(orderId) {
+  const order = orderHistory.find(o => String(o.id) === String(orderId));
+  if (!order) return;
+  executeDirectPrint(order, true);
+}
+
+async function voidOrder(orderId) {
+  const order = orderHistory.find(o => String(o.id) === String(orderId));
+  if (!order) return;
+
+  const msg = currentLang === 'ar' ? `هل أنت متأكد من إلغاء الفاتورة ${order.token}؟` : `Are you sure you want to VOID order ${order.token}?`;
+  if (!confirm(msg)) return;
+
+  order.status = 'void';
+  const shopId = currentShop ? currentShop.id : 'shop1';
+  saveLocalState(shopId);
+
+  // Notify KDS
+  if (kdsChannel) {
+    try { kdsChannel.postMessage({ type: 'ORDER_VOIDED', orderId: order.id }); } catch(e) {}
+  }
+
+  if (supabaseClient && navigator.onLine) {
+    try {
+      await supabaseClient.from('orders').update({ status: 'void' }).eq('id', order.id);
+    } catch(e) {}
+  }
+
+  openRecentBillsModal();
+  updateTokenDisplay();
+}
+
+// --- PETTY CASH DRAWER-OUT LOGIC ---
+function openPettyCashModal() {
+  document.getElementById('petty-amt-input').value = "";
+  document.getElementById('petty-reason-input').value = "";
+  document.getElementById('petty-cash-modal').style.display = 'flex';
+}
+
+async function recordPettyCash() {
+  const amt = parseFloat(document.getElementById('petty-amt-input').value);
+  const reason = document.getElementById('petty-reason-input').value.trim();
+  const shopId = currentShop ? currentShop.id : 'shop1';
+  const bDate = getSaudiBusinessDate();
+
+  if (isNaN(amt) || amt <= 0 || !reason) {
+    return alert(currentLang === 'ar' ? "يرجى إدخال مبلغ صحيح وسبب السحب!" : "Enter valid amount and reason!");
+  }
+
+  const pettyObj = {
+    id: Date.now(),
+    shop_id: shopId,
+    business_date: bDate,
+    shift_no: currentShiftNo,
+    time: new Date().toLocaleTimeString(),
+    amount: amt,
+    reason: reason
+  };
+
+  pettyCashHistory.unshift(pettyObj);
+  saveLocalState(shopId);
+  closeModals();
+
+  if (supabaseClient && navigator.onLine) {
+    try {
+      await supabaseClient.from('petty_cash').insert([pettyObj]);
+    } catch(e) {}
+  }
+
+  alert(currentLang === 'ar' ? `تم تسجيل سحب مبلغ ${amt.toFixed(2)} SAR من الدرج.` : `Drawer Cash-Out of ${amt.toFixed(2)} SAR recorded.`);
+}
+
+// --- FUTURE ACCOUNTS MODULE LINK ---
+function openAccountsModule() {
+  if (typeof window.ACCOUNTS_URL !== 'undefined' && window.ACCOUNTS_URL) {
+    window.location.href = window.ACCOUNTS_URL;
+  } else {
+    alert(currentLang === 'ar' ? "💼 وحدة الحسابات والمصروفات والرواتب ستتوفر قريباً!" : "💼 Accounts, Expenses & HR module is coming soon!");
+  }
+}
+
+// --- BILINGUAL THERMAL 80MM DIRECT PRINTING ---
+function executeDirectPrint(order, isReprint = false) {
   const printArea = document.getElementById('print-area');
   try {
+    let content = "";
     if (printerMode === 'combined') {
-      printArea.innerHTML = getCustomerBillHTML(order) + `
+      content = getCustomerBillHTML(order, isReprint) + `
         <div class="cut-line">---------------- CUT HERE ----------------</div>
       ` + getKitchenSlipHTML(order);
     } else {
-      printArea.innerHTML = getCustomerBillHTML(order);
+      content = getCustomerBillHTML(order, isReprint);
     }
 
+    printArea.innerHTML = content;
     renderQRIntoElement('print-qrcode', order);
 
     setTimeout(() => {
@@ -723,7 +929,7 @@ function executeDirectPrint(order) {
   } catch (err) {}
 }
 
-function getCustomerBillHTML(order) {
+function getCustomerBillHTML(order, isReprint = false) {
   let itemsRows = order.items.map(it => `
     <div class="receipt-row">
       <span style="flex:2;">${it.name}</span>
@@ -732,11 +938,22 @@ function getCustomerBillHTML(order) {
     </div>
   `).join('');
 
-  const payMethodAr = order.payment_method === 'Cash' ? 'نقداً (Cash)' : 'شبكة / مدى (Mada)';
-  const orderTypeAr = order.order_type === 'Takeaway' ? 'سفري / Takeaway' : (order.order_type === 'Dine-in' ? 'محلي / Dine-in' : 'هاتف / Phone');
+  let payLabel = "";
+  if (order.payment_method === 'Split' && order.split_details) {
+    payLabel = `مقسم / Split (Cash: ${order.split_details.cash.toFixed(2)} | Mada: ${order.split_details.card.toFixed(2)})`;
+  } else if (order.payment_method === 'Cash') {
+    payLabel = 'نقداً / Cash';
+  } else {
+    payLabel = 'شبكة / مدى / Mada';
+  }
+
+  const orderTypeStr = order.order_type === 'Dine-in'
+    ? `محلي / Dine-in ${order.table_no ? `(Table: ${order.table_no})` : ''}`
+    : (order.order_type === 'Takeaway' ? 'سفري / Takeaway' : 'هاتف / Phone');
 
   return `
     <div class="receipt-center">
+      ${isReprint ? `<div style="font-size:14px; font-weight:bold; border:1px solid #000; padding:2px; margin-bottom:4px;">*** REPRINT / نسخة معاد طباعتها ***</div>` : ''}
       <h2 style="margin:2px 0; font-size:16px;">${shop.nameAr}</h2>
       <div style="font-size:12px; font-weight:bold;">${currentShop ? currentShop.name : shop.nameEn}</div>
       <div style="font-size:11px;">فاتورة ضريبية مبسطة</div>
@@ -745,7 +962,7 @@ function getCustomerBillHTML(order) {
       <div style="font-size:11px;">الهاتف / Tel: ${shop.phone}</div>
       <div class="receipt-line"></div>
       <h1 style="margin: 2px 0; font-size:26px;">${order.token}</h1>
-      <div class="receipt-bold" style="font-size:13px;">${orderTypeAr} [Shift #${order.shift_no}]</div>
+      <div class="receipt-bold" style="font-size:13px;">${orderTypeStr} [Shift #${order.shift_no}]</div>
       ${order.customer_phone ? `<div style="font-size:11px; font-weight:bold;">Customer Mob: ${order.customer_phone}</div>` : ''}
       <div style="font-size:10px; margin-top:2px;">Shift Date: ${order.business_date} | Time: ${order.time}</div>
     </div>
@@ -761,7 +978,7 @@ function getCustomerBillHTML(order) {
     <div class="receipt-row"><span>المجموع الفرعي (Subtotal):</span><span>${order.subtotal.toFixed(2)}</span></div>
     <div class="receipt-row"><span>ضريبة القيمة المضافة 15% (VAT):</span><span>${order.vat.toFixed(2)}</span></div>
     <div class="receipt-row receipt-bold" style="font-size:14px;"><span>الإجمالي (TOTAL):</span><span>${order.total.toFixed(2)} SAR</span></div>
-    <div class="receipt-row"><span>طريقة الدفع (Payment):</span><span>${payMethodAr}</span></div>
+    <div class="receipt-row"><span>طريقة الدفع (Payment):</span><span>${payLabel}</span></div>
     <div class="qr-center"><div id="print-qrcode"></div></div>
     <div class="receipt-center" style="font-size:10px;">شكراً لزيارتكم<br>Thank you for your visit</div>
   `;
@@ -779,7 +996,7 @@ function getKitchenSlipHTML(order) {
     <div class="receipt-center">
       <h2 style="font-size:18px; margin:2px 0;">*** تذكرة المطبخ / KITCHEN ***</h2>
       <h1 style="font-size:30px; margin:4px 0;">${order.token}</h1>
-      <div style="font-size:14px; font-weight:bold;">${order.order_type} [Shift #${order.shift_no}]</div>
+      <div style="font-size:14px; font-weight:bold;">${order.order_type} ${order.table_no ? `[Table: ${order.table_no}]` : ''} [Shift #${order.shift_no}]</div>
       ${order.customer_phone ? `<div style="font-size:12px; font-weight:bold; margin:3px 0;">Customer Mob: ${order.customer_phone}</div>` : ''}
       <div style="font-size:11px;">Date: ${order.business_date} | ${order.time}</div>
     </div>
@@ -789,7 +1006,7 @@ function getKitchenSlipHTML(order) {
   `;
 }
 
-// --- ZATCA Phase-2 Base64 TLV QR Generation ---
+// --- ZATCA PHASE-1 BASE64 TLV QR GENERATION ---
 function getTLV(tagNum, tagValue) {
   const encoder = new TextEncoder();
   const valBytes = encoder.encode(tagValue);
@@ -827,7 +1044,7 @@ function renderQRIntoElement(elId, order) {
   }
 }
 
-// --- Kitchen Stations Management ---
+// --- CRUD SETTINGS (STATIONS, CATEGORIES, ITEMS) ---
 async function saveKitchenStation() {
   const name = document.getElementById('new-station-name').value.trim();
   const routing = document.getElementById('new-station-routing').value;
@@ -839,11 +1056,7 @@ async function saveKitchenStation() {
   let stObj = null;
   if (editingStId) {
     stObj = kitchenStations.find(s => s.id === editingStId);
-    if (stObj) {
-      stObj.name = name;
-      stObj.routing = routing;
-      stObj.pin = pin;
-    }
+    if (stObj) { stObj.name = name; stObj.routing = routing; stObj.pin = pin; }
   } else {
     const id = name.toLowerCase().replace(/\s+/g, '_');
     stObj = { id, name, routing, pin, shop_id: shopId };
@@ -856,9 +1069,7 @@ async function saveKitchenStation() {
   populateStationDropdowns();
 
   if (supabaseClient && navigator.onLine) {
-    try {
-      await supabaseClient.from('kitchen_stations').upsert([stObj]);
-    } catch(e) {}
+    try { await supabaseClient.from('kitchen_stations').upsert([stObj]); } catch(e) {}
   }
 }
 
@@ -895,9 +1106,7 @@ async function deleteStation(id) {
   populateStationDropdowns();
 
   if (supabaseClient && navigator.onLine) {
-    try {
-      await supabaseClient.from('kitchen_stations').delete().match({ id, shop_id: shopId });
-    } catch(e) {}
+    try { await supabaseClient.from('kitchen_stations').delete().match({ id, shop_id: shopId }); } catch(e) {}
   }
 }
 
@@ -929,7 +1138,7 @@ function populateStationDropdowns() {
   });
 }
 
-// --- Category Management ---
+// Category CRUD
 async function saveCategoryToCloud() {
   const name = document.getElementById('cat-name-input').value.trim();
   const icon = document.getElementById('cat-icon-input').value.trim() || '📁';
@@ -941,11 +1150,7 @@ async function saveCategoryToCloud() {
   let targetCat = null;
   if (editingCatId) {
     targetCat = categories.find(c => c.id === editingCatId);
-    if (targetCat) {
-      targetCat.name = name;
-      targetCat.icon = icon;
-      targetCat.station = station;
-    }
+    if (targetCat) { targetCat.name = name; targetCat.icon = icon; targetCat.station = station; }
   } else {
     const id = name.toLowerCase().replace(/\s+/g, '_');
     targetCat = { id, shop_id: shopId, name, icon, station };
@@ -956,12 +1161,10 @@ async function saveCategoryToCloud() {
   resetCatForm();
   renderCatDropdown();
   renderCategoriesTable();
-  showCategories();
+  renderCategoryPills();
 
   if (supabaseClient && navigator.onLine) {
-    try {
-      await supabaseClient.from('categories').upsert([targetCat]);
-    } catch(e) {}
+    try { await supabaseClient.from('categories').upsert([targetCat]); } catch(e) {}
   }
 }
 
@@ -995,12 +1198,10 @@ async function deleteCategory(id) {
   saveLocalState(shopId);
   renderCatDropdown();
   renderCategoriesTable();
-  showCategories();
+  renderCategoryPills();
 
   if (supabaseClient && navigator.onLine) {
-    try {
-      await supabaseClient.from('categories').delete().match({ id, shop_id: shopId });
-    } catch(e) {}
+    try { await supabaseClient.from('categories').delete().match({ id, shop_id: shopId }); } catch(e) {}
   }
 }
 
@@ -1030,7 +1231,7 @@ function renderCatDropdown() {
   categories.forEach(c => sel.innerHTML += `<option value="${c.id}">${c.name} (${c.station || 'Main'})</option>`);
 }
 
-// --- Menu Item Management ---
+// Menu Items CRUD
 async function saveItemFromForm() {
   const name = document.getElementById('item-name-input').value.trim();
   const price = parseFloat(document.getElementById('item-price-input').value);
@@ -1055,7 +1256,7 @@ async function saveItemFromForm() {
   saveLocalState(shopId);
   resetItemForm();
   renderSettingsTable();
-  showCategories();
+  renderCategoryPills();
 
   if (supabaseClient && navigator.onLine) {
     try {
@@ -1149,7 +1350,7 @@ function removeSelectedImage() {
   if (remBtn) remBtn.style.display = 'none';
 }
 
-// --- Shop Profile Settings ---
+// Shop Settings
 function openSettingsModal() {
   document.getElementById('set-shop-ar').value = shop.nameAr;
   document.getElementById('set-shop-en').value = shop.nameEn;
@@ -1193,7 +1394,7 @@ async function saveShopProfile() {
   }
 }
 
-// --- Physical Keyboard Support ---
+// Keyboard
 window.addEventListener('keydown', (e) => {
   const overlay = document.getElementById('pin-lock-overlay');
   if (overlay && overlay.style.display !== 'none') {
