@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kitchen Display System (KDS) - Pro Edition</title>
+  <title>Kitchen Display System (KDS) - Pro Station Edition</title>
   <!-- Central Config & Supabase Client -->
   <script src="config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -11,43 +11,50 @@
     * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 0; }
     body { background: #0f172a; color: #f8fafc; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-    /* ================= SHOP SELECTOR OVERLAY ================= */
-    #kds-auth-overlay {
-      position: fixed; inset: 0; background: rgba(11, 17, 32, 0.95); z-index: 9999;
+    /* ================= 4-DIGIT PIN DIRECT LOCK SCREEN ================= */
+    #kds-pin-overlay {
+      position: fixed; inset: 0; background: #0b1120; z-index: 9999;
       display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px;
     }
-    .auth-card {
-      background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 24px;
-      max-width: 620px; width: 100%; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+    .pin-modal-card {
+      background: #1e293b; border: 1px solid #334155; border-radius: 20px; padding: 28px 24px;
+      max-width: 360px; width: 100%; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.6);
     }
-    .shop-select-grid {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
-      gap: 12px; margin: 20px 0; max-height: 50vh; overflow-y: auto;
+    .pin-dots-row {
+      display: flex; justify-content: center; gap: 14px; margin: 20px 0;
     }
-    .shop-btn-card {
-      background: #0f172a; border: 2px solid #334155; border-radius: 12px; padding: 14px 10px;
-      cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: space-between;
-      transition: all 0.15s ease; color: #fff; min-height: 120px;
+    .pin-dot {
+      width: 18px; height: 18px; border-radius: 50%; border: 2px solid #475569; background: transparent; transition: all 0.15s ease;
     }
-    .shop-btn-card:hover { border-color: #f59e0b; transform: translateY(-2px); background: #1e293b; }
-    .shop-btn-card img { width: 48px; height: 48px; object-fit: contain; margin-bottom: 8px; border-radius: 8px; }
-    .shop-btn-card h4 { font-size: 13px; line-height: 1.2; font-weight: bold; }
-    .pin-box { display: none; margin-top: 15px; }
-    .pin-input {
-      padding: 10px 14px; font-size: 18px; text-align: center; letter-spacing: 4px;
-      border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; width: 160px;
+    .pin-dot.filled { background: #f59e0b; border-color: #f59e0b; box-shadow: 0 0 10px #f59e0b; }
+    .hidden-pin-input {
+      position: absolute; opacity: 0; pointer-events: none; width: 0; height: 0;
+    }
+    .numpad-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 10px;
+    }
+    .num-key {
+      background: #0f172a; border: 1px solid #334155; color: #f8fafc; font-size: 22px; font-weight: bold;
+      padding: 16px 0; border-radius: 12px; cursor: pointer; transition: 0.1s; user-select: none;
+    }
+    .num-key:active { transform: scale(0.94); background: #334155; }
+    .num-key.backspace { font-size: 18px; color: #ef4444; }
+
+    /* Master Branch Picker */
+    #master-branch-picker {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 10000;
+      justify-content: center; align-items: center; padding: 20px;
     }
 
     /* ================= TOP HEADER ================= */
     .kds-header {
-      background: #1e293b; padding: 10px 20px; display: flex; justify-content: space-between;
+      background: #1e293b; padding: 10px 18px; display: flex; justify-content: space-between;
       align-items: center; border-bottom: 2px solid #334155; flex-wrap: wrap; gap: 10px;
     }
     .kds-title-area { display: flex; align-items: center; gap: 10px; }
     .shop-name-tag { font-size: 18px; font-weight: 800; color: #facc15; }
     .live-badge { background: #16a34a; color: #fff; font-size: 11px; padding: 3px 8px; border-radius: 20px; font-weight: bold; }
 
-    /* Nav View Tabs */
     .view-tabs { display: flex; gap: 6px; background: #0f172a; padding: 4px; border-radius: 8px; }
     .tab-btn {
       background: transparent; border: none; color: #94a3b8; padding: 6px 14px;
@@ -55,8 +62,8 @@
     }
     .tab-btn.active { background: #334155; color: #fff; }
 
-    .header-controls { display: flex; gap: 8px; align-items: center; }
-    .sound-select {
+    .header-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .header-select {
       background: #0f172a; color: #f8fafc; border: 1px solid #475569; padding: 6px 10px;
       border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer;
     }
@@ -98,6 +105,7 @@
       padding: 6px 0; border-bottom: 1px solid #283548; font-size: 15px;
     }
     .kds-item-name { font-weight: 700; color: #ffffff; }
+    .item-station-tag { font-size: 10px; color: #94a3b8; display: block; font-weight: normal; }
     .spicy-tag { color: #ef4444; font-weight: bold; font-size: 12px; margin-left: 4px; }
     .kds-item-qty {
       background: #facc15; color: #000; font-weight: 900; font-size: 17px;
@@ -111,12 +119,12 @@
     }
     .btn-done-single:active { transform: scale(0.97); background: #15803d; }
 
-    /* ================= HISTORY VIEW ================= */
+    /* ================= CLOUD HISTORY VIEW ================= */
     #history-view {
       display: none; flex: 1; flex-direction: column; padding: 16px; overflow-y: auto;
     }
     .history-toolbar {
-      display: flex; gap: 10px; margin-bottom: 14px; align-items: center;
+      display: flex; gap: 10px; margin-bottom: 14px; align-items: center; flex-wrap: wrap;
     }
     .search-box {
       flex: 1; max-width: 400px; padding: 10px 14px; background: #1e293b; border: 1px solid #475569;
@@ -141,30 +149,54 @@
 </head>
 <body>
 
-  <!-- ================= AUTH OVERLAY ================= -->
-  <div id="kds-auth-overlay">
-    <div class="auth-card">
-      <h2 style="color:#f8fafc; margin-bottom:4px;">🧑‍🍳 KDS കിച്ചൻ ബ്രാഞ്ച് തിരഞ്ഞെടുക്കുക</h2>
-      <p style="color:#94a3b8; font-size:13px;">കിച്ചൻ ഡിസ്‌പ്ലേക്കായി നിങ്ങളുടെ ഷോപ്പ് PIN നൽകുക</p>
+  <!-- ================= 4-DIGIT PIN DIRECT LOCK OVERLAY ================= -->
+  <div id="kds-pin-overlay">
+    <div class="pin-modal-card">
+      <div style="font-size:36px; margin-bottom:6px;">🧑‍🍳</div>
+      <h2 style="color:#f8fafc; font-size:18px;">KDS KITCHEN PIN</h2>
+      <p style="color:#94a3b8; font-size:12px; margin-top:2px;">ഷോപ്പ് PIN നൽകുക</p>
       
-      <div class="shop-select-grid" id="kds-shops-list"></div>
-
-      <div class="pin-box" id="kds-pin-box">
-        <h4 id="kds-pin-title" style="color:#f59e0b; margin-bottom:10px;"></h4>
-        <input type="password" id="kds-pin-input" class="pin-input" maxlength="6" placeholder="PIN" onkeyup="checkPinEntry(event)">
-        <div style="margin-top:12px; display:flex; gap:10px; justify-content:center;">
-          <button onclick="cancelPinPrompt()" class="btn-top">Cancel</button>
-          <button onclick="verifyAndLoginKDS()" class="btn-top" style="background:#16a34a; border-color:#16a34a;">Login (തുറക്കുക)</button>
-        </div>
+      <div class="pin-dots-row">
+        <div class="pin-dot" id="dot-0"></div>
+        <div class="pin-dot" id="dot-1"></div>
+        <div class="pin-dot" id="dot-2"></div>
+        <div class="pin-dot" id="dot-3"></div>
       </div>
+
+      <input type="password" id="numpad-hidden-input" class="hidden-pin-input" maxlength="4" autofocus>
+
+      <div class="numpad-grid">
+        <button class="num-key" onclick="pressKey('1')">1</button>
+        <button class="num-key" onclick="pressKey('2')">2</button>
+        <button class="num-key" onclick="pressKey('3')">3</button>
+        <button class="num-key" onclick="pressKey('4')">4</button>
+        <button class="num-key" onclick="pressKey('5')">5</button>
+        <button class="num-key" onclick="pressKey('6')">6</button>
+        <button class="num-key" onclick="pressKey('7')">7</button>
+        <button class="num-key" onclick="pressKey('8')">8</button>
+        <button class="num-key" onclick="pressKey('9')">9</button>
+        <button class="num-key" onclick="clearPinInput()" style="font-size:14px; color:#94a3b8;">CLEAR</button>
+        <button class="num-key" onclick="pressKey('0')">0</button>
+        <button class="num-key backspace" onclick="pressBackspace()">⌫</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Master Branch Selector Modal -->
+  <div id="master-branch-picker">
+    <div class="pin-modal-card" style="max-width:440px;">
+      <h3 style="color:#facc15;">🔑 MASTER KDS ACCESS</h3>
+      <p style="color:#94a3b8; font-size:12px; margin: 8px 0 16px 0;">പ്രവർത്തിപ്പിക്കേണ്ട കിച്ചൻ ബ്രാഞ്ച് തിരഞ്ഞെടുക്കുക:</p>
+      <div id="master-branches-container" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"></div>
     </div>
   </div>
 
   <!-- ================= TOP HEADER ================= -->
   <div class="kds-header">
     <div class="kds-title-area">
-      <span class="shop-name-tag" id="header-shop-name">KDS</span>
+      <span class="shop-name-tag" id="header-shop-name">🍗 KDS</span>
       <span class="live-badge" id="live-indicator">🟢 LIVE</span>
+      <span id="business-date-badge" style="font-size:11px; background:#0f172a; color:#facc15; padding:3px 8px; border-radius:6px; font-weight:bold;"></span>
     </div>
 
     <!-- Live vs History Toggle -->
@@ -173,20 +205,30 @@
         🔥 ലൈവ് ഓർഡറുകൾ (<span id="live-count">0</span>)
       </button>
       <button class="tab-btn" id="tab-history" onclick="switchView('history')">
-        📜 കഴിഞ്ഞവ (History)
+        📜 കഴിഞ്ഞവ (Cloud History)
       </button>
     </div>
 
     <div class="header-controls">
+      <!-- Station Filter -->
+      <select id="station-filter-select" class="header-select" onchange="onStationFilterChange()">
+        <option value="All">Station: All (എല്ലാം)</option>
+        <option value="Main Kitchen">Station: Main Kitchen</option>
+        <option value="Broast Station">Station: Broast Station</option>
+        <option value="Burger Station">Station: Burger Station</option>
+        <option value="Drinks Counter">Station: Drinks Counter</option>
+      </select>
+
       <!-- Sound Selector -->
-      <select id="sound-type-select" class="sound-select" onchange="saveSoundPreference()">
+      <select id="sound-type-select" class="header-select" onchange="saveSoundPreference()">
         <option value="chime">🔔 Classic Chime</option>
         <option value="buzzer">📢 Loud Buzzer</option>
         <option value="double_beep">⏱️ Double Beep</option>
-        <option value="mute">🔇 Mute (ശബ്ദം വേണ്ട)</option>
+        <option value="mute">🔇 Mute</option>
       </select>
+
       <button class="btn-top" onclick="triggerAlertSound()">🔊 ടെസ്റ്റ്</button>
-      <button class="btn-top btn-switch" onclick="switchKdsShop()">🔄 Switch Branch</button>
+      <button class="btn-top btn-switch" onclick="lockKDS()">🔒 Logout</button>
     </div>
   </div>
 
@@ -198,11 +240,12 @@
     </div>
   </div>
 
-  <!-- ================= VIEW 2: ORDER HISTORY & SEARCH ================= -->
+  <!-- ================= VIEW 2: CLOUD HISTORY & SEARCH ================= -->
   <div id="history-view">
     <div class="history-toolbar">
       <input type="text" id="history-search-input" class="search-box" 
-        placeholder="🔍 ടോക്കൺ നമ്പർ (#01) അല്ലെങ്കിൽ മൊബൈൽ നമ്പർ തിരയുക..." oninput="filterHistoryList()">
+        placeholder="🔍 ടോക്കൺ (#01) അല്ലെങ്കിൽ കസ്റ്റമർ ഫോൺ തിരയുക..." oninput="filterHistoryList()">
+      <button class="btn-top" onclick="fetchHistoryFromCloud()" style="background:#0284c7;">🔄 Refresh Cloud History</button>
       <span style="color:#94a3b8; font-size:13px;" id="history-count-text"></span>
     </div>
     <div style="overflow-x:auto;">
@@ -225,66 +268,142 @@
 
   <script>
     // ================= BUILT-IN FALLBACK SHOPS =================
-    // config.js ലോഡ് ആവാൻ എന്തെങ്കിലും തടസ്സം വന്നാൽ ഉടൻ ഇത് പ്രവർത്തിക്കും
     const FALLBACK_SHOPS = [
-      {
-        id: 'shop1',
-        name: 'NASSER BIN EID ALMAHMADI',
-        tagline: 'Main Supermarket Branch',
-        url: 'https://elubqoicerkldrufqcbj.supabase.co',
-        key: 'sb_publishable_zsEKreCmounELozZ5EQ3Lg_aXyut9EK',
-        pin: '1234',
-        logo: 'shop1.png'
-      },
-      {
-        id: 'shop2',
-        name: 'BOOFIYA',
-        tagline: 'Boofiya Restaurant & Cafeteria',
-        url: 'https://qkjcviszzdptssvpguwc.supabase.co',
-        key: 'sb_publishable_J0Z4b7NoP3VuDKdbC0WeIg_OQAlpnLQ',
-        pin: '1111',
-        logo: 'shop2.png'
-      },
-      {
-        id: 'shop3',
-        name: 'TAJ SPORTS',
-        tagline: 'TAJ SPORTS',
-        url: 'https://garpkohthpeirdhcwthk.supabase.co',
-        key: 'sb_publishable_TNhOZnpYuthYHmSJSlyhaw_R6RS1jcY',
-        pin: '3333',
-        logo: 'shop3.png'
-      },
-      {
-        id: 'shop4',
-        name: 'MUSAD SPORTS',
-        tagline: 'MUSAD SPORTS',
-        url: 'https://mwxbakqoipcwblhukrfs.supabase.co',
-        key: 'sb_publishable_OfuR1PeffNa4NWUhpwV3gg_pwqovQZT',
-        pin: '2222',
-        logo: 'shop4.png'
-      }
+      { id: 'shop1', name: 'NASSER BIN EID ALMAHMADI', url: 'https://elubqoicerkldrufqcbj.supabase.co', key: 'sb_publishable_zsEKreCmounELozZ5EQ3Lg_aXyut9EK', pin: '1234' },[cite: 3]
+      { id: 'shop2', name: 'BOOFIYA', url: 'https://qkjcviszzdptssvpguwc.supabase.co', key: 'sb_publishable_J0Z4b7NoP3VuDKdbC0WeIg_OQAlpnLQ', pin: '1111' },[cite: 3]
+      { id: 'shop3', name: 'TAJ SPORTS', url: 'https://garpkohthpeirdhcwthk.supabase.co', key: 'sb_publishable_TNhOZnpYuthYHmSJSlyhaw_R6RS1jcY', pin: '3333' },[cite: 3]
+      { id: 'shop4', name: 'MUSAD SPORTS', url: 'https://mwxbakqoipcwblhukrfs.supabase.co', key: 'sb_publishable_OfuR1PeffNa4NWUhpwV3gg_pwqovQZT', pin: '2222' }[cite: 3]
     ];
 
-    function getAllAvailableShops() {
+    function getAllShops() {
       if (typeof window.SHOPS_CONFIG !== 'undefined' && Array.isArray(window.SHOPS_CONFIG) && window.SHOPS_CONFIG.length > 0) {
-        return window.SHOPS_CONFIG;
+        return window.SHOPS_CONFIG;[cite: 3]
       }
       return FALLBACK_SHOPS;
     }
 
-    function getMasterPinCode() {
-      if (typeof window.MASTER_PIN !== 'undefined') return window.MASTER_PIN;
-      return "0000";
-    }
-
+    let enteredPin = "";
     let currentShop = null;
-    let selectedPendingShop = null;
     let supabaseClient = null;
     let liveOrders = [];
     let historyOrders = [];
     let currentView = 'live';
+    let currentStation = localStorage.getItem('kds_selected_station') || 'All';
 
     const localChannel = new BroadcastChannel('broast_pos_channel');
+
+    // --- Saudi 6:00 AM Business Date ---
+    function getSaudiBusinessDate() {
+      const now = new Date();
+      const saudiTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (3 * 3600000));
+      if (saudiTime.getHours() < 6) {
+        saudiTime.setDate(saudiTime.getDate() - 1);
+      }
+      return saudiTime.toISOString().slice(0, 10);
+    }
+
+    // --- 4-Digit Direct PIN Lock Mechanics ---
+    function pressKey(num) {
+      if (enteredPin.length < 4) {
+        enteredPin += num;
+        updatePinDots();
+        if (enteredPin.length === 4) {
+          setTimeout(verify4DigitPin, 100);
+        }
+      }
+    }
+
+    function pressBackspace() {
+      if (enteredPin.length > 0) {
+        enteredPin = enteredPin.slice(0, -1);
+        updatePinDots();
+      }
+    }
+
+    function clearPinInput() {
+      enteredPin = "";
+      updatePinDots();
+    }
+
+    function updatePinDots() {
+      for (let i = 0; i < 4; i++) {
+        const dot = document.getElementById(`dot-${i}`);
+        if (dot) dot.classList.toggle('filled', i < enteredPin.length);
+      }
+    }
+
+    function verify4DigitPin() {
+      const masterPin = typeof window.MASTER_PIN !== 'undefined' ? window.MASTER_PIN : "0000";[cite: 3]
+      const shops = getAllShops();
+
+      if (enteredPin === masterPin) {
+        openMasterBranchPicker();
+        return;
+      }
+
+      const matchedShop = shops.find(s => s.pin === enteredPin);
+      if (matchedShop) {
+        activateKdsShop(matchedShop);
+      } else {
+        alert("തെറ്റായ PIN നമ്പർ! വീണ്ടും നൽകുക.");
+        clearPinInput();
+      }
+    }
+
+    function openMasterBranchPicker() {
+      const picker = document.getElementById('master-branch-picker');
+      const container = document.getElementById('master-branches-container');
+      container.innerHTML = '';
+      picker.style.display = 'flex';
+
+      getAllShops().forEach(s => {
+        const btn = document.createElement('button');
+        btn.className = 'btn-top';
+        btn.style.cssText = 'padding:14px; font-size:13px; background:#0f172a; border:1px solid #475569;';
+        btn.innerText = s.name;
+        btn.onclick = () => {
+          picker.style.display = 'none';
+          activateKdsShop(s);
+        };
+        container.appendChild(btn);
+      });
+    }
+
+    async function activateKdsShop(s) {
+      currentShop = s;
+      localStorage.setItem('kds_active_shop_id', s.id);
+      document.getElementById('kds-pin-overlay').style.display = 'none';
+      clearPinInput();
+
+      document.getElementById('header-shop-name').innerText = `🍗 ${s.name} (KDS)`;
+      document.getElementById('business-date-badge').innerText = `📅 Shift: ${getSaudiBusinessDate()}`;
+
+      // Set saved station & sound
+      document.getElementById('station-filter-select').value = currentStation;
+      const savedSound = localStorage.getItem('kds_sound_mode') || 'chime';
+      document.getElementById('sound-type-select').value = savedSound;
+
+      // Load local cache immediately
+      liveOrders = JSON.parse(localStorage.getItem(`kds_live_${s.id}`)) || [];
+      historyOrders = JSON.parse(localStorage.getItem(`kds_history_${s.id}`)) || [];
+      renderLiveGrid();
+
+      // Connect Supabase Cloud
+      if (s.url && s.key && window.supabase) {
+        supabaseClient = window.supabase.createClient(s.url, s.key);
+        await fetchLiveOrdersFromCloud();
+        await fetchHistoryFromCloud();
+        listenSupabaseRealtime();
+      }
+    }
+
+    function lockKDS() {
+      currentShop = null;
+      supabaseClient = null;
+      localStorage.removeItem('kds_active_shop_id');
+      clearPinInput();
+      document.getElementById('kds-pin-overlay').style.display = 'flex';
+    }
 
     // --- Audio Alert Synthesizer ---
     function triggerAlertSound() {
@@ -293,12 +412,10 @@
 
       try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
         if (mode === 'chime') {
           const osc1 = audioCtx.createOscillator();
           const gain1 = audioCtx.createGain();
-          osc1.type = 'sine';
-          osc1.frequency.setValueAtTime(587.33, audioCtx.currentTime);
+          osc1.type = 'sine'; osc1.frequency.setValueAtTime(587.33, audioCtx.currentTime);
           gain1.gain.setValueAtTime(0.3, audioCtx.currentTime);
           gain1.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
           osc1.connect(gain1); gain1.connect(audioCtx.destination);
@@ -307,43 +424,35 @@
           setTimeout(() => {
             const osc2 = audioCtx.createOscillator();
             const gain2 = audioCtx.createGain();
-            osc2.type = 'sine';
-            osc2.frequency.setValueAtTime(880, audioCtx.currentTime);
+            osc2.type = 'sine'; osc2.frequency.setValueAtTime(880, audioCtx.currentTime);
             gain2.gain.setValueAtTime(0.4, audioCtx.currentTime);
             gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
             osc2.connect(gain2); gain2.connect(audioCtx.destination);
             osc2.start(); osc2.stop(audioCtx.currentTime + 0.35);
           }, 150);
-
         } else if (mode === 'buzzer') {
           const osc = audioCtx.createOscillator();
           const gain = audioCtx.createGain();
-          osc.type = 'sawtooth';
-          osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+          osc.type = 'sawtooth'; osc.frequency.setValueAtTime(220, audioCtx.currentTime);
           gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
           gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
           osc.connect(gain); gain.connect(audioCtx.destination);
           osc.start(); osc.stop(audioCtx.currentTime + 0.5);
-
         } else if (mode === 'double_beep') {
           const playBeep = (delay) => {
             setTimeout(() => {
               const osc = audioCtx.createOscillator();
               const gain = audioCtx.createGain();
-              osc.type = 'square';
-              osc.frequency.setValueAtTime(900, audioCtx.currentTime);
+              osc.type = 'square'; osc.frequency.setValueAtTime(900, audioCtx.currentTime);
               gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
               gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
               osc.connect(gain); gain.connect(audioCtx.destination);
               osc.start(); osc.stop(audioCtx.currentTime + 0.1);
             }, delay);
           };
-          playBeep(0);
-          playBeep(140);
+          playBeep(0); playBeep(140);
         }
-      } catch (err) {
-        console.warn("Audio Context Error:", err);
-      }
+      } catch (e) {}
     }
 
     function saveSoundPreference() {
@@ -351,138 +460,53 @@
       localStorage.setItem('kds_sound_mode', mode);
     }
 
-    // --- Authentication & Multi-Shop Flow ---
-    function initKdsAuth() {
-      const savedSound = localStorage.getItem('kds_sound_mode') || 'chime';
-      const soundSelect = document.getElementById('sound-type-select');
-      if (soundSelect) soundSelect.value = savedSound;
-
-      const savedShopId = localStorage.getItem('kds_active_shop_id');
-      const shops = getAllAvailableShops();
-
-      if (savedShopId && shops.length > 0) {
-        const found = shops.find(s => s.id === savedShopId);
-        if (found) {
-          activateKdsShop(found);
-          return;
-        }
-      }
-      renderKdsShopOverlay();
-    }
-
-    function renderKdsShopOverlay() {
-      const overlay = document.getElementById('kds-auth-overlay');
-      const grid = document.getElementById('kds-shops-list');
-      const pinBox = document.getElementById('kds-pin-box');
-      if (!overlay || !grid) return;
-
-      overlay.style.display = 'flex';
-      if (pinBox) pinBox.style.display = 'none';
-      grid.innerHTML = '';
-
-      const shops = getAllAvailableShops();
-
-      shops.forEach(s => {
-        const card = document.createElement('div');
-        card.className = 'shop-btn-card';
-        card.innerHTML = `
-          <img src="${s.logo || 'shop1.png'}" onerror="this.src='https://placehold.co/50x50/334155/white?text=SHOP'" alt="">
-          <h4>${s.name}</h4>
-          <small style="color:#64748b; font-size:11px;">${s.tagline || ''}</small>
-        `;
-        card.onclick = () => promptKdsPin(s);
-        grid.appendChild(card);
-      });
-    }
-
-    function promptKdsPin(s) {
-      selectedPendingShop = s;
-      document.getElementById('kds-pin-title').innerText = `${s.name} PIN നൽകുക:`;
-      document.getElementById('kds-pin-box').style.display = 'block';
-      const input = document.getElementById('kds-pin-input');
-      input.value = '';
-      input.focus();
-    }
-
-    function cancelPinPrompt() {
-      selectedPendingShop = null;
-      document.getElementById('kds-pin-box').style.display = 'none';
-    }
-
-    function checkPinEntry(e) {
-      if (e.key === 'Enter') verifyAndLoginKDS();
-    }
-
-    function verifyAndLoginKDS() {
-      const pin = document.getElementById('kds-pin-input').value.trim();
-      const masterPin = getMasterPinCode();
-
-      if (selectedPendingShop && (pin === selectedPendingShop.pin || pin === masterPin)) {
-        activateKdsShop(selectedPendingShop);
-      } else {
-        alert("തെറ്റായ PIN നമ്പർ! വീണ്ടും ശ്രമിക്കുക.");
-        document.getElementById('kds-pin-input').value = '';
-        document.getElementById('kds-pin-input').focus();
-      }
-    }
-
-    function activateKdsShop(s) {
-      currentShop = s;
-      localStorage.setItem('kds_active_shop_id', s.id);
-      document.getElementById('kds-auth-overlay').style.display = 'none';
-      document.getElementById('header-shop-name').innerText = `🍗 ${s.name} (KDS)`;
-
-      // Load cache
-      liveOrders = JSON.parse(localStorage.getItem(`kds_live_${s.id}`)) || [];
-      historyOrders = JSON.parse(localStorage.getItem(`kds_history_${s.id}`)) || [];
+    function onStationFilterChange() {
+      currentStation = document.getElementById('station-filter-select').value;
+      localStorage.setItem('kds_selected_station', currentStation);
       renderLiveGrid();
-
-      // Connect to Supabase
-      if (s.url && s.key && window.supabase) {
-        supabaseClient = window.supabase.createClient(s.url, s.key);
-        fetchSupabaseOrders();
-        listenSupabaseRealtime();
-      }
     }
 
-    function switchKdsShop() {
-      if (confirm("മറ്റൊരു കിച്ചൻ ബ്രാഞ്ചിലേക്ക് മാറാൻ ലോഗൗട്ട് ചെയ്യണോ?")) {
-        localStorage.removeItem('kds_active_shop_id');
-        currentShop = null;
-        supabaseClient = null;
-        renderKdsShopOverlay();
-      }
-    }
-
-    // --- Supabase Orders Sync & Realtime ---
-    async function fetchSupabaseOrders() {
-      if (!supabaseClient) return;
+    // --- Cloud Sync: Live & History ---
+    async function fetchLiveOrdersFromCloud() {
+      if (!supabaseClient || !currentShop) return;
       try {
-        const { data: pendingData } = await supabaseClient
+        const bDate = getSaudiBusinessDate();
+        const { data } = await supabaseClient
           .from('orders')
           .select('*')
+          .eq('shop_id', currentShop.id)
           .eq('status', 'pending')
           .order('id', { ascending: true });
 
-        if (pendingData) {
-          liveOrders = pendingData;
+        if (data) {
+          liveOrders = data;
           saveLocalKdsState();
           renderLiveGrid();
         }
+      } catch (e) {
+        console.warn("Live orders fetch error:", e);
+      }
+    }
 
-        const { data: doneData } = await supabaseClient
+    async function fetchHistoryFromCloud() {
+      if (!supabaseClient || !currentShop) return;
+      try {
+        const bDate = getSaudiBusinessDate();
+        const { data } = await supabaseClient
           .from('orders')
           .select('*')
+          .eq('shop_id', currentShop.id)
           .eq('status', 'completed')
           .order('id', { ascending: false })
           .limit(60);
 
-        if (doneData) {
-          historyOrders = doneData;
+        if (data) {
+          historyOrders = data;
           saveLocalKdsState();
+          if (currentView === 'history') renderHistoryTable();
         }
-      } catch (err) {
-        console.error("Supabase fetch error:", err);
+      } catch (e) {
+        console.warn("History fetch error:", e);
       }
     }
 
@@ -490,18 +514,22 @@
       if (!supabaseClient) return;
 
       supabaseClient
-        .channel('kds-live-channel')
+        .channel('kds-live-orders')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, payload => {
           const newOrder = payload.new;
-          if (newOrder.status === 'pending' && !liveOrders.find(o => o.id === newOrder.id)) {
-            liveOrders.push(newOrder);
-            saveLocalKdsState();
-            triggerAlertSound();
-            renderLiveGrid();
+          if (newOrder.shop_id === currentShop.id && newOrder.status === 'pending') {
+            if (!liveOrders.find(o => o.id === newOrder.id)) {
+              liveOrders.push(newOrder);
+              saveLocalKdsState();
+              triggerAlertSound();
+              renderLiveGrid();
+            }
           }
         })
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, payload => {
           const updated = payload.new;
+          if (updated.shop_id !== currentShop.id) return;
+
           if (updated.status === 'completed') {
             liveOrders = liveOrders.filter(o => o.id !== updated.id);
             if (!historyOrders.find(o => o.id === updated.id)) {
@@ -541,7 +569,7 @@
       }
     }
 
-    // --- 1-Click Complete Action ---
+    // --- 1-Click Complete & Cloud Update ---
     async function completeOrderSingleClick(orderId) {
       const order = liveOrders.find(o => o.id === orderId);
       if (!order) return;
@@ -557,18 +585,13 @@
         try {
           await supabaseClient
             .from('orders')
-            .update({
-              status: 'completed',
-              completed_at: new Date().toISOString()
-            })
+            .update({ status: 'completed', completed_at: new Date().toISOString() })
             .eq('id', orderId);
-        } catch (err) {
-          console.error("Supabase complete error:", err);
-        }
+        } catch(e) {}
       }
     }
 
-    // --- Recall Order from History back to Live ---
+    // --- Recall from History ---
     async function recallOrderBackToLive(orderId) {
       const order = historyOrders.find(o => o.id === orderId);
       if (!order) return;
@@ -584,19 +607,14 @@
         try {
           await supabaseClient
             .from('orders')
-            .update({
-              status: 'pending',
-              completed_at: null
-            })
+            .update({ status: 'pending', completed_at: null })
             .eq('id', orderId);
-        } catch (err) {
-          console.error("Supabase recall error:", err);
-        }
+        } catch(e) {}
       }
       alert(`${order.token} വീണ്ടും ലൈവ് കിച്ചനിലേക്ക് തിരികെ മാറ്റി!`);
     }
 
-    // --- UI View Switching ---
+    // --- Views ---
     function switchView(view) {
       currentView = view;
       document.getElementById('tab-live').classList.toggle('active', view === 'live');
@@ -609,29 +627,40 @@
       } else {
         document.getElementById('kds-orders-container').style.display = 'none';
         document.getElementById('history-view').style.display = 'flex';
+        fetchHistoryFromCloud();
         renderHistoryTable();
       }
     }
 
-    // --- Render Live Orders ---
+    // --- Render Live Grid with Station Routing ---
     function renderLiveGrid() {
       const container = document.getElementById('kds-orders-container');
-      document.getElementById('live-count').innerText = liveOrders.length;
+      const now = Date.now();
 
-      if (liveOrders.length === 0) {
+      // Station Filtering
+      let displayOrders = liveOrders.map(order => {
+        let items = order.items || [];
+        if (currentStation !== 'All') {
+          items = items.filter(it => (it.station || 'Main Kitchen') === currentStation);
+        }
+        return { ...order, filteredItems: items };
+      }).filter(order => order.filteredItems.length > 0);
+
+      document.getElementById('live-count').innerText = displayOrders.length;
+
+      if (displayOrders.length === 0) {
         container.innerHTML = `
           <div class="empty-state">
             <div style="font-size: 50px; margin-bottom: 10px;">🧑‍🍳</div>
-            <div>പെൻഡിങ് ഓർഡറുകൾ ഒന്നുമില്ല (All Orders Completed!)</div>
+            <div>${currentStation === 'All' ? 'പെൻഡിങ് ഓർഡറുകൾ ഒന്നുമില്ല (All Completed!)' : `${currentStation} സെക്ഷനിൽ ഓർഡറുകൾ ഒന്നുമില്ല.`}</div>
           </div>
         `;
         return;
       }
 
       container.innerHTML = '';
-      const now = Date.now();
 
-      liveOrders.forEach(order => {
+      displayOrders.forEach(order => {
         const elapsedSec = Math.floor((now - order.id) / 1000);
         const mins = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
         const secs = String(elapsedSec % 60).padStart(2, '0');
@@ -639,13 +668,14 @@
 
         const custPhone = order.customer_phone || order.phone || '';
 
-        let itemsHtml = (order.items || []).map(it => {
-          const isSpicy = it.name.includes('Spicy');
+        let itemsHtml = order.filteredItems.map(it => {
+          const isSpicy = (it.name || '').includes('Spicy');
           return `
             <div class="kds-item-row">
               <div class="kds-item-name">
                 ${it.name}
                 ${isSpicy ? `<span class="spicy-tag">🌶️ SPICY</span>` : ''}
+                <span class="item-station-tag">[${it.station || 'Main'}]</span>
               </div>
               <div class="kds-item-qty">X ${it.qty}</div>
             </div>
@@ -690,7 +720,7 @@
         });
       }
 
-      document.getElementById('history-count-text').innerText = `${list.length} കഴിഞ്ഞ ഓർഡറുകൾ`;
+      document.getElementById('history-count-text').innerText = `${list.length} കഴിഞ്ഞ ഓർഡറുകൾ (Cloud)`;
       tbody.innerHTML = '';
 
       if (list.length === 0) {
@@ -709,7 +739,7 @@
             <td style="color:#38bdf8;">${custPhone}</td>
             <td style="max-width:250px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${itemsSummary}</td>
             <td>${o.time || '-'}</td>
-            <td style="color:#10b981;">${o.completed_at || 'Done'}</td>
+            <td style="color:#10b981;">${o.completed_at ? new Date(o.completed_at).toLocaleTimeString() : 'Done'}</td>
             <td>
               <button class="btn-recall" onclick="recallOrderBackToLive(${o.id})">↩️ Recall</button>
             </td>
@@ -722,6 +752,7 @@
       renderHistoryTable();
     }
 
+    // Live Timers Tick
     setInterval(() => {
       if (currentView !== 'live') return;
       const now = Date.now();
@@ -737,11 +768,22 @@
       });
     }, 1000);
 
-    // Initialize KDS
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initKdsAuth);
+    // Keyboard support for 4-Digit PIN
+    window.addEventListener('keydown', (e) => {
+      const overlay = document.getElementById('kds-pin-overlay');
+      if (overlay.style.display !== 'none') {
+        if (e.key >= '0' && e.key <= '9') pressKey(e.key);
+        else if (e.key === 'Backspace') pressBackspace();
+      }
+    });
+
+    // Auto-resume existing session if active
+    const savedShopId = localStorage.getItem('kds_active_shop_id');
+    const existingShop = getAllShops().find(s => s.id === savedShopId);
+    if (existingShop) {
+      activateKdsShop(existingShop);
     } else {
-      initKdsAuth();
+      document.getElementById('kds-pin-overlay').style.display = 'flex';
     }
   </script>
 </body>
