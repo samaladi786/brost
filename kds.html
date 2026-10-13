@@ -40,6 +40,7 @@
     .num-key {
       background: #0f172a; border: 1px solid #334155; color: #f8fafc; font-size: 24px; font-weight: bold;
       padding: 14px 0; border-radius: 12px; cursor: pointer; transition: 0.1s; user-select: none;
+      touch-action: manipulation;
     }
     .num-key:active { transform: scale(0.94); background: #334155; }
     .num-key.backspace { font-size: 18px; color: #ef4444; }
@@ -166,27 +167,27 @@
       <p style="color:#94a3b8; font-size:12px; margin-top:2px;">4-അക്ക ഷോപ്പ് PIN നൽകുക</p>
       
       <!-- Visible Interactive PIN Box -->
-      <input type="password" id="kds-pin-display" class="pin-display-input" maxlength="4" placeholder="••••" inputmode="numeric" oninput="handlePinInputChange(event)">
+      <input type="password" id="kds-pin-display" class="pin-display-input" maxlength="4" placeholder="••••" inputmode="numeric" oninput="handlePinInputChange(event)" onkeydown="if(event.key==='Enter') submitPinCheck()">
 
       <div class="pin-error-text" id="pin-error-msg"></div>
 
       <!-- Touch Numpad -->
       <div class="numpad-grid">
-        <button class="num-key" onclick="pressNumpad('1')">1</button>
-        <button class="num-key" onclick="pressNumpad('2')">2</button>
-        <button class="num-key" onclick="pressNumpad('3')">3</button>
-        <button class="num-key" onclick="pressNumpad('4')">4</button>
-        <button class="num-key" onclick="pressNumpad('5')">5</button>
-        <button class="num-key" onclick="pressNumpad('6')">6</button>
-        <button class="num-key" onclick="pressNumpad('7')">7</button>
-        <button class="num-key" onclick="pressNumpad('8')">8</button>
-        <button class="num-key" onclick="pressNumpad('9')">9</button>
-        <button class="num-key" onclick="clearPinInput()" style="font-size:13px; color:#94a3b8;">CLEAR</button>
-        <button class="num-key" onclick="pressNumpad('0')">0</button>
-        <button class="num-key backspace" onclick="pressBackspace()">⌫</button>
+        <button type="button" class="num-key" onclick="pressNumpad('1')">1</button>
+        <button type="button" class="num-key" onclick="pressNumpad('2')">2</button>
+        <button type="button" class="num-key" onclick="pressNumpad('3')">3</button>
+        <button type="button" class="num-key" onclick="pressNumpad('4')">4</button>
+        <button type="button" class="num-key" onclick="pressNumpad('5')">5</button>
+        <button type="button" class="num-key" onclick="pressNumpad('6')">6</button>
+        <button type="button" class="num-key" onclick="pressNumpad('7')">7</button>
+        <button type="button" class="num-key" onclick="pressNumpad('8')">8</button>
+        <button type="button" class="num-key" onclick="pressNumpad('9')">9</button>
+        <button type="button" class="num-key" onclick="clearPinInput()" style="font-size:13px; color:#94a3b8;">CLEAR</button>
+        <button type="button" class="num-key" onclick="pressNumpad('0')">0</button>
+        <button type="button" class="num-key backspace" onclick="pressBackspace()">⌫</button>
       </div>
 
-      <button onclick="submitPinCheck()" class="btn-top" style="width:100%; background:#16a34a; border:none; padding:12px; font-size:15px; margin-top:10px;">
+      <button type="button" onclick="submitPinCheck()" class="btn-top" style="width:100%; background:#16a34a; border:none; padding:12px; font-size:15px; margin-top:10px;">
         തുറക്കുക (LOGIN)
       </button>
 
@@ -274,7 +275,6 @@
   </div>
 
   <script>
-    // Safe LocalStorage helpers
     function safeGet(key, def = null) {
       try { return localStorage.getItem(key) || def; } catch(e) { return def; }
     }
@@ -282,7 +282,6 @@
       try { localStorage.setItem(key, val); } catch(e) {}
     }
 
-    // Fallback shops directly built-in
     const FALLBACK_SHOPS = [
       { id: 'shop1', name: 'NASSER BIN EID ALMAHMADI', url: 'https://elubqoicerkldrufqcbj.supabase.co', key: 'sb_publishable_zsEKreCmounELozZ5EQ3Lg_aXyut9EK', pin: '1234' },[cite: 1]
       { id: 'shop2', name: 'BOOFIYA', url: 'https://qkjcviszzdptssvpguwc.supabase.co', key: 'sb_publishable_J0Z4b7NoP3VuDKdbC0WeIg_OQAlpnLQ', pin: '1111' },[cite: 1]
@@ -304,7 +303,6 @@
     let currentView = 'live';
     let currentStation = safeGet('kds_selected_station', 'All');
 
-    // Safe BroadcastChannel initialization
     let localChannel = null;
     try {
       if (typeof BroadcastChannel !== 'undefined') {
@@ -321,14 +319,13 @@
       return saudiTime.toISOString().slice(0, 10);
     }
 
-    // --- Numpad & Direct PIN Logic ---
     function pressNumpad(num) {
       const input = document.getElementById('kds-pin-display');
       if (input && input.value.length < 4) {
         input.value += String(num);
         clearErrorText();
         if (input.value.length === 4) {
-          setTimeout(submitPinCheck, 100);
+          setTimeout(submitPinCheck, 120);
         }
       }
     }
@@ -349,8 +346,9 @@
 
     function handlePinInputChange(e) {
       clearErrorText();
-      if (e.target.value.length === 4) {
-        setTimeout(submitPinCheck, 100);
+      if (e.target.value.length >= 4) {
+        e.target.value = e.target.value.slice(0, 4);
+        setTimeout(submitPinCheck, 120);
       }
     }
 
@@ -367,7 +365,6 @@
       const masterPin = typeof window.MASTER_PIN !== 'undefined' ? String(window.MASTER_PIN).trim() : '0000';[cite: 1]
       const shops = getAllShops();
 
-      // Master PIN opens first branch or alert
       if (pinStr === masterPin) {
         activateKdsShop(shops[0]);
         return;
@@ -383,13 +380,13 @@
       }
     }
 
-    // Render Quick Branch Buttons
     function renderQuickBranchButtons() {
       const container = document.getElementById('quick-branches-container');
       if (!container) return;
       container.innerHTML = '';
       getAllShops().forEach(s => {
         const btn = document.createElement('button');
+        btn.type = 'button';
         btn.className = 'branch-pill-btn';
         btn.innerText = `${s.name.split(' ')[0]} (${s.pin})`;[cite: 1]
         btn.onclick = () => activateKdsShop(s);
@@ -455,7 +452,6 @@
       }, 100);
     }
 
-    // --- Audio Alert ---
     function triggerAlertSound() {
       const mode = document.getElementById('sound-type-select').value;
       if (mode === 'mute') return;
@@ -516,7 +512,6 @@
       renderLiveGrid();
     }
 
-    // --- Cloud Sync ---
     async function fetchLiveOrdersFromCloud() {
       if (!supabaseClient || !currentShop) return;
       try {
@@ -562,7 +557,7 @@
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, payload => {
           const newOrder = payload.new;
           if (newOrder.shop_id === currentShop.id && newOrder.status === 'pending') {
-            if (!liveOrders.find(o => o.id === newOrder.id)) {
+            if (!liveOrders.find(o => String(o.id) === String(newOrder.id))) {
               liveOrders.push(newOrder);
               saveLocalKdsState();
               triggerAlertSound();
@@ -575,13 +570,13 @@
           if (updated.shop_id !== currentShop.id) return;
 
           if (updated.status === 'completed') {
-            liveOrders = liveOrders.filter(o => o.id !== updated.id);
-            if (!historyOrders.find(o => o.id === updated.id)) {
+            liveOrders = liveOrders.filter(o => String(o.id) !== String(updated.id));
+            if (!historyOrders.find(o => String(o.id) === String(updated.id))) {
               historyOrders.unshift(updated);
             }
           } else if (updated.status === 'pending') {
-            historyOrders = historyOrders.filter(o => o.id !== updated.id);
-            if (!liveOrders.find(o => o.id === updated.id)) {
+            historyOrders = historyOrders.filter(o => String(o.id) !== String(updated.id));
+            if (!liveOrders.find(o => String(o.id) === String(updated.id))) {
               liveOrders.push(updated);
             }
           }
@@ -597,7 +592,7 @@
         if (e.data && e.data.type === 'NEW_ORDER') {
           const newOrder = e.data.order;
           if (!currentShop || newOrder.shop_id === currentShop.id) {
-            if (!liveOrders.find(o => o.id === newOrder.id)) {
+            if (!liveOrders.find(o => String(o.id) === String(newOrder.id))) {
               liveOrders.push(newOrder);
               saveLocalKdsState();
               triggerAlertSound();
@@ -615,14 +610,13 @@
       }
     }
 
-    // --- 1-Click Complete & Recall ---
     async function completeOrderSingleClick(orderId) {
-      const order = liveOrders.find(o => o.id === orderId);
+      const order = liveOrders.find(o => String(o.id) === String(orderId));
       if (!order) return;
 
       order.status = 'completed';
       order.completed_at = new Date().toLocaleTimeString();
-      liveOrders = liveOrders.filter(o => o.id !== orderId);
+      liveOrders = liveOrders.filter(o => String(o.id) !== String(orderId));
       historyOrders.unshift(order);
       saveLocalKdsState();
       renderLiveGrid();
@@ -638,11 +632,11 @@
     }
 
     async function recallOrderBackToLive(orderId) {
-      const order = historyOrders.find(o => o.id === orderId);
+      const order = historyOrders.find(o => String(o.id) === String(orderId));
       if (!order) return;
 
       order.status = 'pending';
-      historyOrders = historyOrders.filter(o => o.id !== orderId);
+      historyOrders = historyOrders.filter(o => String(o.id) !== String(orderId));
       liveOrders.push(order);
       saveLocalKdsState();
       renderHistoryTable();
@@ -676,7 +670,6 @@
       }
     }
 
-    // --- Render Live Grid ---
     function renderLiveGrid() {
       const container = document.getElementById('kds-orders-container');
       if (!container) return;
@@ -749,7 +742,7 @@
             ${itemsHtml}
           </div>
           <div class="card-actions">
-            <button class="btn-done-single" onclick="completeOrderSingleClick(${order.id})">
+            <button type="button" class="btn-done-single" onclick="completeOrderSingleClick(${order.id})">
               ✅ കംപ്ലീറ്റ് (Done)
             </button>
           </div>
@@ -758,7 +751,6 @@
       });
     }
 
-    // --- Render History Table ---
     function renderHistoryTable() {
       const tbody = document.getElementById('history-table-body');
       if (!tbody) return;
@@ -800,7 +792,7 @@
             <td>${o.time || '-'}</td>
             <td style="color:#10b981;">${o.completed_at ? new Date(o.completed_at).toLocaleTimeString() : 'Done'}</td>
             <td>
-              <button class="btn-recall" onclick="recallOrderBackToLive(${o.id})">↩️ Recall</button>
+              <button type="button" class="btn-recall" onclick="recallOrderBackToLive(${o.id})">↩️ Recall</button>
             </td>
           </tr>
         `;
@@ -811,7 +803,6 @@
       renderHistoryTable();
     }
 
-    // Refresh live timers every second
     setInterval(() => {
       if (currentView !== 'live') return;
       const now = Date.now();
@@ -828,7 +819,7 @@
       });
     }, 1000);
 
-    // Keyboard support
+    // Physical Keyboard Support
     window.addEventListener('keydown', (e) => {
       const overlay = document.getElementById('kds-pin-overlay');
       if (overlay && overlay.style.display !== 'none') {
@@ -841,7 +832,7 @@
       }
     });
 
-    // Startup Init
+    // Startup
     renderQuickBranchButtons();
     const savedShopId = safeGet('kds_active_shop_id');
     const existingShop = getAllShops().find(s => s.id === savedShopId);
