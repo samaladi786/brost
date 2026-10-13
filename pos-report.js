@@ -1,8 +1,9 @@
 // ==========================================================
-// POS REPORT ENGINE - BILINGUAL (EN / AR) SHIFT & Z-REPORT
+// POS REPORT ENGINE - SPLIT PAY, PETTY CASH, VOID & Z-CLOSE
 // ==========================================================
 
 let cachedActiveReportOrders = [];
+let cachedActivePettyCash = [];
 let currentViewingLevel = "Full Day Total";
 
 // --- Open Report Modal & Initialize Filters ---
@@ -78,7 +79,7 @@ async function onReportFilterChange() {
   await loadAndRenderReport();
 }
 
-// --- Fetch & Render Report Data ---
+// --- Fetch & Render Report Data (Split Pay, Petty Cash & Void Aware) ---
 async function loadAndRenderReport() {
   const datePicker = document.getElementById('rep-calendar-picker');
   const selectedDate = datePicker ? datePicker.value : getSaudiBusinessDate();
@@ -87,59 +88,92 @@ async function loadAndRenderReport() {
   const shopId = currentShop ? currentShop.id : 'shop1';
   const lang = localStorage.getItem('pos_lang') || 'en';
 
-  // 1. Local Orders
+  // 1. Fetch Local Orders
   let dateOrders = orderHistory.filter(o => o.business_date === selectedDate);
+  let datePetty = pettyCashHistory.filter(p => p.business_date === selectedDate);
 
-  // 2. Fetch from Supabase if Online & Merge
+  // 2. Fetch Cloud Orders if Online
   if (supabaseClient && navigator.onLine) {
     try {
-      const { data } = await supabaseClient
+      const { data: cloudOrders } = await supabaseClient
         .from('orders')
         .select('*')
         .eq('shop_id', shopId)
         .eq('business_date', selectedDate);
 
-      if (data && data.length > 0) {
-        data.forEach(co => {
+      if (cloudOrders && cloudOrders.length > 0) {
+        cloudOrders.forEach(co => {
           if (!dateOrders.find(lo => String(lo.id) === String(co.id))) {
             dateOrders.push(co);
+          }
+        });
+      }
+
+      const { data: cloudPetty } = await supabaseClient
+        .from('petty_cash')
+        .select('*')
+        .eq('shop_id', shopId)
+        .eq('business_date', selectedDate);
+
+      if (cloudPetty && cloudPetty.length > 0) {
+        cloudPetty.forEach(cp => {
+          if (!datePetty.find(lp => String(lp.id) === String(cp.id))) {
+            datePetty.push(cp);
           }
         });
       }
     } catch (e) {}
   }
 
-  // 3. Apply Shift Filter
-  let filtered = [];
+  // 3. Apply Shift Filters
+  let filteredOrders = [];
+  let filteredPetty = [];
+
   if (selectedShiftFilter === "ALL") {
-    filtered = dateOrders;
+    filteredOrders = dateOrders;
+    filteredPetty = datePetty;
     currentViewingLevel = lang === 'ar' ? "إجمالي اليوم بالكامل" : "Full Day Total";
   } else if (selectedShiftFilter === "CURRENT") {
-    filtered = dateOrders.filter(o => Number(o.shift_no) === Number(currentShiftNo));
+    filteredOrders = dateOrders.filter(o => Number(o.shift_no) === Number(currentShiftNo));
+    filteredPetty = datePetty.filter(p => Number(p.shift_no) === Number(currentShiftNo));
     currentViewingLevel = lang === 'ar' ? `الوردية النشطة #${currentShiftNo}` : `Active Live Shift #${currentShiftNo}`;
   } else {
     const targetShiftNo = Number(selectedShiftFilter);
-    filtered = dateOrders.filter(o => Number(o.shift_no) === targetShiftNo);
+    filteredOrders = dateOrders.filter(o => Number(o.shift_no) === targetShiftNo);
+    filteredPetty = datePetty.filter(p => Number(p.shift_no) === targetShiftNo);
     currentViewingLevel = lang === 'ar' ? `وردية رقم #${targetShiftNo}` : `Shift #${targetShiftNo}`;
   }
 
-  cachedActiveReportOrders = filtered;
+  cachedActiveReportOrders = filteredOrders;
+  cachedActivePettyCash = filteredPetty;
 
-  // 4. Compute Financials & Item Breakdown
+  // 4. Compute Financials (Excluding Void Orders from sales totals)
   let totalCash = 0;
   let totalCard = 0;
   let totalVat = 0;
   let grandTotal = 0;
   let itemMap = {};
+  let validBillsCount = 0;
+  let voidBillsCount = 0;
 
-  filtered.forEach(o => {
+  filteredOrders.forEach(o => {
+    if (o.status === 'void') {
+      voidBillsCount += 1;
+      return; // Skip voided orders from sales revenue
+    }
+
+    validBillsCount += 1;
     const oTotal = parseFloat(o.total || 0);
     const oVat = parseFloat(o.vat || 0);
 
     grandTotal += oTotal;
     totalVat += oVat;
 
-    if (o.payment_method === 'Cash') {
+    // Handle Split vs Regular Payments
+    if (o.payment_method === 'Split' && o.split_details) {
+      totalCash += parseFloat(o.split_details.cash || 0);
+      totalCard += parseFloat(o.split_details.card || 0);
+    } else if (o.payment_method === 'Cash') {
       totalCash += oTotal;
     } else {
       totalCard += oTotal;
@@ -158,7 +192,16 @@ async function loadAndRenderReport() {
     });
   });
 
-  // 5. Update UI KPI Cards
+  // Calculate Total Petty Cash Deductions
+  let totalPettyCash = 0;
+  filteredPetty.forEach(p => {
+    totalPettyCash += parseFloat(p.amount || 0);
+  });
+
+  // Net Cash currently expected in the drawer
+  const netCashInDrawer = totalCash - totalPettyCash;
+
+  // 5. Update KPI Cards & Breakdown
   const cashEl = document.getElementById('kpi-cash-val');
   if (cashEl) cashEl.innerText = totalCash.toFixed(2);
 
@@ -169,7 +212,11 @@ async function loadAndRenderReport() {
   if (totalEl) totalEl.innerText = grandTotal.toFixed(2);
 
   const billsCountEl = document.getElementById('kpi-bills-count');
-  if (billsCountEl) billsCountEl.innerText = lang === 'ar' ? `${filtered.length} فواتير` : `${filtered.length} Bills`;
+  if (billsCountEl) {
+    billsCountEl.innerText = lang === 'ar'
+      ? `${validBillsCount} فواتير ${voidBillsCount > 0 ? `(${voidBillsCount} ملغاة)` : ''}`
+      : `${validBillsCount} Bills ${voidBillsCount > 0 ? `(${voidBillsCount} Void)` : ''}`;
+  }
 
   const repDateEl = document.getElementById('rep-date-display');
   if (repDateEl) repDateEl.innerText = selectedDate;
@@ -177,10 +224,15 @@ async function loadAndRenderReport() {
   const repLevelEl = document.getElementById('rep-level-display');
   if (repLevelEl) repLevelEl.innerText = currentViewingLevel;
 
+  const repPettyEl = document.getElementById('rep-petty-display');
+  if (repPettyEl) {
+    repPettyEl.innerText = `${totalPettyCash.toFixed(2)} SAR (Net Cash: ${netCashInDrawer.toFixed(2)} SAR)`;
+  }
+
   const repVatEl = document.getElementById('rep-vat-display');
   if (repVatEl) repVatEl.innerText = `${totalVat.toFixed(2)} SAR`;
 
-  // 6. Populate Items Table
+  // 6. Populate Item Breakdown Table
   const itemsTbody = document.getElementById('rep-items-tbody');
   if (itemsTbody) {
     itemsTbody.innerHTML = '';
@@ -216,20 +268,35 @@ async function executeShiftClosing() {
   if (!confirm(confirmMsg)) return;
 
   const shiftOrders = orderHistory.filter(o => o.business_date === bDate && Number(o.shift_no) === Number(currentShiftNo));
+  const shiftPetty = pettyCashHistory.filter(p => p.business_date === bDate && Number(p.shift_no) === Number(currentShiftNo));
 
   let totalCash = 0;
   let totalCard = 0;
   let totalVat = 0;
   let grandTotal = 0;
+  let validBillsCount = 0;
 
   shiftOrders.forEach(o => {
+    if (o.status === 'void') return;
+    validBillsCount += 1;
     const oTotal = parseFloat(o.total || 0);
     const oVat = parseFloat(o.vat || 0);
     grandTotal += oTotal;
     totalVat += oVat;
-    if (o.payment_method === 'Cash') totalCash += oTotal;
-    else totalCard += oTotal;
+
+    if (o.payment_method === 'Split' && o.split_details) {
+      totalCash += parseFloat(o.split_details.cash || 0);
+      totalCard += parseFloat(o.split_details.card || 0);
+    } else if (o.payment_method === 'Cash') {
+      totalCash += oTotal;
+    } else {
+      totalCard += oTotal;
+    }
   });
+
+  let totalPetty = 0;
+  shiftPetty.forEach(p => totalPetty += parseFloat(p.amount || 0));
+  const netCash = totalCash - totalPetty;
 
   const shiftClosingRecord = {
     shop_id: shopId,
@@ -240,9 +307,11 @@ async function executeShiftClosing() {
     closed_at: new Date().toISOString(),
     cash_sales: totalCash,
     card_sales: totalCard,
+    petty_cash: totalPetty,
+    net_cash_drawer: netCash,
     total_sales: grandTotal,
     vat_amount: totalVat,
-    bills_count: shiftOrders.length,
+    bills_count: validBillsCount,
     closing_note: `Shift #${currentShiftNo} Closed`
   };
 
@@ -250,15 +319,13 @@ async function executeShiftClosing() {
   if (supabaseClient && navigator.onLine) {
     try {
       await supabaseClient.from('shift_closings').insert([shiftClosingRecord]);
-    } catch (e) {
-      console.warn("Shift closing sync notice:", e);
-    }
+    } catch (e) {}
   }
 
-  // 2. Print Bilingual Shift X-Report Slip
-  printShiftXReportSlip(shiftClosingRecord, shiftOrders);
+  // 2. Print Official Shift X-Report Slip
+  printShiftXReportSlip(shiftClosingRecord, shiftOrders, shiftPetty);
 
-  // 3. Increment Shift Number
+  // 3. Increment Shift Number for Next Employee
   currentShiftNo += 1;
   saveLocalState(shopId);
 
@@ -270,33 +337,52 @@ async function executeShiftClosing() {
   closeModals();
 }
 
-// --- Execute Full Day Z-Closing (Z-Report) ---
+// --- Execute Full Day Z-Closing (Smart 5 AM - 6 AM Auto-Reset) ---
 async function executeZDailyClosing() {
   const shopId = currentShop ? currentShop.id : 'shop1';
   const bDate = getSaudiBusinessDate();
   const lang = localStorage.getItem('pos_lang') || 'en';
 
   const confirmMsg = lang === 'ar'
-    ? `هل تريد إغلاق مبيعات اليوم بالكامل (تقرير Z النهائي)؟`
-    : `Perform full day end Z-Closing audit?`;
+    ? `هل تريد إغلاق مبيعات اليوم بالكامل (تقرير Z النهائي)؟\nسيتم تثبيت الحسابات وبدء يوم عمل جديد.`
+    : `Perform full day end Z-Closing audit?\nThis will finalize today's sales and prepare for the next business day.`;
 
   if (!confirm(confirmMsg)) return;
 
   const dayOrders = orderHistory.filter(o => o.business_date === bDate);
+  const dayPetty = pettyCashHistory.filter(p => p.business_date === bDate);
 
   let totalCash = 0;
   let totalCard = 0;
   let totalVat = 0;
   let grandTotal = 0;
+  let validBillsCount = 0;
+  let voidBillsCount = 0;
 
   dayOrders.forEach(o => {
+    if (o.status === 'void') {
+      voidBillsCount += 1;
+      return;
+    }
+    validBillsCount += 1;
     const oTotal = parseFloat(o.total || 0);
     const oVat = parseFloat(o.vat || 0);
     grandTotal += oTotal;
     totalVat += oVat;
-    if (o.payment_method === 'Cash') totalCash += oTotal;
-    else totalCard += oTotal;
+
+    if (o.payment_method === 'Split' && o.split_details) {
+      totalCash += parseFloat(o.split_details.cash || 0);
+      totalCard += parseFloat(o.split_details.card || 0);
+    } else if (o.payment_method === 'Cash') {
+      totalCash += oTotal;
+    } else {
+      totalCard += oTotal;
+    }
   });
+
+  let totalPetty = 0;
+  dayPetty.forEach(p => totalPetty += parseFloat(p.amount || 0));
+  const netCash = totalCash - totalPetty;
 
   const dailyClosingRecord = {
     shop_id: shopId,
@@ -305,8 +391,11 @@ async function executeZDailyClosing() {
     total_sales: grandTotal,
     cash_sales: totalCash,
     card_sales: totalCard,
+    petty_cash: totalPetty,
+    net_cash_drawer: netCash,
     vat_amount: totalVat,
-    bills_count: dayOrders.length,
+    bills_count: validBillsCount,
+    void_count: voidBillsCount,
     total_shifts: currentShiftNo,
     closed_by: 'Manager'
   };
@@ -314,25 +403,37 @@ async function executeZDailyClosing() {
   if (supabaseClient && navigator.onLine) {
     try {
       await supabaseClient.from('daily_closings').insert([dailyClosingRecord]);
-    } catch (e) {
-      console.warn("Daily closing sync notice:", e);
-    }
+    } catch (e) {}
   }
 
-  printFullDayZReportSlip(dailyClosingRecord, dayOrders);
+  // 1. Print Official Z-Report Slip
+  printFullDayZReportSlip(dailyClosingRecord, dayOrders, dayPetty);
+
+  // 2. Smart Cut-off: Mark this business date as closed in localStorage
+  localStorage.setItem(`pos_last_closed_date_${shopId}`, bDate);
+
+  // 3. Reset Shift & Token for the next day
+  currentShiftNo = 1;
+  saveLocalState(shopId);
+
+  // 4. Update Header Business Date Badge immediately
+  const dateBadge = document.getElementById('business-date-badge');
+  if (dateBadge) dateBadge.innerText = `📅 Shift: ${getSaudiBusinessDate()}`;
+  updateTokenDisplay();
 
   const alertMsg = lang === 'ar'
-    ? "تم إغلاق حسابات اليوم بالكامل وحفظها في السحابة بنجاح!"
-    : "Day completed and synchronized with cloud (Z-Report finalized)!";
+    ? "تم إغلاق حسابات اليوم بالكامل (تقرير Z) وبدء دورة العمل الجديدة بنجاح!"
+    : "Day completed and finalized with cloud (Z-Report done)! New business day initiated.";
 
   alert(alertMsg);
   closeModals();
 }
 
-// --- Bilingual Thermal Print: Shift X-Report ---
-function printShiftXReportSlip(shiftRec, shiftOrders) {
+// --- Bilingual Thermal 80mm Print: Shift X-Report ---
+function printShiftXReportSlip(shiftRec, shiftOrders, shiftPetty) {
   let itemMap = {};
   shiftOrders.forEach(o => {
+    if (o.status === 'void') return;
     (o.items || []).forEach(it => {
       const name = it.name || 'Item';
       if (!itemMap[name]) itemMap[name] = { qty: 0, amount: 0 };
@@ -354,7 +455,7 @@ function printShiftXReportSlip(shiftRec, shiftOrders) {
       <h2 style="margin:2px 0;">${shop.nameAr}</h2>
       <div style="font-size:12px; font-weight:bold;">${currentShop ? currentShop.name : shop.nameEn}</div>
       <h3 style="margin:4px 0;">*** SHIFT X-REPORT ***</h3>
-      <div style="font-weight:bold; font-size:13px;">تقرير إغلاق الوردية</div>
+      <div style="font-weight:bold; font-size:13px;">تقرير إغلاق الوردية (X)</div>
       <h2 style="margin:2px 0;">SHIFT #${shiftRec.shift_no}</h2>
       <div>Cashier: ${shiftRec.employee_name}</div>
       <div>Shift Date / التاريخ: ${shiftRec.business_date}</div>
@@ -362,11 +463,13 @@ function printShiftXReportSlip(shiftRec, shiftOrders) {
     </div>
     <div class="receipt-line"></div>
     <div class="receipt-row"><span>عدد الفواتير (Bills Count):</span><span>${shiftRec.bills_count}</span></div>
-    <div class="receipt-row"><span>المبيعات النقدية (Cash):</span><span>${shiftRec.cash_sales.toFixed(2)} SAR</span></div>
+    <div class="receipt-row"><span>إجمالي النقدي (Cash Sales):</span><span>${shiftRec.cash_sales.toFixed(2)} SAR</span></div>
     <div class="receipt-row"><span>مبيعات الشبكة (Mada/Card):</span><span>${shiftRec.card_sales.toFixed(2)} SAR</span></div>
+    <div class="receipt-row" style="color:#d97706;"><span>مصروفات الدرج (Petty Cash):</span><span>-${shiftRec.petty_cash.toFixed(2)} SAR</span></div>
+    <div class="receipt-row receipt-bold"><span>صافي نقد الدرج (Net Cash):</span><span>${shiftRec.net_cash_drawer.toFixed(2)} SAR</span></div>
     <div class="receipt-row"><span>ضريبة القيمة المضافة (VAT):</span><span>${shiftRec.vat_amount.toFixed(2)} SAR</span></div>
     <div class="receipt-line"></div>
-    <div class="receipt-row receipt-bold" style="font-size:14px;"><span>إجمالي الوردية (TOTAL):</span><span>${shiftRec.total_sales.toFixed(2)} SAR</span></div>
+    <div class="receipt-row receipt-bold" style="font-size:14px;"><span>إجمالي المبيعات (TOTAL):</span><span>${shiftRec.total_sales.toFixed(2)} SAR</span></div>
     <div class="receipt-line"></div>
     <div class="receipt-center receipt-bold" style="margin:4px 0;">الأصناف المباعة / ITEMS BREAKDOWN</div>
     <div class="receipt-row receipt-bold"><span>ITEM / الصنف</span><span>العدد</span><span>المجموع</span></div>
@@ -377,10 +480,11 @@ function printShiftXReportSlip(shiftRec, shiftOrders) {
   setTimeout(() => window.print(), 250);
 }
 
-// --- Bilingual Thermal Print: Full Day Z-Report ---
-function printFullDayZReportSlip(dailyRec, dayOrders) {
+// --- Bilingual Thermal 80mm Print: Full Day Z-Report ---
+function printFullDayZReportSlip(dailyRec, dayOrders, dayPetty) {
   let itemMap = {};
   dayOrders.forEach(o => {
+    if (o.status === 'void') return;
     (o.items || []).forEach(it => {
       const name = it.name || 'Item';
       if (!itemMap[name]) itemMap[name] = { qty: 0, amount: 0 };
@@ -402,16 +506,19 @@ function printFullDayZReportSlip(dailyRec, dayOrders) {
       <h2 style="margin:2px 0;">${shop.nameAr}</h2>
       <div style="font-size:12px; font-weight:bold;">${currentShop ? currentShop.name : shop.nameEn}</div>
       <h3 style="margin:4px 0;">*** OFFICIAL Z-REPORT ***</h3>
-      <div style="font-weight:bold; font-size:13px;">التقرير النهائي لليوم (Z)</div>
+      <div style="font-weight:bold; font-size:13px;">التقرير النهائي لليوم (Z-Audit)</div>
       <div>Shift Date / التاريخ: ${dailyRec.business_date}</div>
       <div>Total Shifts / إجمالي الورديات: ${dailyRec.total_shifts}</div>
       <div>Closed By: ${dailyRec.closed_by}</div>
       <div>Printed: ${new Date().toLocaleTimeString()}</div>
     </div>
     <div class="receipt-line"></div>
-    <div class="receipt-row"><span>إجمالي الفواتير (Bills):</span><span>${dailyRec.bills_count}</span></div>
-    <div class="receipt-row"><span>المبيعات النقدية (Cash):</span><span>${dailyRec.cash_sales.toFixed(2)} SAR</span></div>
+    <div class="receipt-row"><span>الفواتير الصحيحة (Valid Bills):</span><span>${dailyRec.bills_count}</span></div>
+    ${dailyRec.void_count > 0 ? `<div class="receipt-row" style="color:#ef4444;"><span>الفواتير الملغاة (Void Bills):</span><span>${dailyRec.void_count}</span></div>` : ''}
+    <div class="receipt-row"><span>المبيعات النقدية (Cash Sales):</span><span>${dailyRec.cash_sales.toFixed(2)} SAR</span></div>
     <div class="receipt-row"><span>مبيعات الشبكة (Mada/Card):</span><span>${dailyRec.card_sales.toFixed(2)} SAR</span></div>
+    <div class="receipt-row" style="color:#d97706;"><span>مصروفات الدرج (Petty Cash):</span><span>-${dailyRec.petty_cash.toFixed(2)} SAR</span></div>
+    <div class="receipt-row receipt-bold"><span>صافي كاش الدرج (Net Cash):</span><span>${dailyRec.net_cash_drawer.toFixed(2)} SAR</span></div>
     <div class="receipt-row"><span>إجمالي الضريبة (VAT 15%):</span><span>${dailyRec.vat_amount.toFixed(2)} SAR</span></div>
     <div class="receipt-line"></div>
     <div class="receipt-row receipt-bold" style="font-size:15px;"><span>الإجمالي العام (GRAND TOTAL):</span><span>${dailyRec.total_sales.toFixed(2)} SAR</span></div>
@@ -425,7 +532,7 @@ function printFullDayZReportSlip(dailyRec, dayOrders) {
   setTimeout(() => window.print(), 250);
 }
 
-// --- Bilingual Thermal Print: Filtered Sales Slip ---
+// --- Print Filtered Sales Slip ---
 function printSelectedReportSlip() {
   closeModals();
   const datePicker = document.getElementById('rep-calendar-picker');
@@ -436,14 +543,24 @@ function printSelectedReportSlip() {
   let totalCard = 0;
   let totalVat = 0;
   let grandTotal = 0;
+  let validCount = 0;
 
   cachedActiveReportOrders.forEach(o => {
+    if (o.status === 'void') return;
+    validCount += 1;
     const oTotal = parseFloat(o.total || 0);
     const oVat = parseFloat(o.vat || 0);
     grandTotal += oTotal;
     totalVat += oVat;
-    if (o.payment_method === 'Cash') totalCash += oTotal;
-    else totalCard += oTotal;
+
+    if (o.payment_method === 'Split' && o.split_details) {
+      totalCash += parseFloat(o.split_details.cash || 0);
+      totalCard += parseFloat(o.split_details.card || 0);
+    } else if (o.payment_method === 'Cash') {
+      totalCash += oTotal;
+    } else {
+      totalCard += oTotal;
+    }
 
     (o.items || []).forEach(it => {
       const name = it.name || 'Item';
@@ -452,6 +569,10 @@ function printSelectedReportSlip() {
       itemMap[name].amount += Number(it.price * (it.qty || 1));
     });
   });
+
+  let totalPetty = 0;
+  cachedActivePettyCash.forEach(p => totalPetty += parseFloat(p.amount || 0));
+  const netCash = totalCash - totalPetty;
 
   let itemsRows = Object.keys(itemMap).map(name => `
     <div class="receipt-row">
@@ -464,15 +585,17 @@ function printSelectedReportSlip() {
   document.getElementById('print-area').innerHTML = `
     <div class="receipt-center">
       <h2 style="margin:2px 0;">${shop.nameAr}</h2>
-      <h3 style="margin:2px 0;">SALES REPORT / تقرير المبيعات</h3>
+      <h3 style="margin:2px 0;">SALES AUDIT / تقرير المبيعات</h3>
       <div style="font-weight:bold; font-size:13px;">${currentViewingLevel}</div>
       <div>Date / التاريخ: ${selectedDate}</div>
       <div>Printed: ${new Date().toLocaleTimeString()}</div>
     </div>
     <div class="receipt-line"></div>
-    <div class="receipt-row"><span>عدد الفواتير (Bills):</span><span>${cachedActiveReportOrders.length}</span></div>
+    <div class="receipt-row"><span>عدد الفواتير (Bills):</span><span>${validCount}</span></div>
     <div class="receipt-row"><span>نقداً (Cash):</span><span>${totalCash.toFixed(2)} SAR</span></div>
     <div class="receipt-row"><span>شبكة / مدى (Mada):</span><span>${totalCard.toFixed(2)} SAR</span></div>
+    <div class="receipt-row" style="color:#d97706;"><span>مصروفات الدرج (Petty Cash):</span><span>-${totalPetty.toFixed(2)} SAR</span></div>
+    <div class="receipt-row receipt-bold"><span>صافي كاش الدرج (Net Cash):</span><span>${netCash.toFixed(2)} SAR</span></div>
     <div class="receipt-row"><span>ضريبة (VAT 15%):</span><span>${totalVat.toFixed(2)} SAR</span></div>
     <div class="receipt-line"></div>
     <div class="receipt-row receipt-bold" style="font-size:14px;"><span>المجموع (TOTAL):</span><span>${grandTotal.toFixed(2)} SAR</span></div>
