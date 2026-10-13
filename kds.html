@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Kitchen Display System (KDS) - Responsive Thermal Roll</title>
+  <title>Kitchen Display System (KDS) - Smart Split Grid & Overdue Tray</title>
 
-  <!-- PWA & Fonts -->
+  <!-- PWA & Typography -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0f172a">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -19,27 +19,27 @@
   <style>
     * { box-sizing: border-box; font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 0; }
     html, body {
-      background: #0f172a; color: #f8fafc; height: 100%; width: 100%;
+      background: #0b1120; color: #f8fafc; height: 100%; width: 100%;
       overflow-x: hidden; position: relative;
     }
     body { display: flex; flex-direction: column; }
 
-    /* RTL Layout Rules */
+    /* RTL Support */
     body[dir="rtl"] { direction: rtl; }
     body[dir="rtl"] .history-table th, body[dir="rtl"] .history-table td { text-align: right; }
 
     /* ================= 4-DIGIT PIN DIRECT LOCK SCREEN ================= */
     #pin-lock-overlay {
-      position: fixed; inset: 0; background: #0f172a; z-index: 9999;
+      position: fixed; inset: 0; background: #0b1120; z-index: 9999;
       display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 16px;
     }
     .pin-modal-card {
       background: #1e293b; border: 1px solid #334155; border-radius: 18px; padding: 20px 16px;
-      max-width: 330px; width: 100%; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+      max-width: 320px; width: 100%; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.6);
     }
     .pin-dots-row { display: flex; justify-content: center; gap: 12px; margin: 12px 0 8px 0; }
     .pin-dot {
-      width: 16px; height: 16px; border-radius: 50%; border: 2px solid #475569; background: transparent; transition: all 0.15s ease;
+      width: 15px; height: 15px; border-radius: 50%; border: 2px solid #475569; background: transparent; transition: all 0.15s ease;
     }
     .pin-dot.filled { background: #f59e0b; border-color: #f59e0b; box-shadow: 0 0 10px #f59e0b; }
     .pin-error-text { color: #ef4444; font-size: 13px; font-weight: bold; min-height: 20px; margin-bottom: 4px; }
@@ -61,7 +61,7 @@
 
     /* ================= TOP RESPONSIVE HEADER ================= */
     .kds-header {
-      background: #1e293b; padding: 10px 12px; display: flex; justify-content: space-between;
+      background: #1e293b; padding: 8px 12px; display: flex; justify-content: space-between;
       align-items: center; border-bottom: 2px solid #334155; flex-wrap: wrap; gap: 8px;
     }
     .kds-title-area { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -87,124 +87,163 @@
     .btn-lang { background: #475569; border-color: #64748b; font-weight: 800; }
     .btn-switch { background: #ef4444; border-color: #dc2626; }
 
-    /* ================= RESPONSIVE CARD GRID (FIFO) ================= */
+    /* ================= MAIN SPLIT WORKSPACE (METHOD B) ================= */
+    .kds-workspace {
+      flex: 1; display: flex; overflow: hidden; position: relative;
+    }
+
+    /* 1. Main Cooking Grid (Blue: 0-5m & Orange: 5-10m) */
+    .active-cooking-panel {
+      flex: 1; display: flex; flex-direction: column; padding: 10px; overflow: hidden;
+      border-right: 2px solid #334155;
+    }
+    .panel-header-title {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 8px; font-size: 13px; font-weight: bold; color: #94a3b8;
+    }
     .orders-grid {
-      flex: 1; padding: 10px; display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
       gap: 10px; overflow-y: auto; align-content: start;
     }
 
-    @media (max-width: 500px) {
-      .orders-grid {
-        grid-template-columns: 1fr;
-        padding: 8px;
-        gap: 8px;
-      }
+    /* 2. Overdue Delayed Tray Panel (> 10m Red Orders) */
+    .overdue-tray-panel {
+      width: 320px; max-width: 35%; background: #131b2e; border-left: 2px solid #b91c1c;
+      display: flex; flex-direction: column; padding: 10px; overflow: hidden;
+    }
+    .overdue-tray-header {
+      display: flex; justify-content: space-between; align-items: center;
+      background: #7f1d1d; color: #fff; padding: 6px 10px; border-radius: 6px; margin-bottom: 8px;
+    }
+    .btn-clear-delayed {
+      background: #ef4444; color: #fff; border: 1px solid #f87171; font-size: 11px;
+      font-weight: 800; padding: 4px 8px; border-radius: 4px; cursor: pointer; transition: 0.1s;
+    }
+    .btn-clear-delayed:active { transform: scale(0.95); background: #dc2626; }
+    .overdue-list-container {
+      flex: 1; display: flex; flex-direction: column; gap: 8px; overflow-y: auto;
     }
 
+    @media (max-width: 768px) {
+      .kds-workspace { flex-direction: column; overflow-y: auto; }
+      .active-cooking-panel { border-right: none; border-bottom: 2px solid #334155; flex: none; min-height: 55vh; }
+      .overdue-tray-panel { width: 100%; max-width: 100%; border-left: none; border-top: 2px solid #b91c1c; flex: none; min-height: 45vh; }
+    }
+
+    /* Card Styling */
     .order-card {
-      background: #1e293b; border: 2px solid #334155; border-radius: 10px;
+      background: #1e293b; border: 2px solid #334155; border-radius: 8px;
       display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.25);
       cursor: pointer; transition: transform 0.1s, border-color 0.15s; user-select: none;
     }
     .order-card:active { transform: scale(0.98); }
     .order-card:hover { border-color: #38bdf8; }
 
-    /* Priority / Age Indicators */
-    .card-priority-normal .card-top { background: #1e3a8a; }
-    .card-priority-warn .card-top { background: #b45309; }
-    .card-priority-urgent .card-top { background: #b91c1c; animation: pulseUrgent 1.5s infinite; }
+    /* Urgency Colors */
+    .card-priority-fresh .card-top { background: #1e3a8a; } /* 0 - 5 min Blue */
+    .card-priority-warning .card-top { background: #b45309; } /* 5 - 10 min Orange */
+    .card-priority-overdue { border-color: #ef4444; }
+    .card-priority-overdue .card-top { background: #991b1b; animation: pulseRed 1.8s infinite; }
 
-    @keyframes pulseUrgent {
+    @keyframes pulseRed {
       0% { opacity: 1; }
       50% { opacity: 0.8; }
       100% { opacity: 1; }
     }
 
     .card-top {
-      padding: 6px 10px; display: flex; justify-content: space-between; align-items: center;
+      padding: 5px 8px; display: flex; justify-content: space-between; align-items: center;
       background: #334155; color: #fff;
     }
-    .card-token { font-size: 20px; font-weight: 900; color: #fff; }
+    .card-token { font-size: 17px; font-weight: 900; color: #fff; }
     .timer-badge { font-family: monospace; font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 4px; background: rgba(0,0,0,0.4); color: #facc15; }
 
     .card-meta {
-      padding: 4px 10px; font-size: 11px; color: #cbd5e1; display: flex; justify-content: space-between;
+      padding: 3px 8px; font-size: 10px; color: #cbd5e1; display: flex; justify-content: space-between;
       border-bottom: 1px dashed #334155; background: #1a2234;
     }
 
-    .card-items-compact { padding: 8px 10px; flex: 1; max-height: 120px; overflow-y: hidden; }
+    .card-items-compact { padding: 6px 8px; flex: 1; max-height: 110px; overflow-y: hidden; }
     .compact-item-line {
       display: flex; justify-content: space-between; align-items: center;
-      padding: 3px 0; border-bottom: 1px dotted #283548; font-size: 13px;
+      padding: 2px 0; border-bottom: 1px dotted #283548; font-size: 12px;
     }
-    .compact-item-name { font-weight: 700; color: #f8fafc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
-    .compact-item-qty { background: #facc15; color: #000; font-weight: 900; font-size: 12px; padding: 1px 6px; border-radius: 4px; }
-    .compact-more-tag { font-size: 10px; color: #38bdf8; text-align: center; margin-top: 4px; font-weight: bold; }
+    .compact-item-name { font-weight: 700; color: #f8fafc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; }
+    .compact-item-qty { background: #facc15; color: #000; font-weight: 900; font-size: 11px; padding: 1px 5px; border-radius: 3px; }
+    .compact-more-tag { font-size: 9px; color: #38bdf8; text-align: center; margin-top: 3px; font-weight: bold; }
 
-    /* Card Action Footer with Quick Complete Button */
+    /* Card Action Footer with Quick Complete */
     .card-footer-action {
-      background: #0f172a; padding: 6px 10px; display: flex; justify-content: space-between;
-      align-items: center; border-top: 1px solid #334155; gap: 8px;
+      background: #0f172a; padding: 4px 8px; display: flex; justify-content: space-between;
+      align-items: center; border-top: 1px solid #334155; gap: 6px;
     }
     .btn-card-quick-done {
-      background: #16a34a; color: #fff; border: none; padding: 6px 12px; border-radius: 6px;
-      font-weight: 900; font-size: 13px; cursor: pointer; transition: 0.1s;
+      background: #16a34a; color: #fff; border: none; padding: 4px 10px; border-radius: 5px;
+      font-weight: 900; font-size: 11px; cursor: pointer; transition: 0.1s;
     }
     .btn-card-quick-done:active { transform: scale(0.92); background: #15803d; }
-    .card-hint-text { font-size: 11px; color: #94a3b8; font-weight: bold; }
+    .card-hint-text { font-size: 10px; color: #94a3b8; font-weight: bold; }
 
-    /* ================= 80MM THERMAL PAPER ROLL POPUP MODAL ================= */
+    /* ================= COMPACT THERMAL RECEIPT POPUP MODAL (FIXED SIZE) ================= */
     .modal-backdrop {
       display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85);
-      justify-content: center; align-items: center; z-index: 1000; padding: 12px;
+      justify-content: center; align-items: center; z-index: 1000; padding: 10px;
     }
     .thermal-receipt-roll {
-      background: #ffffff; color: #000000; width: 330px; max-width: 100%;
-      max-height: 86vh; display: flex; flex-direction: column; border-radius: 4px;
+      background: #ffffff; color: #000000; width: 340px; max-width: 96%;
+      max-height: 82vh; display: flex; flex-direction: column; border-radius: 4px;
       box-shadow: 0 15px 40px rgba(0,0,0,0.8);
       font-family: 'Cairo', monospace; border-top: 4px dashed #64748b; border-bottom: 4px dashed #64748b;
-      animation: rollSlideIn 0.2s ease-out;
+      animation: rollSlideIn 0.15s ease-out;
     }
     @keyframes rollSlideIn {
-      from { transform: translateY(20px); opacity: 0; }
+      from { transform: translateY(15px); opacity: 0; }
       to { transform: translateY(0); opacity: 1; }
     }
 
+    /* Compact Header */
     .thermal-header {
-      padding: 12px 14px 6px 14px; text-align: center; border-bottom: 1px dashed #000;
+      padding: 8px 12px 4px 12px; text-align: center; border-bottom: 1px dashed #000;
     }
-    .receipt-token-big { font-size: 38px; font-weight: 900; line-height: 1.1; margin: 2px 0; color: #000; }
-    .receipt-divider { border-bottom: 1px dashed #000; margin: 6px 0; }
-    .receipt-row { display: flex; justify-content: space-between; font-size: 12px; margin: 2px 0; }
+    .thermal-header-sub { font-size: 11px; font-weight: bold; color: #475569; }
+    .receipt-token-big { font-size: 24px; font-weight: 900; line-height: 1.1; margin: 2px 0; color: #000; }
+    .receipt-divider { border-bottom: 1px dashed #000; margin: 4px 0; }
+    
+    .receipt-meta-compact {
+      display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; margin: 2px 0;
+    }
+    .receipt-row-title {
+      display: flex; justify-content: space-between; font-weight: 900; font-size: 11px; margin-top: 3px;
+    }
 
-    /* Scrollable Thermal Body */
+    /* High Density Scroll-Free Body (Fits 5-6 Items Easily) */
     .thermal-body {
-      flex: 1; overflow-y: auto; padding: 8px 14px;
+      flex: 1; overflow-y: auto; padding: 4px 12px;
     }
     .thermal-item-row {
       display: flex; justify-content: space-between; align-items: center;
-      padding: 6px 0; border-bottom: 1px dotted #94a3b8;
+      padding: 3px 0; border-bottom: 1px dotted #cbd5e1;
     }
-    .thermal-item-title { font-size: 15px; font-weight: 800; color: #000; }
-    .thermal-item-sub { font-size: 10px; color: #475569; }
-    .thermal-spicy-tag { background: #ef4444; color: #fff; font-size: 10px; font-weight: bold; padding: 1px 4px; border-radius: 3px; }
+    .thermal-item-title { font-size: 13px; font-weight: 800; color: #000; line-height: 1.2; }
+    .thermal-item-station { font-size: 9px; color: #64748b; margin-left: 4px; }
+    .thermal-spicy-tag { background: #ef4444; color: #fff; font-size: 9px; font-weight: bold; padding: 1px 4px; border-radius: 3px; margin-left: 2px; }
     .thermal-item-qty {
-      font-size: 18px; font-weight: 900; background: #000; color: #fff;
-      padding: 2px 8px; border-radius: 4px; text-align: center;
+      font-size: 14px; font-weight: 900; background: #000; color: #fff;
+      padding: 1px 6px; border-radius: 4px; text-align: center; min-width: 42px;
     }
 
+    /* Slim Bottom Actions */
     .thermal-actions {
-      padding: 10px 14px; background: #f8fafc; border-top: 1px dashed #000;
-      display: flex; gap: 8px;
+      padding: 6px 12px; background: #f8fafc; border-top: 1px dashed #000;
+      display: flex; gap: 6px;
     }
     .btn-receipt-back {
-      flex: 1; padding: 11px; background: #64748b; color: #fff; border: none;
-      border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer;
+      flex: 1; padding: 8px; background: #64748b; color: #fff; border: none;
+      border-radius: 5px; font-size: 12px; font-weight: bold; cursor: pointer;
     }
     .btn-receipt-complete {
-      flex: 2; padding: 11px; background: #16a34a; color: #fff; border: none;
-      border-radius: 6px; font-size: 16px; font-weight: 900; cursor: pointer;
+      flex: 2; padding: 8px; background: #16a34a; color: #fff; border: none;
+      border-radius: 5px; font-size: 14px; font-weight: 900; cursor: pointer;
     }
     .btn-receipt-complete:active { transform: scale(0.97); background: #15803d; }
 
@@ -231,8 +270,8 @@
     }
 
     .empty-state {
-      grid-column: 1 / -1; display: flex; flex-direction: column; justify-content: center;
-      align-items: center; height: 50vh; color: #64748b; font-size: 16px; text-align: center;
+      display: flex; flex-direction: column; justify-content: center;
+      align-items: center; height: 180px; color: #64748b; font-size: 13px; text-align: center;
     }
   </style>
 </head>
@@ -241,8 +280,8 @@
   <!-- ================= 4-DIGIT PIN DIRECT LOCK SCREEN ================= -->
   <div id="pin-lock-overlay">
     <div class="pin-modal-card">
-      <div style="font-size:32px; margin-bottom:2px;">🧑‍🍳</div>
-      <h2 style="color:#f8fafc; font-size:17px;" id="ui-kds-pin-title">KDS KITCHEN PIN</h2>
+      <div style="font-size:30px; margin-bottom:2px;">🧑‍🍳</div>
+      <h2 style="color:#f8fafc; font-size:16px;" id="ui-kds-pin-title">KDS KITCHEN PIN</h2>
       <p style="color:#94a3b8; font-size:11px; margin-top:2px;" id="ui-kds-pin-sub">Enter Shop PIN</p>
       
       <div class="pin-dots-row">
@@ -264,7 +303,7 @@
         <button type="button" class="num-key" onclick="pressKey('7')">7</button>
         <button type="button" class="num-key" onclick="pressKey('8')">8</button>
         <button type="button" class="num-key" onclick="pressKey('9')">9</button>
-        <button type="button" class="num-key" onclick="clearPinInput()" style="font-size:12px; color:#94a3b8;" id="ui-kds-clear">CLEAR</button>
+        <button type="button" class="num-key" onclick="clearPinInput()" style="font-size:11px; color:#94a3b8;" id="ui-kds-clear">CLEAR</button>
         <button type="button" class="num-key" onclick="pressKey('0')">0</button>
         <button type="button" class="num-key backspace" onclick="pressBackspace()">⌫</button>
       </div>
@@ -273,8 +312,8 @@
 
   <!-- Master Branch Picker Modal -->
   <div id="master-branch-picker">
-    <div class="pin-modal-card" style="max-width:400px;">
-      <h3 style="color:#facc15; font-size:16px;">🔑 MASTER KDS ACCESS</h3>
+    <div class="pin-modal-card" style="max-width:380px;">
+      <h3 style="color:#facc15; font-size:15px;">🔑 MASTER KDS ACCESS</h3>
       <p style="color:#94a3b8; font-size:11px; margin: 6px 0 12px 0;" id="ui-master-sub">Select Branch to Open:</p>
       <div id="master-branches-container" style="display:grid; grid-template-columns:1fr 1fr; gap:8px;"></div>
       <button onclick="document.getElementById('master-branch-picker').style.display='none'" class="btn-top" style="margin-top:12px; width:100%;" id="ui-master-cancel">Cancel</button>
@@ -292,7 +331,7 @@
     <!-- Live vs History Toggle -->
     <div class="view-tabs">
       <button class="tab-btn active" id="tab-live" onclick="switchView('live')">
-        🔥 <span id="ui-tab-live-text">Live</span> (<span id="live-count">0</span>)
+        🔥 <span id="ui-tab-live-text">Live Orders</span> (<span id="live-count">0</span>)
       </button>
       <button class="tab-btn" id="tab-history" onclick="switchView('history')">
         📜 <span id="ui-tab-hist-text">History</span>
@@ -321,45 +360,66 @@
     </div>
   </div>
 
-  <!-- ================= VIEW 1: COMPACT ORDERS GRID (FIFO) ================= -->
-  <div class="orders-grid" id="kds-orders-container"></div>
+  <!-- ================= VIEW 1: METHOD B SPLIT WORKSPACE ================= -->
+  <div class="kds-workspace" id="live-workspace">
+    
+    <!-- 1. Active Cooking Panel (< 10 Mins Blue & Orange) -->
+    <div class="active-cooking-panel">
+      <div class="panel-header-title">
+        <span>🍳 ACTIVE COOKING (0 - 10 MINS)</span>
+        <span id="active-cooking-count" style="color:#38bdf8;">0 Orders</span>
+      </div>
+      <div class="orders-grid" id="active-orders-grid"></div>
+    </div>
 
-  <!-- ================= VIEW 2: 80MM THERMAL RECEIPT POP-UP MODAL ================= -->
+    <!-- 2. Overdue Delayed Tray Panel (> 10 Mins Red Orders) -->
+    <div class="overdue-tray-panel">
+      <div class="overdue-tray-header">
+        <div>
+          <span style="font-weight:900; font-size:12px;">⚠️ OVERDUE (>10M)</span>
+          <span id="overdue-count-badge" style="background:#000; padding:1px 5px; border-radius:10px; font-size:10px; margin-left:4px;">0</span>
+        </div>
+        <button type="button" class="btn-clear-delayed" onclick="clearAllDelayedOrders()" id="ui-btn-clear-delayed">
+          🧹 Clear Overdue
+        </button>
+      </div>
+      <div class="overdue-list-container" id="overdue-orders-container"></div>
+    </div>
+
+  </div>
+
+  <!-- ================= VIEW 2: COMPACT 80MM THERMAL RECEIPT POPUP MODAL ================= -->
   <div class="modal-backdrop" id="order-detail-modal" onclick="onModalBackdropClick(event)">
     <div class="thermal-receipt-roll" id="thermal-receipt-container">
       <div class="thermal-header">
-        <div style="font-size:12px; font-weight:bold;">*** KITCHEN SLIP / تذكرة المطبخ ***</div>
-        <div class="receipt-token-big" id="modal-token">#01</div>
+        <div class="thermal-header-sub">*** KITCHEN SLIP / تذكرة المطبخ ***</div>
+        <div class="receipt-token-big" id="modal-token">Token #01</div>
         <div class="receipt-divider"></div>
-        <div class="receipt-row">
-          <span>Type / النوع:</span>
-          <strong id="modal-type">Takeaway</strong>
+        <div class="receipt-meta-compact">
+          <span id="modal-type-table">Takeaway</span>
+          <span id="modal-time">00:00:00</span>
         </div>
-        <div class="receipt-row">
-          <span>Time / الوقت:</span>
-          <span id="modal-time">00:00</span>
-        </div>
-        <div class="receipt-row" id="modal-phone-row" style="display:none;">
+        <div class="receipt-meta-compact" id="modal-phone-row" style="display:none; color:#1e3a8a;">
           <span>Customer Mob:</span>
-          <strong id="modal-phone" style="direction:ltr;"></strong>
+          <span id="modal-phone" style="direction:ltr;"></span>
         </div>
         <div class="receipt-divider"></div>
-        <div class="receipt-row" style="font-weight:bold;">
+        <div class="receipt-row-title">
           <span>ITEM / الصنف</span>
           <span>QTY / العدد</span>
         </div>
       </div>
 
-      <!-- Scrollable Receipt Roll Items -->
+      <!-- High Density Scroll-Free Body -->
       <div class="thermal-body" id="modal-items-container"></div>
 
-      <!-- Thermal Bottom Actions -->
+      <!-- Slim Bottom Actions -->
       <div class="thermal-actions">
         <button type="button" class="btn-receipt-back" onclick="closeOrderModal()" id="ui-btn-modal-back">
           ⬅️ Back
         </button>
         <button type="button" class="btn-receipt-complete" onclick="completeFocusedOrder()" id="ui-btn-modal-done">
-          ✅ Complete (إكمال)
+          ✅ Complete Order (إكمال)
         </button>
       </div>
     </div>
@@ -379,7 +439,7 @@
         <thead>
           <tr>
             <th id="ui-th-token">Token</th>
-            <th id="ui-th-type">Type</th>
+            <th id="ui-th-type">Type & Table</th>
             <th id="ui-th-phone">Customer Phone</th>
             <th id="ui-th-items">Items</th>
             <th id="ui-th-date">Shift Date</th>
@@ -416,17 +476,19 @@
         masterCancel: "Cancel",
         langToggle: "🌐 العربية",
         liveTab: "Live Orders",
-        histTab: "History (Cloud)",
-        testSound: "🔊 Test",
-        logout: "🔒 Logout",
-        modalBack: "⬅️ Back (رجوع)",
-        modalDone: "✅ Complete Order (إكمال)",
+        histTab: "History",
+        testSound: "🔊",
+        logout: "🔒",
+        clearDelayed: "🧹 Clear Overdue",
+        modalBack: "⬅️ Back",
+        modalDone: "✅ Complete Order",
         clickSlip: "🔍 Open Receipt Slip",
         emptyKitchen: "All orders completed! Kitchen is clear.",
-        refreshCloud: "🔄 Refresh Cloud",
+        emptyOverdue: "No delayed orders. All good! 👍",
+        refreshCloud: "🔄 Refresh",
         searchPlaceholder: "🔍 Search Token (#01) or Phone...",
         thToken: "Token",
-        thType: "Type",
+        thType: "Type & Table",
         thPhone: "Customer Phone",
         thItems: "Items",
         thDate: "Shift Date",
@@ -443,17 +505,19 @@
         masterCancel: "إلغاء",
         langToggle: "🌐 English",
         liveTab: "الطلبات الحالية",
-        histTab: "سجل الطلبات (السحابة)",
-        testSound: "🔊 فحص الصوت",
-        logout: "🔒 خروج",
-        modalBack: "⬅️ رجوع (Back)",
+        histTab: "سجل الطلبات",
+        testSound: "🔊",
+        logout: "🔒",
+        clearDelayed: "🧹 إكمال المتأخر فقط",
+        modalBack: "⬅️ رجوع",
         modalDone: "✅ إكمال الطلب (Done)",
-        clickSlip: "🔍 عرض تذكرة الطلب",
+        clickSlip: "🔍 عرض التذكرة",
         emptyKitchen: "تم إنجاز كافة الطلبات! المطبخ جاهز.",
-        refreshCloud: "🔄 تحديث السحابة",
+        emptyOverdue: "لا توجد طلبات متأخرة 👍",
+        refreshCloud: "🔄 تحديث",
         searchPlaceholder: "🔍 بحث برقم الطلب (#01) أو الجوال...",
         thToken: "رقم الطلب",
-        thType: "نوع الطلب",
+        thType: "النوع والطاولة",
         thPhone: "جوال العميل",
         thItems: "الأصناف",
         thDate: "تاريخ الوردية",
@@ -485,6 +549,7 @@
       setText('btn-lang-toggle', t.langToggle);
       setText('ui-tab-live-text', t.liveTab);
       setText('ui-tab-hist-text', t.histTab);
+      setText('ui-btn-clear-delayed', t.clearDelayed);
       setText('ui-btn-modal-back', t.modalBack);
       setText('ui-btn-modal-done', t.modalDone);
       setText('ui-btn-refresh-hist', t.refreshCloud);
@@ -498,7 +563,7 @@
       setText('ui-th-completed', t.thCompleted);
       setText('ui-th-action', t.thAction);
 
-      renderLiveGrid();
+      renderSplitWorkspace();
       if (currentView === 'history') renderHistoryTable();
     }
 
@@ -518,7 +583,7 @@
       }
     } catch(e) {}
 
-    // --- PURE LOCAL SAUDI CALENDAR DATE (ZERO UTC .toISOString BUG) ---
+    // --- PURE LOCAL SAUDI CALENDAR DATE ---
     function formatDateYMD(d) {
       const year = d.getFullYear();
       const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -543,7 +608,6 @@
         prevDate.setDate(prevDate.getDate() - 1);
         const prevDateStr = formatDateYMD(prevDate);
 
-        // Smart Cut-off: If early Z-close was already done between 5:00 and 6:00 AM
         if (lastClosedDate === prevDateStr) {
           targetDate = new Date(y, m, d);
         } else {
@@ -771,7 +835,7 @@
     function onStationFilterChange() {
       currentStation = document.getElementById('station-filter-select').value;
       localStorage.setItem('kds_selected_station', currentStation);
-      renderLiveGrid();
+      renderSplitWorkspace();
     }
 
     // --- FIFO LIVE ORDERS FETCH ---
@@ -788,7 +852,7 @@
         if (data) {
           liveOrders = data;
           saveLocalKdsState();
-          renderLiveGrid();
+          renderSplitWorkspace();
         }
       } catch (e) {}
     }
@@ -829,7 +893,7 @@
               liveOrders.sort((a,b) => Number(a.id) - Number(b.id)); // Maintain FIFO
               saveLocalKdsState();
               triggerAlertSound();
-              renderLiveGrid();
+              renderSplitWorkspace();
             }
           }
         })
@@ -855,7 +919,7 @@
             }
           }
           saveLocalKdsState();
-          renderLiveGrid();
+          renderSplitWorkspace();
           if (currentView === 'history') renderHistoryTable();
         })
         .subscribe();
@@ -871,14 +935,14 @@
               liveOrders.sort((a,b) => Number(a.id) - Number(b.id));
               saveLocalKdsState();
               triggerAlertSound();
-              renderLiveGrid();
+              renderSplitWorkspace();
             }
           }
         } else if (e.data && e.data.type === 'ORDER_VOIDED') {
           const voidedId = e.data.orderId;
           liveOrders = liveOrders.filter(o => String(o.id) !== String(voidedId));
           saveLocalKdsState();
-          renderLiveGrid();
+          renderSplitWorkspace();
         }
       };
     }
@@ -890,15 +954,18 @@
       }
     }
 
-    // --- RENDER COMPACT CARDS WITH QUICK COMPLETE BUTTON ---
-    function renderLiveGrid() {
-      const container = document.getElementById('kds-orders-container');
-      if (!container) return;
+    // --- METHOD B: SPLIT WORKSPACE RENDERING ---
+    function renderSplitWorkspace() {
+      const activeGrid = document.getElementById('active-orders-grid');
+      const overdueContainer = document.getElementById('overdue-orders-container');
+      if (!activeGrid || !overdueContainer) return;
+
       const now = Date.now();
       const t = kdsI18n[currentLang];
 
       liveOrders.sort((a, b) => Number(a.id) - Number(b.id)); // FIFO
 
+      // Filter by Kitchen Station
       let displayOrders = liveOrders.map(order => {
         let rawItems = order.items || [];
         if (typeof rawItems === 'string') {
@@ -913,74 +980,149 @@
         return { ...order, filteredItems: items };
       }).filter(order => order.filteredItems && order.filteredItems.length > 0);
 
-      const countEl = document.getElementById('live-count');
-      if (countEl) countEl.innerText = displayOrders.length;
+      document.getElementById('live-count').innerText = displayOrders.length;
 
-      if (displayOrders.length === 0) {
-        container.innerHTML = `
-          <div class="empty-state">
-            <div style="font-size: 40px; margin-bottom: 8px;">🧑‍🍳</div>
+      // Separate into Fresh (< 10 mins) and Overdue (> 10 mins)
+      let activeList = [];
+      let overdueList = [];
+
+      displayOrders.forEach(o => {
+        const orderTimeMs = Number(o.id) || now;
+        const elapsedSec = Math.floor((now - orderTimeMs) / 1000);
+        if (elapsedSec > 600) overdueList.push(o);
+        else activeList.push(o);
+      });
+
+      document.getElementById('active-cooking-count').innerText = `${activeList.length} Orders`;
+      document.getElementById('overdue-count-badge').innerText = overdueList.length;
+
+      // 1. Render Active Cooking Panel
+      activeGrid.innerHTML = '';
+      if (activeList.length === 0) {
+        activeGrid.innerHTML = `
+          <div class="empty-state" style="grid-column: 1 / -1;">
+            <div style="font-size: 32px; margin-bottom: 6px;">🧑‍🍳</div>
             <div>${t.emptyKitchen}</div>
           </div>
         `;
-        return;
+      } else {
+        activeList.forEach(order => {
+          activeGrid.appendChild(createOrderCardElement(order, now, false));
+        });
       }
 
-      container.innerHTML = '';
-
-      displayOrders.forEach(order => {
-        const orderTimeMs = Number(order.id) || now;
-        const elapsedSec = Math.floor((now - orderTimeMs) / 1000);
-        const mins = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
-        const secs = String(elapsedSec % 60).padStart(2, '0');
-
-        let priorityClass = 'card-priority-normal';
-        if (elapsedSec > 600) priorityClass = 'card-priority-urgent';
-        else if (elapsedSec > 300) priorityClass = 'card-priority-warn';
-
-        const custPhone = order.customer_phone || order.phone || '';
-
-        // First 3 items for compact view
-        const visibleItems = order.filteredItems.slice(0, 3);
-        const remainingCount = order.filteredItems.length - 3;
-
-        let itemsCompactHtml = visibleItems.map(it => `
-          <div class="compact-item-line">
-            <span class="compact-item-name">${it.name || ''}</span>
-            <span class="compact-item-qty">X ${it.qty || 1}</span>
-          </div>
-        `).join('');
-
-        if (remainingCount > 0) {
-          itemsCompactHtml += `<div class="compact-more-tag">+ ${remainingCount} more items...</div>`;
-        }
-
-        const card = document.createElement('div');
-        card.className = `order-card ${priorityClass}`;
-        // Clicking card opens 80mm thermal roll popup
-        card.onclick = () => openThermalReceiptModal(order.id);
-
-        card.innerHTML = `
-          <div class="card-top">
-            <span class="card-token">${order.token || 'Token'}</span>
-            <span class="timer-badge" id="timer-${order.id}">⏱️ ${mins}:${secs}</span>
-          </div>
-          <div class="card-meta">
-            <span>${order.order_type || 'Takeaway'}</span>
-            ${custPhone ? `<span style="color:#38bdf8;">📞 ${custPhone}</span>` : `<span>${order.time || ''}</span>`}
-          </div>
-          <div class="card-items-compact">
-            ${itemsCompactHtml}
-          </div>
-          <div class="card-footer-action">
-            <span class="card-hint-text">${t.clickSlip}</span>
-            <button type="button" class="btn-card-quick-done" onclick="executeQuickComplete(event, ${order.id})">
-              ${t.quickDone}
-            </button>
+      // 2. Render Overdue Tray Panel
+      overdueContainer.innerHTML = '';
+      if (overdueList.length === 0) {
+        overdueContainer.innerHTML = `
+          <div class="empty-state">
+            <div style="font-size: 26px; margin-bottom: 4px;">✅</div>
+            <div>${t.emptyOverdue}</div>
           </div>
         `;
-        container.appendChild(card);
+      } else {
+        overdueList.forEach(order => {
+          overdueContainer.appendChild(createOrderCardElement(order, now, true));
+        });
+      }
+    }
+
+    function createOrderCardElement(order, now, isOverdue) {
+      const t = kdsI18n[currentLang];
+      const orderTimeMs = Number(order.id) || now;
+      const elapsedSec = Math.floor((now - orderTimeMs) / 1000);
+      const mins = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
+      const secs = String(elapsedSec % 60).padStart(2, '0');
+
+      let priorityClass = 'card-priority-fresh';
+      if (isOverdue) priorityClass = 'card-priority-overdue';
+      else if (elapsedSec > 300) priorityClass = 'card-priority-warning';
+
+      const typeStr = order.order_type === 'Dine-in'
+        ? `Dine-in ${order.table_no ? `[T#${order.table_no}]` : ''}`
+        : (order.order_type || 'Takeaway');
+
+      const custPhone = order.customer_phone || order.phone || '';
+
+      const visibleItems = order.filteredItems.slice(0, 3);
+      const remainingCount = order.filteredItems.length - 3;
+
+      let itemsCompactHtml = visibleItems.map(it => `
+        <div class="compact-item-line">
+          <span class="compact-item-name">${it.name || ''}</span>
+          <span class="compact-item-qty">X ${it.qty || 1}</span>
+        </div>
+      `).join('');
+
+      if (remainingCount > 0) {
+        itemsCompactHtml += `<div class="compact-more-tag">+ ${remainingCount} more...</div>`;
+      }
+
+      const card = document.createElement('div');
+      card.className = `order-card ${priorityClass}`;
+      card.onclick = () => openThermalReceiptModal(order.id);
+
+      card.innerHTML = `
+        <div class="card-top">
+          <span class="card-token">${order.token || 'Token'}</span>
+          <span class="timer-badge" id="timer-${order.id}">⏱️ ${mins}:${secs}</span>
+        </div>
+        <div class="card-meta">
+          <span>${typeStr}</span>
+          ${custPhone ? `<span style="color:#38bdf8;">📞 ${custPhone}</span>` : `<span>${order.time || ''}</span>`}
+        </div>
+        <div class="card-items-compact">
+          ${itemsCompactHtml}
+        </div>
+        <div class="card-footer-action">
+          <span class="card-hint-text">${t.clickSlip}</span>
+          <button type="button" class="btn-card-quick-done" onclick="executeQuickComplete(event, ${order.id})">
+            ${t.quickDone}
+          </button>
+        </div>
+      `;
+      return card;
+    }
+
+    // --- BULK CLEAR OVERDUE RED ORDERS ONLY ---
+    async function clearAllDelayedOrders() {
+      const now = Date.now();
+      const overdueOrders = liveOrders.filter(o => {
+        const orderTimeMs = Number(o.id) || now;
+        return (now - orderTimeMs) > 600000; // > 10 mins
       });
+
+      if (overdueOrders.length === 0) {
+        return alert(currentLang === 'ar' ? "لا توجد طلبات متأخرة لإنهائها!" : "No overdue orders to clear!");
+      }
+
+      const confirmMsg = currentLang === 'ar'
+        ? `هل أنت متأكد من إنهاء كافة الطلبات المتأخرة (${overdueOrders.length} طلبات) مع بقاء الطلبات الجديدة؟`
+        : `Complete all ${overdueOrders.length} overdue orders? (Fresh active orders will remain untouched).`;
+
+      if (!confirm(confirmMsg)) return;
+
+      const overdueIds = overdueOrders.map(o => o.id);
+
+      // Remove from live and move to history
+      liveOrders = liveOrders.filter(o => !overdueIds.includes(o.id));
+      overdueOrders.forEach(o => {
+        o.status = 'completed';
+        o.completed_at = new Date().toLocaleTimeString();
+        historyOrders.unshift(o);
+      });
+
+      saveLocalKdsState();
+      renderSplitWorkspace();
+
+      if (supabaseClient) {
+        try {
+          await supabaseClient
+            .from('orders')
+            .update({ status: 'completed', completed_at: new Date().toISOString() })
+            .in('id', overdueIds);
+        } catch(e) {}
+      }
     }
 
     // --- QUICK COMPLETE DIRECTLY FROM CARD ---
@@ -1003,7 +1145,7 @@
         closeOrderModal();
       }
 
-      renderLiveGrid();
+      renderSplitWorkspace();
 
       if (supabaseClient) {
         try {
@@ -1015,15 +1157,20 @@
       }
     }
 
-    // --- 80MM THERMAL RECEIPT POPUP MODAL ---
+    // --- HIGH-DENSITY COMPACT 80MM THERMAL RECEIPT MODAL ---
     function openThermalReceiptModal(orderId) {
       const order = liveOrders.find(o => String(o.id) === String(orderId));
       if (!order) return;
 
       currentlyFocusedOrderId = orderId;
-      document.getElementById('modal-token').innerText = order.token || '#01';
-      document.getElementById('modal-type').innerText = order.order_type || 'Takeaway';
-      document.getElementById('modal-time').innerText = `${order.business_date || ''} ${order.time || ''}`;
+      document.getElementById('modal-token').innerText = order.token || 'Token';
+      
+      const typeTableStr = order.order_type === 'Dine-in'
+        ? `🍽️ Dine-in (محلي) ${order.table_no ? `[Table #${order.table_no}]` : ''}`
+        : `📦 ${order.order_type || 'Takeaway'}`;
+
+      document.getElementById('modal-type-table').innerText = typeTableStr;
+      document.getElementById('modal-time').innerText = `${order.time || ''}`;
 
       const phoneRow = document.getElementById('modal-phone-row');
       const phoneEl = document.getElementById('modal-phone');
@@ -1057,8 +1204,8 @@
               <div class="thermal-item-title">
                 ${it.name || ''}
                 ${isSpicy ? `<span class="thermal-spicy-tag">🌶️ SPICY</span>` : ''}
+                <span class="thermal-item-station">[${it.station || 'Main'}]</span>
               </div>
-              <div class="thermal-item-sub">[${it.station || 'Main Kitchen'}]</div>
             </div>
             <div class="thermal-item-qty">[ X ${it.qty || 1} ]</div>
           </div>
@@ -1096,7 +1243,7 @@
       liveOrders.sort((a,b) => Number(a.id) - Number(b.id)); // Maintain FIFO
       saveLocalKdsState();
       renderHistoryTable();
-      renderLiveGrid();
+      renderSplitWorkspace();
 
       if (supabaseClient) {
         try {
@@ -1107,7 +1254,7 @@
         } catch(e) {}
       }
 
-      const msg = currentLang === 'ar' ? `تم استرجاع الطلب ${order.token} إلى شاشة المطبخ!` : `Order ${order.token} recalled back to live kitchen!`;
+      const msg = currentLang === 'ar' ? `تم استرجاع الطلب ${order.token} إلى المطبخ!` : `Order ${order.token} recalled back to kitchen!`;
       alert(msg);
     }
 
@@ -1117,11 +1264,11 @@
       document.getElementById('tab-history').classList.toggle('active', view === 'history');
 
       if (view === 'live') {
-        document.getElementById('kds-orders-container').style.display = 'grid';
+        document.getElementById('live-workspace').style.display = 'flex';
         document.getElementById('history-view').style.display = 'none';
-        renderLiveGrid();
+        renderSplitWorkspace();
       } else {
-        document.getElementById('kds-orders-container').style.display = 'none';
+        document.getElementById('live-workspace').style.display = 'none';
         document.getElementById('history-view').style.display = 'flex';
         fetchHistoryFromCloud();
         renderHistoryTable();
@@ -1161,11 +1308,12 @@
 
         const itemsSummary = rawItems.map(it => `${it.name || ''} (x${it.qty || 1})`).join(', ');
         const custPhone = o.customer_phone || o.phone || '-';
+        const typeTable = o.order_type === 'Dine-in' ? `Dine-in ${o.table_no ? `[T#${o.table_no}]` : ''}` : (o.order_type || '-');
 
         tbody.innerHTML += `
           <tr>
-            <td><strong style="color:#facc15; font-size:14px;">${o.token || '-'}</strong></td>
-            <td>${o.order_type || '-'}</td>
+            <td><strong style="color:#facc15; font-size:13px;">${o.token || '-'}</strong></td>
+            <td>${typeTable}</td>
             <td style="color:#38bdf8;">${custPhone}</td>
             <td style="max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${itemsSummary}</td>
             <td>${o.business_date || '-'}</td>
@@ -1182,7 +1330,7 @@
       renderHistoryTable();
     }
 
-    // Elapsed live timers (FIFO update loop)
+    // Elapsed live timers (Auto-shifts orders to Overdue when >10m)
     setInterval(() => {
       const now = Date.now();
       liveOrders.forEach(order => {
@@ -1194,9 +1342,13 @@
         const el = document.getElementById(`timer-${order.id}`);
         if (el) el.innerText = `⏱️ ${mins}:${secs}`;
       });
+      // Re-evaluate tray segregation
+      if (currentView === 'live') {
+        renderSplitWorkspace();
+      }
     }, 1000);
 
-    // Physical keyboard listener
+    // Keyboard listener
     window.addEventListener('keydown', (e) => {
       const overlay = document.getElementById('pin-lock-overlay');
       if (overlay && overlay.style.display !== 'none') {
