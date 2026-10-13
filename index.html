@@ -1,31 +1,44 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Broasted POS - Enterprise Cloud Edition</title>
+  <title>Broasted POS - Bilingual Enterprise Edition</title>
+
+  <!-- PWA Manifest & App Config -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  <link rel="apple-touch-icon" href="icon-192.png">
+
+  <!-- Cairo Font for English & Arabic Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 
   <!-- External Libraries & Central Config -->
   <script src="config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  
-<!-- PWA Manifest & App Link -->
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0f172a">
-  <link rel="apple-touch-icon" href="icon-192.png">
 
   <!-- Service Worker Register -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js');
+        navigator.serviceWorker.register('sw.js').catch(() => {});
       });
     }
   </script>
+
   <style>
-    * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 0; }
+    * { box-sizing: border-box; font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 0; }
     body { display: flex; height: 100vh; background: #f1f5f9; overflow: hidden; }
+
+    /* RTL Layout Rules */
+    body[dir="rtl"] { direction: rtl; }
+    body[dir="rtl"] .menu-panel { border-right: none; border-left: 2px solid #cbd5e1; }
+    body[dir="rtl"] .shop-badge { margin-left: 0; margin-right: 6px; }
+    body[dir="rtl"] .set-table td, body[dir="rtl"] .set-table th,
+    body[dir="rtl"] .rep-table td, body[dir="rtl"] .rep-table th { text-align: right; }
 
     /* ================= 4-DIGIT PIN LOCK OVERLAY ================= */
     #pin-lock-overlay {
@@ -33,7 +46,7 @@
       display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px;
     }
     .pin-modal-card {
-      background: #1e293b; border: 1px solid #334155; border-radius: 20px; padding: 22px 20px;
+      background: #1e293b; border: 1px solid #334155; border-radius: 20px; padding: 24px 20px;
       max-width: 350px; width: 100%; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.6);
     }
     .pin-dots-row { display: flex; justify-content: center; gap: 14px; margin: 14px 0 8px 0; }
@@ -41,7 +54,7 @@
       width: 18px; height: 18px; border-radius: 50%; border: 2px solid #475569; background: transparent; transition: all 0.15s ease;
     }
     .pin-dot.filled { background: #38bdf8; border-color: #38bdf8; box-shadow: 0 0 10px #38bdf8; }
-    .pin-error-text { color: #ef4444; font-size: 12px; font-weight: bold; min-height: 18px; margin-bottom: 4px; }
+    .pin-error-text { color: #ef4444; font-size: 13px; font-weight: bold; min-height: 20px; margin-bottom: 4px; }
 
     .numpad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 6px; }
     .num-key {
@@ -54,7 +67,7 @@
 
     .direct-branch-btn {
       width: 100%; background: #0f172a; border: 1px solid #38bdf8; color: #38bdf8;
-      padding: 10px; border-radius: 10px; font-weight: bold; font-size: 13px;
+      padding: 10px; border-radius: 10px; font-weight: bold; font-size: 14px;
       margin-top: 12px; cursor: pointer; transition: 0.15s;
     }
     .direct-branch-btn:hover { background: #38bdf8; color: #000; }
@@ -70,6 +83,7 @@
     .top-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
     .top-actions { display: flex; gap: 8px; align-items: center; }
     .btn-top { background: #1e293b; color: #fff; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 12px; }
+    .btn-lang { background: #475569; font-weight: 800; border: 1px solid #64748b; }
     .btn-report { background: #0284c7; }
     .btn-kds-link { background: #f59e0b; color: #000; text-decoration: none; padding: 8px 12px; border-radius: 8px; font-weight: bold; font-size: 12px; }
     .btn-logout { background: #ef4444; }
@@ -110,7 +124,7 @@
     .cart-panel { flex: 3.2; background: #ffffff; display: flex; flex-direction: column; padding: 12px; }
     .cart-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; }
     .token-badge { background: #fee2e2; color: #dc2626; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 13px; }
-    .btn-clear { background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 11px; }
+    .btn-clear { background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 12px; }
 
     .cart-items { flex: 1; overflow-y: auto; margin-top: 8px; }
     .cart-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f8fafc; }
@@ -158,14 +172,14 @@
     .rep-table th, .rep-table td { padding: 6px 8px; border: 1px solid #cbd5e1; text-align: left; }
     .rep-table th { background: #f1f5f9; }
 
-    /* Thermal 80mm Print CSS */
+    /* Thermal 80mm Print CSS (Bilingual Format) */
     #print-area { display: none; }
     @media print {
       body * { visibility: hidden !important; }
       #print-area, #print-area * { visibility: visible !important; }
       #print-area {
         display: block !important; position: absolute; left: 0; top: 0;
-        width: 78mm; padding: 2mm; font-family: monospace; font-size: 12px; color: #000;
+        width: 78mm; padding: 2mm; font-family: 'Cairo', monospace; font-size: 12px; color: #000; direction: ltr;
       }
       .receipt-center { text-align: center; }
       .receipt-bold { font-weight: bold; }
@@ -182,8 +196,8 @@
   <div id="pin-lock-overlay">
     <div class="pin-modal-card">
       <div style="font-size:36px; margin-bottom:4px;">🔒</div>
-      <h2 style="color:#f8fafc; font-size:18px;">ENTER 4-DIGIT PIN</h2>
-      <p style="color:#94a3b8; font-size:12px; margin-top:2px;">ഷോപ്പ് PIN നൽകുക</p>
+      <h2 style="color:#f8fafc; font-size:18px;" id="ui-pin-title">ENTER 4-DIGIT PIN</h2>
+      <p style="color:#94a3b8; font-size:12px; margin-top:2px;" id="ui-pin-subtitle">Enter Shop PIN</p>
       
       <div class="pin-dots-row">
         <div class="pin-dot" id="dot-0"></div>
@@ -204,14 +218,13 @@
         <button type="button" class="num-key" onclick="pressKey('7')">7</button>
         <button type="button" class="num-key" onclick="pressKey('8')">8</button>
         <button type="button" class="num-key" onclick="pressKey('9')">9</button>
-        <button type="button" class="num-key" onclick="clearPinInput()" style="font-size:13px; color:#94a3b8;">CLEAR</button>
+        <button type="button" class="num-key" onclick="clearPinInput()" style="font-size:13px; color:#94a3b8;" id="ui-pin-clear">CLEAR</button>
         <button type="button" class="num-key" onclick="pressKey('0')">0</button>
         <button type="button" class="num-key backspace" onclick="pressBackspace()">⌫</button>
       </div>
 
-      <!-- Direct Fallback Button -->
-      <button type="button" class="direct-branch-btn" onclick="directOpenShop()">
-        🍗 നേരിട്ട് തുറക്കുക (BROST)
+      <button type="button" class="direct-branch-btn" onclick="directOpenShop()" id="ui-pin-direct-btn">
+        🍗 Direct Access (BROST)
       </button>
     </div>
   </div>
@@ -220,9 +233,9 @@
   <div id="master-branch-picker">
     <div class="pin-modal-card" style="max-width:440px;">
       <h3 style="color:#facc15;">🔑 MASTER ADMIN ACCESS</h3>
-      <p style="color:#94a3b8; font-size:12px; margin: 8px 0 16px 0;">പ്രവർത്തിപ്പിക്കേണ്ട ബ്രാഞ്ച് തിരഞ്ഞെടുക്കുക:</p>
+      <p style="color:#94a3b8; font-size:12px; margin: 8px 0 16px 0;" id="ui-master-select-text">Select Branch to Open:</p>
       <div id="master-branches-container" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"></div>
-      <button onclick="document.getElementById('master-branch-picker').style.display='none'" class="btn-top" style="margin-top:14px; width:100%;">Cancel</button>
+      <button onclick="document.getElementById('master-branch-picker').style.display='none'" class="btn-top" style="margin-top:14px; width:100%;" id="ui-master-cancel">Cancel</button>
     </div>
   </div>
 
@@ -239,25 +252,27 @@
         <small style="color:#64748b;" id="current-date-time"></small>
       </div>
       <div class="top-actions">
-        <a href="kds.html" target="_blank" class="btn-kds-link">📺 KDS സ്ക്രീൻ</a>
-        <button class="btn-top btn-report" onclick="openShiftAndZReportModal()">📊 റിപ്പോർട്ടുകൾ</button>
-        <button class="btn-top" onclick="openSettingsModal()">⚙️ Settings</button>
-        <button class="btn-top btn-logout" onclick="lockPOS()">🔒 Logout</button>
+        <!-- Language Switch Button -->
+        <button class="btn-top btn-lang" id="btn-lang-toggle" onclick="toggleLanguage()">🌐 العربية</button>
+        <a href="kds.html" target="_blank" class="btn-kds-link" id="ui-btn-kds">📺 KDS Screen</a>
+        <button class="btn-top btn-report" onclick="openShiftAndZReportModal()" id="ui-btn-reports">📊 Reports</button>
+        <button class="btn-top" onclick="openSettingsModal()" id="ui-btn-settings">⚙️ Settings</button>
+        <button class="btn-top btn-logout" onclick="lockPOS()" id="ui-btn-logout">🔒 Logout</button>
       </div>
     </div>
 
     <!-- Order Options Bar -->
     <div class="order-bar">
-      <button class="type-btn active" onclick="setOrderType('Takeaway (سفري)', this)">📦 Takeaway (سفري)</button>
-      <button class="type-btn" onclick="setOrderType('Dine-in (محلي)', this)">🍽️ Dine-in (محلي)</button>
-      <button class="type-btn" onclick="setOrderType('Phone Order (طلب هاتف)', this)">📞 Phone Order</button>
-      <input type="tel" class="phone-input" id="cust-phone" placeholder="കസ്റ്റമർ മൊബൈൽ നമ്പർ (ഓപ്ഷണൽ)">
+      <button class="type-btn active" id="btn-type-takeaway" onclick="setOrderType('Takeaway', this)">📦 Takeaway (سفري)</button>
+      <button class="type-btn" id="btn-type-dinein" onclick="setOrderType('Dine-in', this)">🍽️ Dine-in (محلي)</button>
+      <button class="type-btn" id="btn-type-phone" onclick="setOrderType('Phone Order', this)">📞 Phone Order (هاتف)</button>
+      <input type="tel" class="phone-input" id="cust-phone" placeholder="Customer Mobile (Optional)">
     </div>
 
     <!-- Navigation -->
     <div class="nav-bar">
-      <button class="btn-back" id="btn-back" onclick="showCategories()">⬅️ Categories (ബാക്ക്)</button>
-      <div class="current-title" id="current-title">മെയിൻ കാറ്റഗറികൾ (Categories)</div>
+      <button class="btn-back" id="btn-back" onclick="showCategories()">⬅️ Categories (Back)</button>
+      <div class="current-title" id="current-title">Main Categories</div>
     </div>
 
     <div class="grid-container" id="pos-grid"></div>
@@ -267,22 +282,22 @@
   <div class="cart-panel">
     <div class="cart-header">
       <div>
-        <strong>ഓർഡർ ലിസ്റ്റ്</strong>
+        <strong id="ui-cart-title">Order List</strong>
         <span class="token-badge" id="token-display">Token #01</span>
       </div>
-      <button class="btn-clear" onclick="clearCart()">🗑️ റദ്ദാക്കുക</button>
+      <button class="btn-clear" onclick="clearCart()" id="ui-btn-clear-cart">🗑️ Clear Cart</button>
     </div>
 
     <div class="cart-items" id="cart-list"></div>
 
     <div class="totals">
-      <div class="row"><span>Subtotal:</span><span id="subtotal">0.00 SAR</span></div>
-      <div class="row"><span>VAT (15%):</span><span id="vat">0.00 SAR</span></div>
-      <div class="row total-bold"><span>Total:</span><span id="grand-total">0.00 SAR</span></div>
+      <div class="row"><span id="ui-lbl-subtotal">Subtotal:</span><span id="subtotal">0.00 SAR</span></div>
+      <div class="row"><span id="ui-lbl-vat">VAT (15%):</span><span id="vat">0.00 SAR</span></div>
+      <div class="row total-bold"><span id="ui-lbl-total">Total:</span><span id="grand-total">0.00 SAR</span></div>
       
       <div class="pay-btn-group">
-        <button class="btn-pay-cash" onclick="openCashPaymentModal()">💵 CASH (ക്യാഷ്)</button>
-        <button class="btn-pay-card" onclick="processCardPayment()">💳 MADA / CARD</button>
+        <button class="btn-pay-cash" onclick="openCashPaymentModal()" id="ui-btn-pay-cash">💵 CASH (نقداً)</button>
+        <button class="btn-pay-card" onclick="processCardPayment()" id="ui-btn-pay-card">💳 MADA / CARD (شبكة)</button>
       </div>
     </div>
   </div>
@@ -292,12 +307,12 @@
     <div class="modal-box">
       <h3 id="flavor-modal-title">Select Flavor</h3>
       <div style="margin: 20px 0; display: flex; justify-content: center; gap: 20px;">
-        <label><input type="radio" name="spice" value="Normal" checked> Normal</label>
-        <label><input type="radio" name="spice" value="Spicy"> Spicy 🌶️</label>
+        <label><input type="radio" name="spice" value="Normal" checked> <span id="ui-flv-normal">Normal (عادي)</span></label>
+        <label><input type="radio" name="spice" value="Spicy"> <span id="ui-flv-spicy">Spicy 🌶️ (حار)</span></label>
       </div>
       <div class="modal-btn-row">
-        <button class="btn-cancel" onclick="closeModals()">Cancel</button>
-        <button class="btn-confirm" onclick="confirmBroastFlavor()">Add to Bill</button>
+        <button class="btn-cancel" onclick="closeModals()" id="ui-btn-flv-cancel">Cancel</button>
+        <button class="btn-confirm" onclick="confirmBroastFlavor()" id="ui-btn-flv-confirm">Add to Bill</button>
       </div>
     </div>
   </div>
@@ -305,36 +320,36 @@
   <!-- Cash Payment Modal -->
   <div class="modal-backdrop" id="cash-modal">
     <div class="modal-box">
-      <h3>💵 ക്യാഷ് പേയ്‌മെന്റ്</h3>
-      <p style="margin: 8px 0; font-size: 16px;">ബിൽ തുക: <strong id="cash-bill-amt" style="color:#e11d48;">0.00 SAR</strong></p>
-      <input type="number" id="cash-received-input" placeholder="കസ്റ്റമർ നൽകിയ തുക" 
+      <h3 id="ui-cash-modal-title">💵 Cash Payment</h3>
+      <p style="margin: 8px 0; font-size: 16px;"><span id="ui-cash-lbl-bill">Bill Amount:</span> <strong id="cash-bill-amt" style="color:#e11d48;">0.00 SAR</strong></p>
+      <input type="number" id="cash-received-input" placeholder="Cash Received" 
         style="width: 100%; padding: 10px; font-size: 16px; margin: 10px 0; text-align: center;" oninput="calculateChange()">
       <div style="font-size: 16px; font-weight: bold; color: #16a34a; margin-bottom: 10px;">
-        ബാക്കി നൽകേണ്ടത്: <span id="cash-change-amt">0.00</span> SAR
+        <span id="ui-cash-lbl-change">Change Due:</span> <span id="cash-change-amt">0.00</span> SAR
       </div>
       <div class="modal-btn-row">
-        <button class="btn-cancel" onclick="closeModals()">Cancel</button>
-        <button class="btn-confirm" onclick="finalizeOrder('Cash')">Print & Complete</button>
+        <button class="btn-cancel" onclick="closeModals()" id="ui-btn-cash-cancel">Cancel</button>
+        <button class="btn-confirm" onclick="finalizeOrder('Cash')" id="ui-btn-cash-confirm">Print & Complete</button>
       </div>
     </div>
   </div>
 
   <!-- ================= SHIFT & Z-REPORT MODAL ================= -->
   <div class="modal-backdrop" id="report-modal">
-    <div class="modal-box" style="width: 600px; max-width: 95%; max-height: 90vh; overflow-y: auto; text-align: left;">
-      <h3 style="text-align: center;">📊 ഫിനാൻഷ്യൽ & ഷിഫ്റ്റ് റിപ്പോർട്ടുകൾ</h3>
+    <div class="modal-box" style="width: 620px; max-width: 95%; max-height: 90vh; overflow-y: auto; text-align: left;">
+      <h3 style="text-align: center;" id="ui-rep-main-title">📊 Financial & Shift Reports</h3>
       
       <!-- Date & Shift Filter Bar -->
       <div style="display:flex; gap:8px; align-items:center; background:#f8fafc; padding:8px 12px; border-radius:8px; margin: 10px 0; border:1px solid #cbd5e1; flex-wrap:wrap;">
         <div style="flex:1;">
-          <small style="font-weight:bold; color:#64748b; display:block;">തീയതി:</small>
+          <small style="font-weight:bold; color:#64748b; display:block;" id="ui-rep-lbl-date">Select Date:</small>
           <input type="date" id="rep-calendar-picker" onchange="onReportFilterChange()" style="width:100%; padding:6px; border-radius:6px; border:1px solid #cbd5e1; font-weight:bold;">
         </div>
         <div style="flex:1.2;">
-          <small style="font-weight:bold; color:#64748b; display:block;">ഷിഫ്റ്റ് തിരഞ്ഞെടുക്കുക:</small>
+          <small style="font-weight:bold; color:#64748b; display:block;" id="ui-rep-lbl-shift">Filter Shift:</small>
           <select id="rep-shift-selector" onchange="onReportFilterChange()" style="width:100%; padding:6px; border-radius:6px; border:1px solid #cbd5e1; font-weight:bold;">
-            <option value="ALL">🌟 അന്നത്തെ ആകെ കച്ചവടം (Full Day)</option>
-            <option value="CURRENT">⚡ നിലവിലെ ഷിഫ്റ്റ് (Active Shift)</option>
+            <option value="ALL" id="ui-opt-full-day">🌟 Full Day Total (إجمالي اليوم)</option>
+            <option value="CURRENT" id="ui-opt-curr-shift">⚡ Active Live Shift (الوردية الحالية)</option>
           </select>
         </div>
       </div>
@@ -342,17 +357,17 @@
       <!-- Top KPI Cards (Cash, Card/Bank, Grand Total) -->
       <div class="kpi-cards-grid">
         <div class="kpi-card kpi-cash">
-          <div class="kpi-title">💵 ക്യാഷ് (CASH)</div>
+          <div class="kpi-title" id="ui-kpi-cash-title">💵 CASH (نقداً)</div>
           <div class="kpi-val" id="kpi-cash-val">0.00</div>
           <small style="font-size:10px;">SAR</small>
         </div>
         <div class="kpi-card kpi-card-bank">
-          <div class="kpi-title">💳 ബാങ്ക് / മാദ (MADA)</div>
+          <div class="kpi-title" id="ui-kpi-card-title">💳 MADA / CARD (شبكة)</div>
           <div class="kpi-val" id="kpi-card-val">0.00</div>
           <small style="font-size:10px;">SAR</small>
         </div>
         <div class="kpi-card kpi-total">
-          <div class="kpi-title">💰 ആകെ കച്ചവടം (TOTAL)</div>
+          <div class="kpi-title" id="ui-kpi-total-title">💰 TOTAL (الإجمالي)</div>
           <div class="kpi-val" id="kpi-total-val">0.00</div>
           <small style="font-size:10px;" id="kpi-bills-count">0 Bills</small>
         </div>
@@ -360,17 +375,21 @@
 
       <!-- Detailed Breakdown Box -->
       <div style="font-size: 13px; line-height: 1.7; background:#fff; border:1px solid #e2e8f0; padding:10px; border-radius:8px;">
-        <div class="row"><span>ബിസിനസ്സ് ഷിഫ്റ്റ് ഡേറ്റ്:</span><strong id="rep-date-display">-</strong></div>
-        <div class="row"><span>റിപ്പോർട്ട് ലെവൽ:</span><strong id="rep-level-display">Full Day</strong></div>
-        <div class="row"><span>ആകെ വാറ്റ് (15% VAT):</span><strong id="rep-vat-display">0.00 SAR</strong></div>
+        <div class="row"><span id="ui-rep-info-shift-date">Shift Date:</span><strong id="rep-date-display">-</strong></div>
+        <div class="row"><span id="ui-rep-info-level">Report Level:</span><strong id="rep-level-display">Full Day</strong></div>
+        <div class="row"><span id="ui-rep-info-vat">Total VAT (15%):</span><strong id="rep-vat-display">0.00 SAR</strong></div>
       </div>
 
       <!-- Item Sales Breakdown -->
-      <h4 style="margin: 12px 0 4px 0; font-size:14px;">📦 വിറ്റഴിച്ച ഐറ്റങ്ങളുടെ കണക്ക് (Item Breakdown):</h4>
+      <h4 style="margin: 12px 0 4px 0; font-size:14px;" id="ui-rep-items-title">📦 Item Sales Breakdown (تفاصيل الأصناف):</h4>
       <div style="max-height: 160px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius:6px;">
         <table class="rep-table">
           <thead>
-            <tr><th>Item Name</th><th style="text-align:center;">Qty</th><th style="text-align:right;">Amount</th></tr>
+            <tr>
+              <th id="ui-th-item">Item Name</th>
+              <th style="text-align:center;" id="ui-th-qty">Qty</th>
+              <th style="text-align:right;" id="ui-th-amount">Amount</th>
+            </tr>
           </thead>
           <tbody id="rep-items-tbody"></tbody>
         </table>
@@ -379,15 +398,15 @@
       <!-- Action Buttons -->
       <div class="modal-btn-row" style="flex-direction:column; gap:8px; margin-top:14px;">
         <div style="display:flex; gap:8px;">
-          <button class="btn-cancel" onclick="closeModals()">Close</button>
-          <button class="btn-confirm" style="background:#0284c7;" onclick="printSelectedReportSlip()">🖨️ പ്രിന്റ് റിപ്പോർട്ട്</button>
+          <button class="btn-cancel" onclick="closeModals()" id="ui-btn-rep-close">Close</button>
+          <button class="btn-confirm" style="background:#0284c7;" onclick="printSelectedReportSlip()" id="ui-btn-rep-print">🖨️ Print Report Slip</button>
         </div>
         <div style="display:flex; gap:8px;">
-          <button class="btn-top" style="flex:1; background:#f59e0b; color:#000; padding:10px; border-radius:6px;" onclick="executeShiftClosing()">
-            🧑‍💼 ഈ ഷിഫ്റ്റ് ക്ലോസ് ചെയ്യുക (Shift End)
+          <button class="btn-top" style="flex:1; background:#f59e0b; color:#000; padding:10px; border-radius:6px;" onclick="executeShiftClosing()" id="ui-btn-shift-close">
+            🧑‍💼 Close Active Shift (إغلاق الوردية)
           </button>
-          <button class="btn-top" style="flex:1; background:#b91c1c; padding:10px; border-radius:6px;" onclick="executeZDailyClosing()">
-            🔒 ഫുൾ ഡേ ക്ലോസ് (Day End Z-Close)
+          <button class="btn-top" style="flex:1; background:#b91c1c; padding:10px; border-radius:6px;" onclick="executeZDailyClosing()" id="ui-btn-day-close">
+            🔒 Full Day Z-Closing (إغلاق اليوم Z)
           </button>
         </div>
       </div>
@@ -397,26 +416,26 @@
   <!-- ================= SETTINGS MODAL ================= -->
   <div class="modal-backdrop" id="settings-modal">
     <div class="modal-box settings-box">
-      <h3>⚙️ സിസ്റ്റം സെറ്റിങ്സ് & മാപ്പിംഗ് മാനേജ്‌മെന്റ്</h3>
+      <h3 id="ui-set-main-title">⚙️ System Settings & Mapping</h3>
 
-      <!-- 1. Kitchen Station Manager (Full CRUD with Station PIN) -->
+      <!-- 1. Kitchen Station Manager -->
       <div style="background:#f8fafc; padding:10px 12px; border-radius:8px; margin-top:8px; border:1px solid #e2e8f0;" id="st-form-box">
-        <h4 id="st-form-title">🧑‍🍳 കിച്ചൻ സ്റ്റേഷൻ മാനേജ്‌മെന്റ് (Add / Edit Station):</h4>
+        <h4 id="st-form-title">🧑‍🍳 Kitchen Station Management:</h4>
         <div style="display:grid; grid-template-columns: 2fr 1.5fr 1fr auto; gap:6px; margin-top:6px;">
-          <input type="text" id="new-station-name" placeholder="സ്റ്റേഷൻ പേര് (ഉദാ: Broast Station)" style="padding:6px;">
+          <input type="text" id="new-station-name" placeholder="Station Name (e.g. Broast Section)" style="padding:6px;">
           <select id="new-station-routing" style="padding:6px;">
             <option value="Both">Both (KDS + Printer)</option>
             <option value="Display Only">Display Only (KDS)</option>
             <option value="Printer Only">Printer Only</option>
           </select>
-          <input type="text" id="new-station-pin" placeholder="PIN (ഉദാ: 1001)" maxlength="4" style="padding:6px; text-align:center;">
+          <input type="text" id="new-station-pin" placeholder="PIN (1001)" maxlength="4" style="padding:6px; text-align:center;">
           <div style="display:flex; gap:4px;">
             <button id="btn-save-st" onclick="saveKitchenStation()" style="background:#1e293b; color:#fff; border:none; padding:6px 12px; border-radius:4px; font-weight:bold; cursor:pointer;">Save</button>
             <button id="btn-cancel-st" onclick="resetStationForm()" style="display:none; background:#64748b; color:#fff; border:none; padding:6px 8px; border-radius:4px; cursor:pointer;">Cancel</button>
           </div>
         </div>
 
-        <h5 style="margin-top:10px;">നിലവിലുള്ള സ്റ്റേഷനുകൾ (Edit & Delete):</h5>
+        <h5 style="margin-top:10px;" id="ui-set-curr-stations">Current Stations:</h5>
         <div style="max-height: 120px; overflow-y: auto; margin-top:4px;">
           <table class="set-table">
             <thead><tr><th>Station Name</th><th>Routing Mode</th><th>Station PIN</th><th>Action</th></tr></thead>
@@ -425,11 +444,11 @@
         </div>
       </div>
 
-      <!-- 2. Category Creator & Edit / Delete Manager -->
+      <!-- 2. Category Management -->
       <div style="background:#f8fafc; padding:10px 12px; border-radius:8px; margin-top:8px; border:1px solid #e2e8f0;" id="cat-form-box">
-        <h4 id="cat-form-title">📁 കാറ്റഗറി മാനേജ്‌മെന്റ് (Create / Edit):</h4>
+        <h4 id="cat-form-title">📁 Category Management:</h4>
         <div style="display:grid; grid-template-columns: 2fr 1fr 2fr auto; gap:6px; margin-top:6px;">
-          <input type="text" id="cat-name-input" placeholder="കാറ്റഗറി പേര്" style="padding:6px;">
+          <input type="text" id="cat-name-input" placeholder="Category Name" style="padding:6px;">
           <input type="text" id="cat-icon-input" placeholder="Icon (🍗)" style="padding:6px; text-align:center;">
           <select id="cat-station-select" style="padding:6px;"></select>
           <div style="display:flex; gap:4px;">
@@ -438,7 +457,7 @@
           </div>
         </div>
 
-        <h5 style="margin-top:10px;">നിലവിലുള്ള കാറ്റഗറികൾ (Edit & Delete):</h5>
+        <h5 style="margin-top:10px;" id="ui-set-curr-cats">Current Categories:</h5>
         <div style="max-height: 120px; overflow-y: auto; margin-top:4px;">
           <table class="set-table">
             <thead><tr><th>Icon</th><th>Category Name</th><th>Kitchen Station</th><th>Action</th></tr></thead>
@@ -449,10 +468,10 @@
 
       <!-- 3. Add or Edit Item -->
       <div style="background:#f8fafc; padding:10px 12px; border-radius:8px; margin-top:8px; border:1px solid #e2e8f0;" id="item-form-box">
-        <h4 id="item-form-title">പുതിയ ഐറ്റം ചേർക്കുക:</h4>
+        <h4 id="item-form-title">Add Menu Item:</h4>
         <div style="display:grid; grid-template-columns: 2fr 1fr 1.5fr; gap:6px; margin-top:6px;">
-          <input type="text" id="item-name-input" placeholder="ഐറ്റം പേര്" style="padding:6px;">
-          <input type="number" id="item-price-input" placeholder="വില (SAR)" style="padding:6px;">
+          <input type="text" id="item-name-input" placeholder="Item Name" style="padding:6px;">
+          <input type="number" id="item-price-input" placeholder="Price (SAR)" style="padding:6px;">
           <select id="item-cat-select" style="padding:6px;"></select>
           
           <div style="grid-column: span 2; display:flex; align-items:center; gap:8px;">
@@ -462,7 +481,7 @@
           </div>
 
           <label style="display:flex; align-items:center; gap:4px; font-size:12px;">
-            <input type="checkbox" id="item-spicy-checkbox"> Spicy ഓപ്ഷൻ വേണോ?
+            <input type="checkbox" id="item-spicy-checkbox"> <span id="ui-lbl-spicy-opt">Has Spicy Option?</span>
           </label>
         </div>
         <div style="margin-top:8px; display:flex; gap:6px;">
@@ -472,7 +491,7 @@
       </div>
 
       <!-- 4. Menu Items Table -->
-      <h4 style="margin-top:10px;">നിലവിലുള്ള ഐറ്റങ്ങൾ എഡിറ്റ് ചെയ്യുക:</h4>
+      <h4 style="margin-top:10px;" id="ui-set-curr-items">Current Menu Items:</h4>
       <div style="max-height: 150px; overflow-y: auto;">
         <table class="set-table">
           <thead><tr><th>Photo</th><th>Item</th><th>Price</th><th>Category</th><th>Spicy?</th><th>Action</th></tr></thead>
@@ -482,25 +501,25 @@
 
       <!-- 5. Shop Profile & VAT -->
       <div style="background:#f8fafc; padding:10px 12px; border-radius:8px; margin-top:8px; border:1px solid #e2e8f0;">
-        <h4>സ്ഥാപന വിവരങ്ങൾ (VAT Profile):</h4>
+        <h4 id="ui-set-vat-title">Shop Profile & VAT Data:</h4>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 4px;">
-          <input type="text" id="set-shop-ar" placeholder="ഷോപ്പ് പേര് (Arabic)" style="padding:6px;">
+          <input type="text" id="set-shop-ar" placeholder="Shop Name (Arabic - اسم المنشأة)" style="padding:6px;">
           <input type="text" id="set-shop-en" placeholder="Shop Name (English)" style="padding:6px;">
-          <input type="text" id="set-vat-no" placeholder="15-Digit VAT Number" style="padding:6px;">
-          <input type="text" id="set-phone" placeholder="ഷോപ്പ് ഫോൺ നമ്പർ" style="padding:6px;">
+          <input type="text" id="set-vat-no" placeholder="15-Digit VAT Number (الرقم الضريبي)" style="padding:6px;">
+          <input type="text" id="set-phone" placeholder="Telephone (رقم الهاتف)" style="padding:6px;">
         </div>
         <div style="margin-top:6px; display:flex; justify-content:space-between; align-items:center;">
           <select id="set-printer-mode" style="padding:6px;">
-            <option value="combined">സിംഗിൾ പ്രിന്റർ (ബില്ലും കിച്ചൻ സ്ലിപ്പും ഒന്നിച്ചു)</option>
-            <option value="separate">രണ്ട് പ്രിന്ററുകൾ (പ്രത്യേകം കിച്ചൻ പ്രിന്റ്)</option>
-            <option value="off">കിച്ചൻ പ്രിന്റ് വേണ്ട (കസ്റ്റമർ ബിൽ മാത്രം)</option>
+            <option value="combined">Combined (Customer Receipt + Kitchen Slip)</option>
+            <option value="separate">Separate Kitchen Slip</option>
+            <option value="off">Customer Bill Only</option>
           </select>
-          <button onclick="saveShopProfile()" style="background:#1e293b; color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;">Save Profile</button>
+          <button onclick="saveShopProfile()" style="background:#1e293b; color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;" id="ui-btn-save-profile">Save Profile</button>
         </div>
       </div>
 
       <div class="modal-btn-row">
-        <button class="btn-cancel" onclick="closeModals()">Close</button>
+        <button class="btn-cancel" onclick="closeModals()" id="ui-btn-set-close">Close</button>
       </div>
     </div>
   </div>
