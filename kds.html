@@ -3,28 +3,70 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kitchen Display System (KDS) - Broasted</title>
+  <title>Kitchen Display System (KDS) - Multi-Shop</title>
+  <!-- Central Config & Supabase Client -->
+  <script src="config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 0; }
     body { background: #0f172a; color: #f8fafc; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-    /* Top KDS Bar */
+    /* ================= SHOP SELECTOR OVERLAY ================= */
+    #kds-auth-overlay {
+      position: fixed; inset: 0; background: #0b1120; z-index: 9999;
+      display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px;
+    }
+    .auth-card {
+      background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 24px;
+      max-width: 600px; width: 100%; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+    }
+    .shop-select-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 12px; margin: 20px 0; max-height: 50vh; overflow-y: auto;
+    }
+    .shop-btn-card {
+      background: #0f172a; border: 2px solid #334155; border-radius: 12px; padding: 14px 10px;
+      cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+      transition: all 0.15s ease; color: #fff;
+    }
+    .shop-btn-card:hover { border-color: #f59e0b; transform: translateY(-2px); }
+    .shop-btn-card img { width: 50px; height: 50px; object-fit: contain; margin-bottom: 8px; border-radius: 8px; }
+    .shop-btn-card h4 { font-size: 13px; line-height: 1.2; }
+    .pin-box { display: none; margin-top: 15px; }
+    .pin-input {
+      padding: 10px 14px; font-size: 18px; text-align: center; letter-spacing: 4px;
+      border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; width: 160px;
+    }
+
+    /* ================= TOP HEADER ================= */
     .kds-header {
-      background: #1e293b; padding: 12px 20px; display: flex; justify-content: space-between;
+      background: #1e293b; padding: 10px 20px; display: flex; justify-content: space-between;
       align-items: center; border-bottom: 2px solid #334155;
     }
-    .kds-title { display: flex; align-items: center; gap: 12px; font-size: 20px; font-weight: bold; }
-    .status-badge { background: #16a34a; color: #fff; font-size: 12px; padding: 4px 10px; border-radius: 20px; }
-    .btn-sound-test { background: #334155; color: #fff; border: 1px solid #475569; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; }
-    .btn-sound-test:hover { background: #475569; }
+    .kds-title-area { display: flex; align-items: center; gap: 12px; }
+    .shop-name-tag { font-size: 20px; font-weight: 800; color: #facc15; }
+    .status-badge { background: #16a34a; color: #fff; font-size: 11px; padding: 3px 8px; border-radius: 20px; font-weight: bold; }
+    
+    .filter-tabs { display: flex; gap: 8px; background: #0f172a; padding: 4px; border-radius: 8px; }
+    .tab-btn {
+      background: transparent; border: none; color: #94a3b8; padding: 6px 14px;
+      border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px;
+    }
+    .tab-btn.active { background: #334155; color: #fff; }
 
-    /* Order Grid */
+    .header-actions { display: flex; gap: 10px; align-items: center; }
+    .btn-top {
+      background: #334155; color: #fff; border: 1px solid #475569; padding: 6px 12px;
+      border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold;
+    }
+    .btn-switch { background: #ef4444; border-color: #dc2626; }
+
+    /* ================= ORDERS GRID ================= */
     .orders-grid {
-      flex: 1; padding: 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      flex: 1; padding: 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
       gap: 16px; overflow-y: auto; align-content: start;
     }
 
-    /* Single Order Ticket Card */
     .order-card {
       background: #1e293b; border: 2px solid #334155; border-radius: 12px;
       display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
@@ -35,83 +77,124 @@
       to { transform: scale(1); opacity: 1; }
     }
 
-    /* Header of card */
+    /* Status Themes */
+    .card-pending { border-color: #f59e0b; }
+    .card-pending .card-top { background: #78350f; }
+
+    .card-serving { border-color: #10b981; }
+    .card-serving .card-top { background: #064e3b; }
+
     .card-top {
-      background: #334155; padding: 10px 14px; display: flex; justify-content: space-between;
-      align-items: center; border-bottom: 1px solid #475569;
+      padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;
     }
-    .card-token { font-size: 24px; font-weight: 900; color: #facc15; }
-    .timer-badge { font-family: monospace; font-size: 14px; font-weight: bold; padding: 3px 8px; border-radius: 4px; background: #0f172a; }
-    .timer-late { background: #dc2626 !important; color: #fff; }
+    .card-token { font-size: 22px; font-weight: 900; color: #fff; }
+    .status-pill {
+      font-size: 11px; font-weight: bold; padding: 3px 8px; border-radius: 4px; text-transform: uppercase;
+    }
+    .pill-pending { background: #f59e0b; color: #000; }
+    .pill-serving { background: #10b981; color: #fff; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
 
     .card-meta {
-      padding: 6px 14px; font-size: 13px; color: #94a3b8; display: flex; justify-content: space-between;
+      padding: 6px 14px; font-size: 12px; color: #94a3b8; display: flex; justify-content: space-between;
       border-bottom: 1px dashed #334155; background: #1a2234;
     }
 
-    /* Items body */
-    .card-items { flex: 1; padding: 12px 14px; max-height: 250px; overflow-y: auto; }
+    .card-items { flex: 1; padding: 10px 14px; max-height: 250px; overflow-y: auto; }
     .kds-item-row {
       display: flex; justify-content: space-between; align-items: center;
-      padding: 6px 0; border-bottom: 1px solid #283548; font-size: 16px;
+      padding: 6px 0; border-bottom: 1px solid #283548; font-size: 15px;
     }
     .kds-item-name { font-weight: 700; color: #ffffff; }
-    .spicy-tag { color: #ef4444; font-weight: bold; font-size: 13px; margin-left: 4px; }
+    .spicy-tag { color: #ef4444; font-weight: bold; font-size: 12px; margin-left: 4px; }
     .kds-item-qty {
-      background: #facc15; color: #000; font-weight: 900; font-size: 18px;
-      padding: 2px 10px; border-radius: 6px;
+      background: #facc15; color: #000; font-weight: 900; font-size: 17px;
+      padding: 2px 9px; border-radius: 6px;
     }
 
-    /* Actions */
     .card-actions { padding: 10px 14px; background: #1a2234; border-top: 1px solid #334155; }
-    .btn-done {
-      width: 100%; padding: 12px; background: #16a34a; color: #fff; font-size: 16px;
-      font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: 0.1s;
+    .btn-action {
+      width: 100%; padding: 10px; font-size: 15px; font-weight: bold; border: none;
+      border-radius: 8px; cursor: pointer; transition: 0.1s;
     }
-    .btn-done:active { transform: scale(0.97); background: #15803d; }
+    .btn-serving { background: #f59e0b; color: #000; }
+    .btn-complete { background: #10b981; color: #fff; }
 
-    /* Empty state */
+    .timer-badge { font-family: monospace; font-size: 12px; font-weight: bold; padding: 2px 6px; border-radius: 4px; background: #0f172a; }
+    .timer-late { background: #dc2626 !important; color: #fff; }
+
     .empty-state {
       grid-column: 1 / -1; display: flex; flex-direction: column; justify-content: center;
-      align-items: center; height: 60vh; color: #64748b; font-size: 20px;
+      align-items: center; height: 60vh; color: #64748b; font-size: 18px;
     }
   </style>
 </head>
 <body>
 
-  <div class="kds-header">
-    <div class="kds-title">
-      <span>🍗 KITCHEN DISPLAY (KDS)</span>
-      <span class="status-badge" id="live-indicator">🟢 LIVE</span>
-    </div>
-    <div style="display:flex; gap:10px; align-items:center;">
-      <span id="active-count" style="font-weight:bold; color:#facc15;">0 Orders Pending</span>
-      <button class="btn-sound-test" onclick="playBeepSound()">🔔 സൗണ്ട് ടെസ്റ്റ്</button>
+  <!-- ================= AUTH OVERLAY ================= -->
+  <div id="kds-auth-overlay">
+    <div class="auth-card">
+      <h2 style="color:#f8fafc; margin-bottom:4px;">🧑‍🍳 KDS കിച്ചൻ ബ്രാഞ്ച് തിരഞ്ഞെടുക്കുക</h2>
+      <p style="color:#94a3b8; font-size:13px;">കിച്ചൻ ഡിസ്‌പ്ലേക്കായി നിങ്ങളുടെ ഷോപ്പ് PIN നൽകുക</p>
+      
+      <div class="shop-select-grid" id="kds-shops-list"></div>
+
+      <div class="pin-box" id="kds-pin-box">
+        <h4 id="kds-pin-title" style="color:#f59e0b; margin-bottom:10px;"></h4>
+        <input type="password" id="kds-pin-input" class="pin-input" maxlength="6" placeholder="PIN" onkeyup="checkPinEntry(event)">
+        <div style="margin-top:12px; display:flex; gap:10px; justify-content:center;">
+          <button onclick="cancelPinPrompt()" class="btn-top">Cancel</button>
+          <button onclick="verifyAndLoginKDS()" class="btn-top" style="background:#16a34a; border-color:#16a34a;">Login (തുറക്കുക)</button>
+        </div>
+      </div>
     </div>
   </div>
 
+  <!-- ================= TOP HEADER ================= -->
+  <div class="kds-header">
+    <div class="kds-title-area">
+      <span class="shop-name-tag" id="header-shop-name">KDS</span>
+      <span class="status-badge" id="live-indicator">🟢 LIVE</span>
+    </div>
+
+    <!-- Filter Tabs (All / Cooking / Serving) -->
+    <div class="filter-tabs">
+      <button class="tab-btn active" onclick="setKdsFilter('all', this)">All Orders</button>
+      <button class="tab-btn" onclick="setKdsFilter('pending', this)">🟡 Cooking</button>
+      <button class="tab-btn" onclick="setKdsFilter('serving', this)">🟢 Serving</button>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn-top" onclick="playBeepSound()">🔔 ടെസ്റ്റ് സൗണ്ട്</button>
+      <button class="btn-top btn-switch" onclick="switchKdsShop()">🔄 Switch Branch</button>
+    </div>
+  </div>
+
+  <!-- ================= CARDS GRID ================= -->
   <div class="orders-grid" id="kds-orders-container">
     <div class="empty-state">
       <div style="font-size: 50px; margin-bottom: 10px;">🧑‍🍳</div>
-      <div>പുതിയ ഓർഡറുകൾ ഒന്നും വന്നിട്ടില്ല (Waiting for orders...)</div>
+      <div>ഓർഡറുകൾ ഒന്നും വന്നിട്ടില്ല (Waiting for orders...)</div>
     </div>
   </div>
 
   <script>
-    // Live KDS Communication Channel
-    const kdsChannel = new BroadcastChannel('broast_pos_channel');
-    let activeOrders = JSON.parse(localStorage.getItem('kds_active_orders')) || [];
+    let currentShop = null;
+    let selectedPendingShop = null;
+    let supabaseClient = null;
+    let activeOrders = [];
+    let currentFilter = 'all';
 
-    // Web Audio Synthesizer Beep (No MP3 files needed!)
+    const localChannel = new BroadcastChannel('broast_pos_channel');
+
+    // --- Audio Alert ---
     function playBeepSound() {
       try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        
-        // Two-tone alert chime (High then higher)
         const osc1 = audioCtx.createOscillator();
         const gain1 = audioCtx.createGain();
         osc1.type = 'sine';
-        osc1.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+        osc1.frequency.setValueAtTime(587.33, audioCtx.currentTime);
         gain1.gain.setValueAtTime(0.3, audioCtx.currentTime);
         gain1.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
         osc1.connect(gain1);
@@ -123,7 +206,7 @@
           const osc2 = audioCtx.createOscillator();
           const gain2 = audioCtx.createGain();
           osc2.type = 'sine';
-          osc2.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
+          osc2.frequency.setValueAtTime(880, audioCtx.currentTime);
           gain2.gain.setValueAtTime(0.4, audioCtx.currentTime);
           gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
           osc2.connect(gain2);
@@ -131,49 +214,230 @@
           osc2.start();
           osc2.stop(audioCtx.currentTime + 0.3);
         }, 150);
-
       } catch (err) {
-        console.log("Audio play error:", err);
+        console.log("Audio alert error:", err);
       }
     }
 
-    // Listen for live orders from pos.html
-    kdsChannel.onmessage = function(event) {
-      if (event.data && event.data.type === 'NEW_ORDER') {
-        const newOrder = event.data.order;
-        // Avoid duplicate
-        if (!activeOrders.find(o => o.id === newOrder.id)) {
-          activeOrders.push(newOrder);
-          localStorage.setItem('kds_active_orders', JSON.stringify(activeOrders));
-          playBeepSound();
-          renderKdsGrid();
+    // --- Multi-Shop Auth Flow ---
+    function initKdsAuth() {
+      const savedShopId = localStorage.getItem('kds_active_shop_id');
+      const shops = window.SHOPS_CONFIG || [];
+
+      if (savedShopId && shops.length > 0) {
+        const found = shops.find(s => s.id === savedShopId);
+        if (found) {
+          activateKdsShop(found);
+          return;
+        }
+      }
+      renderKdsShopOverlay();
+    }
+
+    function renderKdsShopOverlay() {
+      const overlay = document.getElementById('kds-auth-overlay');
+      const grid = document.getElementById('kds-shops-list');
+      const pinBox = document.getElementById('kds-pin-box');
+      overlay.style.display = 'flex';
+      pinBox.style.display = 'none';
+      grid.innerHTML = '';
+
+      const shops = window.SHOPS_CONFIG || [];
+      shops.forEach(s => {
+        const card = document.createElement('div');
+        card.className = 'shop-btn-card';
+        card.innerHTML = `
+          <img src="${s.logo || 'shop1.png'}" onerror="this.src='https://placehold.co/50x50/334155/white?text=SHOP'" alt="">
+          <h4>${s.name}</h4>
+          <small style="color:#64748b; font-size:11px;">${s.tagline || ''}</small>
+        `;
+        card.onclick = () => promptKdsPin(s);
+        grid.appendChild(card);
+      });
+    }
+
+    function promptKdsPin(s) {
+      selectedPendingShop = s;
+      document.getElementById('kds-pin-title').innerText = `${s.name} PIN നൽകുക:`;
+      document.getElementById('kds-pin-box').style.display = 'block';
+      const input = document.getElementById('kds-pin-input');
+      input.value = '';
+      input.focus();
+    }
+
+    function cancelPinPrompt() {
+      selectedPendingShop = null;
+      document.getElementById('kds-pin-box').style.display = 'none';
+    }
+
+    function checkPinEntry(e) {
+      if (e.key === 'Enter') verifyAndLoginKDS();
+    }
+
+    function verifyAndLoginKDS() {
+      const pin = document.getElementById('kds-pin-input').value.trim();
+      const masterPin = window.MASTER_PIN || "0000";
+
+      if (selectedPendingShop && (pin === selectedPendingShop.pin || pin === masterPin)) {
+        activateKdsShop(selectedPendingShop);
+      } else {
+        alert("തെറ്റായ PIN നമ്പർ! വീണ്ടും ശ്രമിക്കുക.");
+        document.getElementById('kds-pin-input').value = '';
+        document.getElementById('kds-pin-input').focus();
+      }
+    }
+
+    function activateKdsShop(s) {
+      currentShop = s;
+      localStorage.setItem('kds_active_shop_id', s.id);
+      document.getElementById('kds-auth-overlay').style.display = 'none';
+      document.getElementById('header-shop-name').innerText = `🍗 ${s.name} (KDS)`;
+
+      // Load existing active orders from localStorage
+      activeOrders = JSON.parse(localStorage.getItem(`kds_orders_${s.id}`)) || [];
+      renderOrdersGrid();
+
+      // Connect to Shop-Specific Supabase
+      if (s.url && s.key && window.supabase) {
+        supabaseClient = window.supabase.createClient(s.url, s.key);
+        fetchSupabaseActiveOrders();
+        listenSupabaseRealtime();
+      }
+    }
+
+    function switchKdsShop() {
+      if (confirm("മറ്റൊരു കിച്ചൻ ബ്രാഞ്ചിലേക്ക് മാറാൻ ലോഗൗട്ട് ചെയ്യണോ?")) {
+        localStorage.removeItem('kds_active_shop_id');
+        currentShop = null;
+        supabaseClient = null;
+        renderKdsShopOverlay();
+      }
+    }
+
+    // --- Supabase Sync & Realtime ---
+    async function fetchSupabaseActiveOrders() {
+      if (!supabaseClient) return;
+      try {
+        const { data, error } = await supabaseClient
+          .from('orders')
+          .select('*')
+          .in('status', ['pending', 'serving'])
+          .order('id', { ascending: true });
+
+        if (data && !error) {
+          activeOrders = data;
+          saveLocalOrders();
+          renderOrdersGrid();
+        }
+      } catch (err) {
+        console.error("Supabase fetch orders error:", err);
+      }
+    }
+
+    function listenSupabaseRealtime() {
+      if (!supabaseClient) return;
+
+      supabaseClient
+        .channel('kds-realtime')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, payload => {
+          const newOrder = payload.new;
+          if (!activeOrders.find(o => o.id === newOrder.id)) {
+            activeOrders.push(newOrder);
+            saveLocalOrders();
+            playBeepSound();
+            renderOrdersGrid();
+          }
+        })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, payload => {
+          const updated = payload.new;
+          if (updated.status === 'completed') {
+            activeOrders = activeOrders.filter(o => o.id !== updated.id);
+          } else {
+            const idx = activeOrders.findIndex(o => o.id === updated.id);
+            if (idx !== -1) activeOrders[idx] = updated;
+          }
+          saveLocalOrders();
+          renderOrdersGrid();
+        })
+        .subscribe();
+    }
+
+    // --- Local Fallback Channel ---
+    localChannel.onmessage = function(e) {
+      if (e.data && e.data.type === 'NEW_ORDER') {
+        const newOrder = e.data.order;
+        if (!currentShop || newOrder.shop_id === currentShop.id) {
+          if (!activeOrders.find(o => o.id === newOrder.id)) {
+            activeOrders.push(newOrder);
+            saveLocalOrders();
+            playBeepSound();
+            renderOrdersGrid();
+          }
         }
       }
     };
 
-    // Also sync if pos.html modified localStorage directly
-    window.addEventListener('storage', function(e) {
-      if (e.key === 'kds_active_orders') {
-        activeOrders = JSON.parse(e.newValue || '[]');
-        renderKdsGrid();
+    function saveLocalOrders() {
+      if (currentShop) {
+        localStorage.setItem(`kds_orders_${currentShop.id}`, JSON.stringify(activeOrders));
       }
-    });
-
-    function markOrderDone(orderId) {
-      activeOrders = activeOrders.filter(o => o.id !== orderId);
-      localStorage.setItem('kds_active_orders', JSON.stringify(activeOrders));
-      renderKdsGrid();
     }
 
-    function renderKdsGrid() {
-      const container = document.getElementById('kds-orders-container');
-      document.getElementById('active-count').innerText = `${activeOrders.length} Orders Pending`;
+    // --- Status Progression (Pending -> Serving -> Completed) ---
+    async function advanceOrderStatus(orderId, nextStatus) {
+      const order = activeOrders.find(o => o.id === orderId);
+      if (!order) return;
 
-      if (activeOrders.length === 0) {
+      if (nextStatus === 'serving') {
+        order.status = 'serving';
+        order.serving_at = new Date().toISOString();
+      } else if (nextStatus === 'completed') {
+        order.status = 'completed';
+        order.completed_at = new Date().toISOString();
+        activeOrders = activeOrders.filter(o => o.id !== orderId);
+      }
+
+      saveLocalOrders();
+      renderOrdersGrid();
+
+      // Cloud Update
+      if (supabaseClient) {
+        try {
+          await supabaseClient
+            .from('orders')
+            .update({
+              status: order.status,
+              serving_at: order.serving_at || null,
+              completed_at: order.completed_at || null
+            })
+            .eq('id', orderId);
+        } catch (err) {
+          console.error("Supabase status update error:", err);
+        }
+      }
+    }
+
+    // --- UI Rendering ---
+    function setKdsFilter(filter, btn) {
+      currentFilter = filter;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderOrdersGrid();
+    }
+
+    function renderOrdersGrid() {
+      const container = document.getElementById('kds-orders-container');
+
+      let filtered = activeOrders;
+      if (currentFilter !== 'all') {
+        filtered = activeOrders.filter(o => (o.status || 'pending') === currentFilter);
+      }
+
+      if (filtered.length === 0) {
         container.innerHTML = `
           <div class="empty-state">
             <div style="font-size: 50px; margin-bottom: 10px;">🧑‍🍳</div>
-            <div>പുതിയ ഓർഡറുകൾ ഒന്നും വന്നിട്ടില്ല (Waiting for orders...)</div>
+            <div>ഓർഡറുകൾ ഒന്നും വന്നിട്ടില്ല (Waiting for orders...)</div>
           </div>
         `;
         return;
@@ -182,13 +446,16 @@
       container.innerHTML = '';
       const now = Date.now();
 
-      activeOrders.forEach(order => {
+      filtered.forEach(order => {
+        const status = order.status || 'pending';
+        const isServing = status === 'serving';
+
         const elapsedSec = Math.floor((now - order.id) / 1000);
         const mins = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
         const secs = String(elapsedSec % 60).padStart(2, '0');
-        const isLate = elapsedSec > 600; // 10 minutes warning
+        const isLate = elapsedSec > 600;
 
-        let itemsHtml = order.items.map(it => {
+        let itemsHtml = (order.items || []).map(it => {
           const isSpicy = it.name.includes('Spicy');
           return `
             <div class="kds-item-row">
@@ -202,28 +469,38 @@
         }).join('');
 
         const card = document.createElement('div');
-        card.className = 'order-card';
+        card.className = `order-card ${isServing ? 'card-serving' : 'card-pending'}`;
         card.innerHTML = `
           <div class="card-top">
             <span class="card-token">${order.token}</span>
-            <span class="timer-badge ${isLate ? 'timer-late' : ''}" id="timer-${order.id}">⏱️ ${mins}:${secs}</span>
+            <span class="status-pill ${isServing ? 'pill-serving' : 'pill-pending'}">
+              ${isServing ? '🟢 SERVING' : '🟡 COOKING'}
+            </span>
           </div>
           <div class="card-meta">
-            <span>${order.type}</span>
-            <span>${order.time}</span>
+            <span>${order.type || 'Takeaway'}</span>
+            <span class="timer-badge ${isLate ? 'timer-late' : ''}" id="timer-${order.id}">⏱️ ${mins}:${secs}</span>
           </div>
           <div class="card-items">
             ${itemsHtml}
           </div>
           <div class="card-actions">
-            <button class="btn-done" onclick="markOrderDone(${order.id})">✅ DONE (തയ്യാറായി)</button>
+            ${!isServing ? `
+              <button class="btn-action btn-serving" onclick="advanceOrderStatus(${order.id}, 'serving')">
+                🔔 Ready / Serving (വിതരണത്തിന് റെഡി)
+              </button>
+            ` : `
+              <button class="btn-action btn-complete" onclick="advanceOrderStatus(${order.id}, 'completed')">
+                ✅ Complete / Delivered (നൽകി)
+              </button>
+            `}
           </div>
         `;
         container.appendChild(card);
       });
     }
 
-    // Refresh timers every second
+    // Refresh live timers every second
     setInterval(() => {
       const now = Date.now();
       activeOrders.forEach(order => {
@@ -238,8 +515,8 @@
       });
     }, 1000);
 
-    // Initial render
-    renderKdsGrid();
+    // Launch
+    initKdsAuth();
   </script>
 </body>
 </html>
