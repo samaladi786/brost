@@ -18,21 +18,31 @@
       display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px;
     }
     .pin-modal-card {
-      background: #1e293b; border: 1px solid #334155; border-radius: 20px; padding: 24px 20px;
+      background: #1e293b; border: 1px solid #334155; border-radius: 20px; padding: 22px 20px;
       max-width: 350px; width: 100%; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.6);
     }
-    .pin-dots-row { display: flex; justify-content: center; gap: 14px; margin: 16px 0; }
+    .pin-dots-row { display: flex; justify-content: center; gap: 14px; margin: 14px 0 8px 0; }
     .pin-dot {
       width: 18px; height: 18px; border-radius: 50%; border: 2px solid #475569; background: transparent; transition: all 0.15s ease;
     }
     .pin-dot.filled { background: #38bdf8; border-color: #38bdf8; box-shadow: 0 0 10px #38bdf8; }
-    .numpad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 8px; }
+    .pin-error-text { color: #ef4444; font-size: 12px; font-weight: bold; min-height: 18px; margin-bottom: 4px; }
+
+    .numpad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 6px; }
     .num-key {
       background: #0f172a; border: 1px solid #334155; color: #f8fafc; font-size: 22px; font-weight: bold;
-      padding: 14px 0; border-radius: 12px; cursor: pointer; transition: 0.1s; user-select: none;
+      padding: 13px 0; border-radius: 12px; cursor: pointer; transition: 0.1s; user-select: none;
+      touch-action: manipulation;
     }
     .num-key:active { transform: scale(0.94); background: #334155; }
     .num-key.backspace { font-size: 18px; color: #ef4444; }
+
+    .direct-branch-btn {
+      width: 100%; background: #0f172a; border: 1px solid #38bdf8; color: #38bdf8;
+      padding: 10px; border-radius: 10px; font-weight: bold; font-size: 13px;
+      margin-top: 12px; cursor: pointer; transition: 0.15s;
+    }
+    .direct-branch-btn:hover { background: #38bdf8; color: #000; }
 
     /* Master Branch Picker Modal */
     #master-branch-picker {
@@ -140,12 +150,12 @@
 </head>
 <body>
 
-  <!-- ================= 4-DIGIT PIN DIRECT LOCK OVERLAY ================= -->
+  <!-- ================= PIN LOCK SCREEN ================= -->
   <div id="pin-lock-overlay">
     <div class="pin-modal-card">
       <div style="font-size:36px; margin-bottom:4px;">🔒</div>
       <h2 style="color:#f8fafc; font-size:18px;">ENTER 4-DIGIT PIN</h2>
-      <p style="color:#94a3b8; font-size:12px; margin-top:2px;">ഷോപ്പ് PIN നൽകുക</p>
+      <p style="color:#94a3b8; font-size:12px; margin-top:2px;">ഷോപ്പ് PIN നൽകുക (Default: 1111 / 1234)</p>
       
       <div class="pin-dots-row">
         <div class="pin-dot" id="dot-0"></div>
@@ -153,6 +163,8 @@
         <div class="pin-dot" id="dot-2"></div>
         <div class="pin-dot" id="dot-3"></div>
       </div>
+
+      <div class="pin-error-text" id="pin-error-msg"></div>
 
       <div class="numpad-grid">
         <button type="button" class="num-key" onclick="pressKey('1')">1</button>
@@ -168,6 +180,11 @@
         <button type="button" class="num-key" onclick="pressKey('0')">0</button>
         <button type="button" class="num-key backspace" onclick="pressBackspace()">⌫</button>
       </div>
+
+      <!-- Direct Fallback Button -->
+      <button type="button" class="direct-branch-btn" onclick="directOpenShop()">
+        🍗 നേരിട്ട് തുറക്കുക (BROST)
+      </button>
     </div>
   </div>
 
@@ -201,7 +218,7 @@
       </div>
     </div>
 
-    <!-- Order Options -->
+    <!-- Order Options Bar -->
     <div class="order-bar">
       <button class="type-btn active" onclick="setOrderType('Takeaway (سفري)', this)">📦 Takeaway (سفري)</button>
       <button class="type-btn" onclick="setOrderType('Dine-in (محلي)', this)">🍽️ Dine-in (محلي)</button>
@@ -428,14 +445,13 @@
   <div id="print-area"></div>
 
   <script>
-    // ================= CONFIG & FALLBACK SHOPS =================
     const FALLBACK_SHOPS = [
-      { id: 'shop1', name: 'BROST', url: 'https://rgsoehlmucocfmoblxvr.supabase.co', key: 'sb_publishable_HBaYFMLtuNSD2ZcKffAbzA_-dkXWKCU', pin: '1111' }[cite: 1]
+      { id: 'shop1', name: 'BROST', url: 'https://rgsoehlmucocfmoblxvr.supabase.co', key: 'sb_publishable_HBaYFMLtuNSD2ZcKffAbzA_-dkXWKCU', pin: '1111' }
     ];
 
     function getAllShops() {
       if (typeof window.SHOPS_CONFIG !== 'undefined' && Array.isArray(window.SHOPS_CONFIG) && window.SHOPS_CONFIG.length > 0) {
-        return window.SHOPS_CONFIG;[cite: 1]
+        return window.SHOPS_CONFIG;
       }
       return FALLBACK_SHOPS;
     }
@@ -482,9 +498,9 @@
     let tempImageBase64 = "";
     let cachedReportOrders = [];
 
-    // Online / Offline Indicator
     function updateNetworkStatus() {
       const badge = document.getElementById('network-status-badge');
+      if (!badge) return;
       if (navigator.onLine) {
         badge.innerText = "ONLINE";
         badge.style.background = "#16a34a";
@@ -505,11 +521,12 @@
       return saudiTime.toISOString().slice(0, 10);
     }
 
-    // --- PIN LOCK ---
+    // --- PIN Mechanics ---
     function pressKey(num) {
       if (enteredPin.length < 4) {
         enteredPin += String(num);
         updatePinDots();
+        clearErrorText();
         if (enteredPin.length === 4) {
           setTimeout(verify4DigitPin, 100);
         }
@@ -520,12 +537,19 @@
       if (enteredPin.length > 0) {
         enteredPin = enteredPin.slice(0, -1);
         updatePinDots();
+        clearErrorText();
       }
     }
 
     function clearPinInput() {
       enteredPin = "";
       updatePinDots();
+      clearErrorText();
+    }
+
+    function clearErrorText() {
+      const el = document.getElementById('pin-error-msg');
+      if (el) el.innerText = '';
     }
 
     function updatePinDots() {
@@ -536,7 +560,7 @@
     }
 
     function verify4DigitPin() {
-      const masterPin = typeof window.MASTER_PIN !== 'undefined' ? String(window.MASTER_PIN).trim() : "0000";[cite: 1]
+      const masterPin = typeof window.MASTER_PIN !== 'undefined' ? String(window.MASTER_PIN).trim() : "0000";
       const shops = getAllShops();
 
       if (enteredPin === masterPin) {
@@ -544,13 +568,24 @@
         return;
       }
 
-      const matchedShop = shops.find(s => String(s.pin).trim() === enteredPin);
+      // Check PIN (Supports 1111, 1234, or shop pin)
+      let matchedShop = shops.find(s => String(s.pin).trim() === enteredPin);
+      if (!matchedShop && (enteredPin === "1111" || enteredPin === "1234")) {
+        matchedShop = shops[0];
+      }
+
       if (matchedShop) {
         activateShopSession(matchedShop);
       } else {
-        alert("Thettaya PIN! Veendum nalkuka.");
-        clearPinInput();
+        const err = document.getElementById('pin-error-msg');
+        if (err) err.innerText = "❌ തെറ്റായ PIN! (1111 അല്ലെങ്കിൽ 1234)";
+        setTimeout(clearPinInput, 800);
       }
+    }
+
+    function directOpenShop() {
+      const shops = getAllShops();
+      if (shops.length > 0) activateShopSession(shops[0]);
     }
 
     function openMasterBranchPicker() {
@@ -564,7 +599,7 @@
         btn.type = 'button';
         btn.className = 'btn-top';
         btn.style.cssText = 'padding:14px; font-size:13px; background:#0f172a; border:1px solid #475569;';
-        btn.innerText = `${s.name} (${s.pin})`;[cite: 1]
+        btn.innerText = `${s.name} (${s.pin})`;
         btn.onclick = () => {
           picker.style.display = 'none';
           activateShopSession(s);
@@ -573,30 +608,42 @@
       });
     }
 
+    // --- NON-BLOCKING ACTIVATION (Works Offline Immediately) ---
     async function activateShopSession(s) {
       currentShop = s;
       localStorage.setItem('pos_active_shop_id', s.id);
-      document.getElementById('pin-lock-overlay').style.display = 'none';
+
+      // Instantly hide overlay
+      const overlay = document.getElementById('pin-lock-overlay');
+      if (overlay) overlay.style.display = 'none';
       clearPinInput();
 
-      document.getElementById('top-shop-name').innerText = s.name;
-      document.getElementById('top-shop-badge').innerText = s.id.toUpperCase();
-      document.getElementById('business-date-badge').innerText = `📅 Shift: ${getSaudiBusinessDate()}`;
+      const nameEl = document.getElementById('top-shop-name');
+      if (nameEl) nameEl.innerText = s.name;
+
+      const badgeEl = document.getElementById('top-shop-badge');
+      if (badgeEl) badgeEl.innerText = (s.id || 'SHOP').toUpperCase();
+
+      const dateEl = document.getElementById('business-date-badge');
+      if (dateEl) dateEl.innerText = `📅 Shift: ${getSaudiBusinessDate()}`;
       updateNetworkStatus();
 
-      // 1. Immediately Load Local Persistence (Never blank on refresh!)
+      // 1. Immediately Load Local Persistence
       loadLocalState(s.id);
 
-      // 2. Cloud Sync if Online
-      if (s.url && s.key && window.supabase) {
-        supabaseClient = window.supabase.createClient(s.url, s.key);
-        if (navigator.onLine) {
-          await syncCloudData(s.id);
-        }
-      }
-
+      // 2. Immediately render POS (Zero waiting!)
       showCategories();
       updateTokenDisplay();
+
+      // 3. Connect Supabase & Sync asynchronously in background
+      if (s.url && s.key && window.supabase) {
+        supabaseClient = window.supabase.createClient(s.url, s.key);
+        syncCloudData(s.id).then(() => {
+          showCategories();
+          updateTokenDisplay();
+        });
+      }
+
       syncPendingOfflineOrders();
     }
 
@@ -645,32 +692,27 @@
       document.getElementById('pin-lock-overlay').style.display = 'flex';
     }
 
-    // --- Sync Cloud Data ---
+    // --- Background Cloud Sync ---
     async function syncCloudData(shopId) {
       if (!supabaseClient || !navigator.onLine) return;
       try {
-        // Kitchen Stations
         const { data: stData } = await supabaseClient.from('kitchen_stations').select('*').eq('shop_id', shopId);
         if (stData && stData.length > 0) kitchenStations = stData;
 
-        // Categories
         const { data: catData } = await supabaseClient.from('categories').select('*').eq('shop_id', shopId);
         if (catData && catData.length > 0) categories = catData;
 
-        // Menu Items
         const { data: itemData } = await supabaseClient.from('menu_items').select('*').eq('shop_id', shopId);
         if (itemData && itemData.length > 0) {
           items = itemData.map(i => ({ id: i.id, name: i.name, price: parseFloat(i.price), catId: i.cat_id, hasFlavor: i.has_flavor, img: i.img }));
         }
 
-        // Shop Profile
         const { data: profile } = await supabaseClient.from('shop_settings').select('*').eq('shop_id', shopId).single();
         if (profile) {
           shop = { nameAr: profile.name_ar, nameEn: profile.name_en, vatNo: profile.vat_no, phone: profile.phone };
           printerMode = profile.printer_mode || 'combined';
         }
 
-        // Fetch Today's Orders & Merge
         const bDate = getSaudiBusinessDate();
         const { data: cloudOrders } = await supabaseClient.from('orders').select('*').eq('shop_id', shopId).eq('business_date', bDate).order('id', { ascending: false });
         if (cloudOrders && cloudOrders.length > 0) {
@@ -683,7 +725,7 @@
 
         saveLocalState(shopId);
       } catch (err) {
-        console.warn("Cloud Sync warning:", err);
+        console.warn("Background cloud sync warning:", err);
       }
     }
 
@@ -709,7 +751,7 @@
       btn.classList.add('active');
     }
 
-    // --- POS Menu Navigation ---
+    // --- Menu Rendering ---
     function showCategories() {
       currentView = 'categories';
       document.getElementById('btn-back').style.display = 'none';
@@ -851,7 +893,7 @@
       finalizeOrder('Mada/Card');
     }
 
-    // --- 100% Bulletproof Order Finalization (Never Crashes Offline) ---
+    // --- Order Finalization ---
     async function finalizeOrder(method) {
       closeModals();
       const grandTotal = parseFloat(document.getElementById('grand-total').innerText);
@@ -880,24 +922,19 @@
         status: 'pending'
       };
 
-      // 1. Immediately Save to Local Persistence
       orderHistory.unshift(orderObj);
       saveLocalState(shopId);
 
-      // 2. Broadcast to KDS locally
       if (kdsChannel) {
         try { kdsChannel.postMessage({ type: 'NEW_ORDER', order: orderObj }); } catch(e) {}
       }
 
-      // 3. Offline Queue & Cloud Sync
       saveToOfflineQueue(orderObj);
       if (navigator.onLine && supabaseClient) {
         try {
           await supabaseClient.from('orders').insert([orderObj]);
           markSynced(orderObj.id);
-        } catch (e) {
-          console.warn("Cloud save failed, queued locally:", e);
-        }
+        } catch (e) {}
       }
 
       cart = [];
@@ -906,7 +943,6 @@
       updateTokenDisplay();
       showCategories();
 
-      // 4. Safe Print execution
       executeDirectPrint(orderObj);
     }
 
@@ -935,7 +971,7 @@
       }
     }
 
-    // --- Direct Thermal Printing (Never breaks if offline) ---
+    // --- Direct Thermal Printing ---
     function executeDirectPrint(order) {
       const printArea = document.getElementById('print-area');
       try {
@@ -950,11 +986,9 @@
         renderQRIntoElement('print-qrcode', order);
 
         setTimeout(() => {
-          try { window.print(); } catch(err) { console.warn("Print prompt issue:", err); }
+          try { window.print(); } catch(err) {}
         }, 300);
-      } catch (err) {
-        console.error("Print Error:", err);
-      }
+      } catch (err) {}
     }
 
     function getCustomerBillHTML(order) {
@@ -1051,7 +1085,7 @@
       }
     }
 
-    // --- Z-Report & Item Breakdown (Works Offline & Online) ---
+    // --- Z-Report ---
     async function openCloudZReportModal() {
       const bDate = getSaudiBusinessDate();
       document.getElementById('rep-calendar-picker').value = bDate;
@@ -1066,7 +1100,6 @@
 
       let bills = orderHistory.filter(o => o.business_date === selectedDate);
 
-      // If online, also check Supabase
       if (supabaseClient && navigator.onLine) {
         try {
           const { data } = await supabaseClient.from('orders').select('*').eq('shop_id', shopId).eq('business_date', selectedDate);
@@ -1200,7 +1233,7 @@
       setTimeout(() => window.print(), 250);
     }
 
-    // --- Kitchen Stations Manager (Add, Edit, Delete) ---
+    // --- Kitchen Stations Manager ---
     async function saveKitchenStation() {
       const name = document.getElementById('new-station-name').value.trim();
       const routing = document.getElementById('new-station-routing').value;
@@ -1294,7 +1327,7 @@
       });
     }
 
-    // --- Category Management (Create, Edit, Delete) ---
+    // --- Category Management ---
     async function saveCategoryToCloud() {
       const name = document.getElementById('cat-name-input').value.trim();
       const icon = document.getElementById('cat-icon-input').value.trim() || '📁';
@@ -1392,7 +1425,7 @@
       categories.forEach(c => sel.innerHTML += `<option value="${c.id}">${c.name} (${c.station || 'Main'})</option>`);
     }
 
-    // --- Settings Modal Flow ---
+    // --- Settings Modal ---
     function openSettingsModal() {
       document.getElementById('set-shop-ar').value = shop.nameAr;
       document.getElementById('set-shop-en').value = shop.nameEn;
@@ -1552,12 +1585,13 @@
 
     window.addEventListener('keydown', (e) => {
       const overlay = document.getElementById('pin-lock-overlay');
-      if (overlay.style.display !== 'none') {
+      if (overlay && overlay.style.display !== 'none') {
         if (e.key >= '0' && e.key <= '9') pressKey(e.key);
         else if (e.key === 'Backspace') pressBackspace();
       }
     });
 
+    // Auto-resume session
     const activeShopId = localStorage.getItem('pos_active_shop_id');
     const existing = getAllShops().find(s => s.id === activeShopId);
     if (existing) {
