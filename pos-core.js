@@ -1,5 +1,5 @@
 // ==========================================================
-// POS CORE ENGINE - BILLING, STATIONS, CRUD & PRINTING
+// POS CORE ENGINE - BILINGUAL (EN / AR), BILLING & PRINTING
 // ==========================================================
 
 const FALLBACK_SHOPS = [
@@ -11,6 +11,137 @@ function getAllShops() {
     return window.SHOPS_CONFIG;
   }
   return FALLBACK_SHOPS;
+}
+
+// --- LANGUAGE DICTIONARY (ENGLISH & ARABIC) ---
+let currentLang = localStorage.getItem('pos_lang') || 'en';
+
+const i18n = {
+  en: {
+    pinTitle: "ENTER 4-DIGIT PIN",
+    pinSubtitle: "Enter Shop PIN",
+    pinClear: "CLEAR",
+    pinDirect: "🍗 Direct Access (BROST)",
+    masterText: "Select Branch to Open:",
+    cancel: "Cancel",
+    langToggle: "🌐 العربية",
+    kdsScreen: "📺 KDS Screen",
+    reports: "📊 Reports",
+    settings: "⚙️ Settings",
+    logout: "🔒 Logout",
+    takeaway: "📦 Takeaway (سفري)",
+    dinein: "🍽️ Dine-in (محلي)",
+    phoneOrder: "📞 Phone Order (هاتف)",
+    custPhonePlaceholder: "Customer Mobile (Optional)",
+    btnBack: "⬅️ Categories (Back)",
+    categoriesTitle: "Main Categories",
+    cartTitle: "Order List",
+    clearCart: "🗑️ Clear Cart",
+    subtotal: "Subtotal:",
+    vat: "VAT (15%):",
+    total: "Total:",
+    payCash: "💵 CASH (نقداً)",
+    payCard: "💳 MADA / CARD (شبكة)",
+    flavorTitle: "Select Flavor",
+    flvNormal: "Normal (عادي)",
+    flvSpicy: "Spicy 🌶️ (حار)",
+    addBill: "Add to Bill",
+    cashModalTitle: "💵 Cash Payment",
+    billAmount: "Bill Amount:",
+    changeDue: "Change Due:",
+    printComplete: "Print & Complete",
+    online: "ONLINE",
+    offline: "OFFLINE (LOCAL)"
+  },
+  ar: {
+    pinTitle: "أدخل الرقم السري (4 أرقام)",
+    pinSubtitle: "أدخل الرقم السري للفرع",
+    pinClear: "مسح",
+    pinDirect: "🍗 الدخول المباشر (بروست)",
+    masterText: "اختر الفرع لفتحه:",
+    cancel: "إلغاء",
+    langToggle: "🌐 English",
+    kdsScreen: "📺 شاشة المطبخ",
+    reports: "📊 التقارير",
+    settings: "⚙️ الإعدادات",
+    logout: "🔒 تسجيل خروج",
+    takeaway: "📦 سفري (Takeaway)",
+    dinein: "🍽️ محلي (Dine-in)",
+    phoneOrder: "📞 طلب هاتف (Phone)",
+    custPhonePlaceholder: "رقم جوال العميل (اختياري)",
+    btnBack: "⬅️ الأقسام (رجوع)",
+    categoriesTitle: "الأقسام الرئيسية",
+    cartTitle: "قائمة الطلب",
+    clearCart: "🗑️ إلغاء الطلب",
+    subtotal: "المجموع الفرعي:",
+    vat: "ضريبة القيمة المضافة (15%):",
+    total: "الإجمالي النهائي:",
+    payCash: "💵 نقداً (CASH)",
+    payCard: "💳 شبكة / مدى (MADA)",
+    flavorTitle: "اختر النكهة",
+    flvNormal: "عادي (Normal)",
+    flvSpicy: "حار 🌶️ (Spicy)",
+    addBill: "إضافة للطلب",
+    cashModalTitle: "💵 الدفع نقداً",
+    billAmount: "مبلغ الفاتورة:",
+    changeDue: "المبلغ المتبقي:",
+    printComplete: "طباعة وإنهاء",
+    online: "متصل (ONLINE)",
+    offline: "غير متصل (LOCAL)"
+  }
+};
+
+function toggleLanguage() {
+  currentLang = currentLang === 'en' ? 'ar' : 'en';
+  localStorage.setItem('pos_lang', currentLang);
+  applyLanguage(currentLang);
+}
+
+function applyLanguage(lang) {
+  document.body.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  const t = i18n[lang];
+
+  const setText = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
+  const setPlaceholder = (id, val) => { const el = document.getElementById(id); if (el) el.placeholder = val; };
+
+  setText('ui-pin-title', t.pinTitle);
+  setText('ui-pin-subtitle', t.pinSubtitle);
+  setText('ui-pin-clear', t.pinClear);
+  setText('ui-pin-direct-btn', t.pinDirect);
+  setText('ui-master-select-text', t.masterText);
+  setText('ui-master-cancel', t.cancel);
+  setText('btn-lang-toggle', t.langToggle);
+  setText('ui-btn-kds', t.kdsScreen);
+  setText('ui-btn-reports', t.reports);
+  setText('ui-btn-settings', t.settings);
+  setText('ui-btn-logout', t.logout);
+  setText('btn-type-takeaway', t.takeaway);
+  setText('btn-type-dinein', t.dinein);
+  setText('btn-type-phone', t.phoneOrder);
+  setPlaceholder('cust-phone', t.custPhonePlaceholder);
+  setText('btn-back', t.btnBack);
+  if (currentView === 'categories') {
+    setText('current-title', t.categoriesTitle);
+  }
+  setText('ui-cart-title', t.cartTitle);
+  setText('ui-btn-clear-cart', t.clearCart);
+  setText('ui-lbl-subtotal', t.subtotal);
+  setText('ui-lbl-vat', t.vat);
+  setText('ui-lbl-total', t.total);
+  setText('ui-btn-pay-cash', t.payCash);
+  setText('ui-btn-pay-card', t.payCard);
+  setText('flavor-modal-title', t.flavorTitle);
+  setText('ui-flv-normal', t.flvNormal);
+  setText('ui-flv-spicy', t.flvSpicy);
+  setText('ui-btn-flv-cancel', t.cancel);
+  setText('ui-btn-flv-confirm', t.addBill);
+  setText('ui-cash-modal-title', t.cashModalTitle);
+  setText('ui-cash-lbl-bill', t.billAmount);
+  setText('ui-cash-lbl-change', t.changeDue);
+  setText('ui-btn-cash-cancel', t.cancel);
+  setText('ui-btn-cash-confirm', t.printComplete);
+
+  updateNetworkStatus();
 }
 
 // Global POS State
@@ -29,18 +160,18 @@ let kitchenStations = [
 ];
 
 let categories = [
-  { id: "broast", name: "Broasted", icon: "🍗", station: "Broast Station" },
-  { id: "potatoes", name: "Potatoes", icon: "🍟", station: "Broast Station" },
-  { id: "drinks", name: "Drinks", icon: "🥤", station: "Drinks Counter" },
-  { id: "addons", name: "Add-ons", icon: "➕", station: "Main Kitchen" }
+  { id: "broast", name: "Broasted (بروستد)", icon: "🍗", station: "Broast Station" },
+  { id: "potatoes", name: "Potatoes (بطاطس)", icon: "🍟", station: "Broast Station" },
+  { id: "drinks", name: "Drinks (مشروبات)", icon: "🥤", station: "Drinks Counter" },
+  { id: "addons", name: "Add-ons (إضافات)", icon: "➕", station: "Main Kitchen" }
 ];
 
 let items = [
-  { id: 1, name: "4 Pcs Broast", price: 18.00, catId: "broast", hasFlavor: true, img: "" },
-  { id: 2, name: "8 Pcs Broast", price: 34.00, catId: "broast", hasFlavor: true, img: "" },
-  { id: 3, name: "Potatoes Small", price: 5.00, catId: "potatoes", hasFlavor: false, img: "" },
-  { id: 4, name: "Pepsi", price: 3.50, catId: "drinks", hasFlavor: false, img: "" },
-  { id: 5, name: "Thoom (Garlic)", price: 1.00, catId: "addons", hasFlavor: false, img: "" }
+  { id: 1, name: "4 Pcs Broast (بروستد 4 قطع)", price: 18.00, catId: "broast", hasFlavor: true, img: "" },
+  { id: 2, name: "8 Pcs Broast (بروستد 8 قطع)", price: 34.00, catId: "broast", hasFlavor: true, img: "" },
+  { id: 3, name: "Potatoes Small (بطاطس صغير)", price: 5.00, catId: "potatoes", hasFlavor: false, img: "" },
+  { id: 4, name: "Pepsi (بيبسي)", price: 3.50, catId: "drinks", hasFlavor: false, img: "" },
+  { id: 5, name: "Thoom / Garlic (ثوم)", price: 1.00, catId: "addons", hasFlavor: false, img: "" }
 ];
 
 let orderHistory = [];
@@ -50,7 +181,7 @@ let currentShiftNo = 1;
 let cart = [];
 let currentView = 'categories';
 let selectedTempItem = null;
-let activeOrderType = "Takeaway (سفري)";
+let activeOrderType = "Takeaway";
 let editingItemId = null;
 let editingCatId = null;
 let editingStId = null;
@@ -60,11 +191,12 @@ let tempImageBase64 = "";
 function updateNetworkStatus() {
   const badge = document.getElementById('network-status-badge');
   if (!badge) return;
+  const t = i18n[currentLang];
   if (navigator.onLine) {
-    badge.innerText = "ONLINE";
+    badge.innerText = t.online;
     badge.style.background = "#16a34a";
   } else {
-    badge.innerText = "OFFLINE (LOCAL)";
+    badge.innerText = t.offline;
     badge.style.background = "#e11d48";
   }
 }
@@ -137,7 +269,7 @@ function verify4DigitPin() {
     activateShopSession(matchedShop);
   } else {
     const err = document.getElementById('pin-error-msg');
-    if (err) err.innerText = "❌ തെറ്റായ PIN! (1111 അല്ലെങ്കിൽ 1234)";
+    if (err) err.innerText = currentLang === 'ar' ? "❌ رمز غير صحيح! (1111 أو 1234)" : "❌ Invalid PIN! (1111 or 1234)";
     setTimeout(clearPinInput, 800);
   }
 }
@@ -186,14 +318,15 @@ async function activateShopSession(s) {
   if (dateEl) dateEl.innerText = `📅 Shift: ${getSaudiBusinessDate()}`;
   updateNetworkStatus();
 
-  // 1. Load Local Persistence Instantly
+  // Load Local Persistence
   loadLocalState(s.id);
 
-  // 2. Render POS Interface Immediately
+  // Apply Language & Render
+  applyLanguage(currentLang);
   showCategories();
   updateTokenDisplay();
 
-  // 3. Connect Supabase & Background Sync
+  // Connect Supabase Cloud Sync
   if (s.url && s.key && window.supabase) {
     supabaseClient = window.supabase.createClient(s.url, s.key);
     syncCloudData(s.id).then(() => {
@@ -287,7 +420,7 @@ async function syncCloudData(shopId) {
 
     saveLocalState(shopId);
   } catch (err) {
-    console.warn("Background cloud sync warning:", err);
+    console.warn("Background cloud sync notice:", err);
   }
 }
 
@@ -321,7 +454,7 @@ function showCategories() {
   const backBtn = document.getElementById('btn-back');
   if (backBtn) backBtn.style.display = 'none';
   const title = document.getElementById('current-title');
-  if (title) title.innerText = 'മെയിൻ കാറ്റഗറികൾ (Categories)';
+  if (title) title.innerText = i18n[currentLang].categoriesTitle;
 
   const grid = document.getElementById('pos-grid');
   if (!grid) return;
@@ -379,7 +512,8 @@ function handleItemSelect(item, cat) {
 
 function confirmBroastFlavor() {
   const spice = document.querySelector('input[name="spice"]:checked').value;
-  addToCart(`${selectedTempItem.name} (${spice})`, selectedTempItem.price, selectedTempItem.station);
+  const spiceLabel = spice === 'Spicy' ? '(حار / Spicy)' : '(عادي / Normal)';
+  addToCart(`${selectedTempItem.name} ${spiceLabel}`, selectedTempItem.price, selectedTempItem.station);
   closeModals();
   showCategories();
 }
@@ -403,7 +537,8 @@ function changeQty(index, delta) {
 
 function clearCart() {
   if (cart.length === 0) return;
-  if (confirm("ഈ ഓർഡർ പൂർണ്ണമായും റദ്ദാക്കണോ?")) {
+  const msg = currentLang === 'ar' ? "هل تريد إلغاء هذا الطلب بالكامل؟" : "Clear this order completely?";
+  if (confirm(msg)) {
     cart = [];
     document.getElementById('cust-phone').value = '';
     updateCartUI();
@@ -443,7 +578,7 @@ function updateCartUI() {
 }
 
 function openCashPaymentModal() {
-  if (cart.length === 0) return alert("ഓർഡർ ലിസ്റ്റ് കാലിയാണ്!");
+  if (cart.length === 0) return alert(currentLang === 'ar' ? "السلة فارغة!" : "Cart is empty!");
   const total = parseFloat(document.getElementById('grand-total').innerText);
   document.getElementById('cash-bill-amt').innerText = total.toFixed(2) + " SAR";
   document.getElementById('cash-received-input').value = total.toFixed(2);
@@ -460,11 +595,11 @@ function calculateChange() {
 }
 
 function processCardPayment() {
-  if (cart.length === 0) return alert("ഓർഡർ ലിസ്റ്റ് കാലിയാണ്!");
+  if (cart.length === 0) return alert(currentLang === 'ar' ? "السلة فارغة!" : "Cart is empty!");
   finalizeOrder('Mada/Card');
 }
 
-// --- Order Finalization strictly matching Supabase Schema ---
+// --- Order Finalization with Clean Supabase Mapping ---
 async function finalizeOrder(method) {
   closeModals();
   const grandTotal = parseFloat(document.getElementById('grand-total').innerText);
@@ -476,7 +611,6 @@ async function finalizeOrder(method) {
   const timeStr = new Date().toLocaleTimeString();
   const shopId = currentShop ? currentShop.id : 'shop1';
 
-  // Rich Local Object
   const orderObj = {
     id: Date.now(),
     shop_id: shopId,
@@ -494,16 +628,16 @@ async function finalizeOrder(method) {
     status: 'pending'
   };
 
-  // 1. Immediately Save to Local Persistence
+  // 1. Local Storage
   orderHistory.unshift(orderObj);
   saveLocalState(shopId);
 
-  // 2. Broadcast Local Event to KDS
+  // 2. KDS Broadcast
   if (kdsChannel) {
     try { kdsChannel.postMessage({ type: 'NEW_ORDER', order: orderObj }); } catch(e) {}
   }
 
-  // 3. Exact Database Insert Payload (Strictly matching Supabase schema)
+  // 3. Supabase Insert Payload
   const dbOrderPayload = {
     id: orderObj.id,
     shop_id: orderObj.shop_id,
@@ -531,7 +665,7 @@ async function finalizeOrder(method) {
         console.warn("Supabase insert notice:", error);
       }
     } catch (e) {
-      console.warn("Saved locally, queued for sync:", e);
+      console.warn("Saved offline, will sync:", e);
     }
   }
 
@@ -569,7 +703,7 @@ async function syncPendingOfflineOrders() {
   }
 }
 
-// --- Thermal Direct Kiosk Printing ---
+// --- Bilingual Thermal Direct Kiosk Printing (ZATCA Compliant) ---
 function executeDirectPrint(order) {
   const printArea = document.getElementById('print-area');
   try {
@@ -598,29 +732,38 @@ function getCustomerBillHTML(order) {
     </div>
   `).join('');
 
+  const payMethodAr = order.payment_method === 'Cash' ? 'نقداً (Cash)' : 'شبكة / مدى (Mada)';
+  const orderTypeAr = order.order_type === 'Takeaway' ? 'سفري / Takeaway' : (order.order_type === 'Dine-in' ? 'محلي / Dine-in' : 'هاتف / Phone');
+
   return `
     <div class="receipt-center">
-      <h3>${shop.nameAr}</h3>
-      <div>${currentShop ? currentShop.name : shop.nameEn}</div>
-      <div>VAT: ${shop.vatNo}</div>
-      <div>TEL: ${shop.phone}</div>
+      <h2 style="margin:2px 0; font-size:16px;">${shop.nameAr}</h2>
+      <div style="font-size:12px; font-weight:bold;">${currentShop ? currentShop.name : shop.nameEn}</div>
+      <div style="font-size:11px;">فاتورة ضريبية مبسطة</div>
+      <div style="font-size:10px;">Simplified Tax Invoice</div>
+      <div style="font-size:11px; margin-top:2px;">الرقم الضريبي / VAT: ${shop.vatNo}</div>
+      <div style="font-size:11px;">الهاتف / Tel: ${shop.phone}</div>
       <div class="receipt-line"></div>
-      <h2 style="margin: 4px 0;">${order.token}</h2>
-      <div class="receipt-bold">${order.order_type} (Shift #${order.shift_no})</div>
-      ${order.customer_phone ? `<div style="font-weight:bold;">Customer Mob: ${order.customer_phone}</div>` : ''}
+      <h1 style="margin: 2px 0; font-size:26px;">${order.token}</h1>
+      <div class="receipt-bold" style="font-size:13px;">${orderTypeAr} [Shift #${order.shift_no}]</div>
+      ${order.customer_phone ? `<div style="font-size:11px; font-weight:bold;">Customer Mob: ${order.customer_phone}</div>` : ''}
       <div style="font-size:10px; margin-top:2px;">Shift Date: ${order.business_date} | Time: ${order.time}</div>
     </div>
     <div class="receipt-line"></div>
-    <div class="receipt-row receipt-bold"><span>ITEM</span><span>QTY</span><span>TOTAL</span></div>
+    <div class="receipt-row receipt-bold" style="font-size:11px;">
+      <span>الصنف / ITEM</span>
+      <span>العدد</span>
+      <span>المجموع</span>
+    </div>
     <div class="receipt-line"></div>
     ${itemsRows}
     <div class="receipt-line"></div>
-    <div class="receipt-row"><span>Subtotal (غير شامل):</span><span>${order.subtotal.toFixed(2)}</span></div>
-    <div class="receipt-row"><span>VAT 15% (ضريبة):</span><span>${order.vat.toFixed(2)}</span></div>
-    <div class="receipt-row receipt-bold" style="font-size:14px;"><span>TOTAL:</span><span>${order.total.toFixed(2)} SAR</span></div>
-    <div class="receipt-row"><span>Payment:</span><span>${order.payment_method}</span></div>
+    <div class="receipt-row"><span>المجموع الفرعي (Subtotal):</span><span>${order.subtotal.toFixed(2)}</span></div>
+    <div class="receipt-row"><span>ضريبة القيمة المضافة 15% (VAT):</span><span>${order.vat.toFixed(2)}</span></div>
+    <div class="receipt-row receipt-bold" style="font-size:14px;"><span>الإجمالي (TOTAL):</span><span>${order.total.toFixed(2)} SAR</span></div>
+    <div class="receipt-row"><span>طريقة الدفع (Payment):</span><span>${payMethodAr}</span></div>
     <div class="qr-center"><div id="print-qrcode"></div></div>
-    <div class="receipt-center" style="font-size:10px;">فاتورة ضريبية مبسطة<br>Simplified Tax Invoice</div>
+    <div class="receipt-center" style="font-size:10px;">شكراً لزيارتكم<br>Thank you for your visit</div>
   `;
 }
 
@@ -634,11 +777,11 @@ function getKitchenSlipHTML(order) {
 
   return `
     <div class="receipt-center">
-      <h2 style="font-size:20px; margin:2px 0;">*** KITCHEN TICKET ***</h2>
-      <h1 style="font-size:28px; margin:4px 0;">${order.token}</h1>
-      <div style="font-size:15px; font-weight:bold;">${order.order_type} [Shift #${order.shift_no}]</div>
-      ${order.customer_phone ? `<div style="font-size:13px; font-weight:bold; margin:3px 0;">Customer Mob: ${order.customer_phone}</div>` : ''}
-      <div style="font-size:11px;">Shift: ${order.business_date} | ${order.time}</div>
+      <h2 style="font-size:18px; margin:2px 0;">*** تذكرة المطبخ / KITCHEN ***</h2>
+      <h1 style="font-size:30px; margin:4px 0;">${order.token}</h1>
+      <div style="font-size:14px; font-weight:bold;">${order.order_type} [Shift #${order.shift_no}]</div>
+      ${order.customer_phone ? `<div style="font-size:12px; font-weight:bold; margin:3px 0;">Customer Mob: ${order.customer_phone}</div>` : ''}
+      <div style="font-size:11px;">Date: ${order.business_date} | ${order.time}</div>
     </div>
     <div class="receipt-line"></div>
     ${itemsRows}
@@ -646,7 +789,7 @@ function getKitchenSlipHTML(order) {
   `;
 }
 
-// --- ZATCA Phase-2 Base64 QR Generation ---
+// --- ZATCA Phase-2 Base64 TLV QR Generation ---
 function getTLV(tagNum, tagValue) {
   const encoder = new TextEncoder();
   const valBytes = encoder.encode(tagValue);
@@ -684,14 +827,14 @@ function renderQRIntoElement(elId, order) {
   }
 }
 
-// --- Kitchen Stations Management (Full CRUD with Station PIN) ---
+// --- Kitchen Stations Management ---
 async function saveKitchenStation() {
   const name = document.getElementById('new-station-name').value.trim();
   const routing = document.getElementById('new-station-routing').value;
   const pin = document.getElementById('new-station-pin').value.trim() || '1111';
   const shopId = currentShop ? currentShop.id : 'shop1';
 
-  if (!name) return alert("സ്റ്റേഷൻ പേര് നൽകുക!");
+  if (!name) return alert(currentLang === 'ar' ? "يرجى كتابة اسم القسم!" : "Enter station name!");
 
   let stObj = null;
   if (editingStId) {
@@ -723,7 +866,7 @@ function startEditStation(id) {
   const st = kitchenStations.find(s => s.id === id);
   if (!st) return;
   editingStId = st.id;
-  document.getElementById('st-form-title').innerText = `കിച്ചൻ സ്റ്റേഷൻ എഡിറ്റ് ചെയ്യുക: "${st.name}"`;
+  document.getElementById('st-form-title').innerText = `Edit Station: "${st.name}"`;
   document.getElementById('new-station-name').value = st.name;
   document.getElementById('new-station-routing').value = st.routing || 'Both';
   document.getElementById('new-station-pin').value = st.pin || '1111';
@@ -733,7 +876,7 @@ function startEditStation(id) {
 
 function resetStationForm() {
   editingStId = null;
-  document.getElementById('st-form-title').innerText = "🧑‍🍳 കിച്ചൻ സ്റ്റേഷൻ മാനേജ്‌മെന്റ് (Add / Edit Station):";
+  document.getElementById('st-form-title').innerText = "🧑‍🍳 Kitchen Station Management:";
   document.getElementById('new-station-name').value = '';
   document.getElementById('new-station-routing').value = 'Both';
   document.getElementById('new-station-pin').value = '';
@@ -742,7 +885,8 @@ function resetStationForm() {
 }
 
 async function deleteStation(id) {
-  if (!confirm("ഈ കിച്ചൻ സ്റ്റേഷൻ നീക്കം ചെയ്യണോ?")) return;
+  const msg = currentLang === 'ar' ? "هل أنت متأكد من حذف هذا القسم؟" : "Delete this kitchen station?";
+  if (!confirm(msg)) return;
   const shopId = currentShop ? currentShop.id : 'shop1';
   kitchenStations = kitchenStations.filter(s => s.id !== id);
 
@@ -785,14 +929,14 @@ function populateStationDropdowns() {
   });
 }
 
-// --- Category Management (Full CRUD) ---
+// --- Category Management ---
 async function saveCategoryToCloud() {
   const name = document.getElementById('cat-name-input').value.trim();
   const icon = document.getElementById('cat-icon-input').value.trim() || '📁';
   const station = document.getElementById('cat-station-select').value;
   const shopId = currentShop ? currentShop.id : 'shop1';
 
-  if (!name) return alert("കാറ്റഗറിയുടെ പേര് നൽകുക!");
+  if (!name) return alert(currentLang === 'ar' ? "يرجى كتابة اسم القسم!" : "Enter category name!");
 
   let targetCat = null;
   if (editingCatId) {
@@ -825,25 +969,26 @@ function startEditCategory(id) {
   const cat = categories.find(c => c.id === id);
   if (!cat) return;
   editingCatId = cat.id;
-  document.getElementById('cat-form-title').innerText = `കാറ്റഗറി എഡിറ്റ് ചെയ്യുക: "${cat.name}"`;
+  document.getElementById('cat-form-title').innerText = `Edit Category: "${cat.name}"`;
   document.getElementById('cat-name-input').value = cat.name;
   document.getElementById('cat-icon-input').value = cat.icon || '📁';
   document.getElementById('cat-station-select').value = cat.station || 'Main Kitchen';
-  document.getElementById('btn-save-cat').innerText = "Update Cat";
+  document.getElementById('btn-save-cat').innerText = "Update";
   document.getElementById('btn-cancel-cat-edit').style.display = 'inline-block';
 }
 
 function resetCatForm() {
   editingCatId = null;
-  document.getElementById('cat-form-title').innerText = "📁 കാറ്റഗറി മാനേജ്‌മെന്റ് (Create / Edit):";
+  document.getElementById('cat-form-title').innerText = "📁 Category Management:";
   document.getElementById('cat-name-input').value = '';
   document.getElementById('cat-icon-input').value = '';
-  document.getElementById('btn-save-cat').innerText = "Save Cat";
+  document.getElementById('btn-save-cat').innerText = "Save";
   document.getElementById('btn-cancel-cat-edit').style.display = 'none';
 }
 
 async function deleteCategory(id) {
-  if (!confirm("ഈ കാറ്റഗറി നീക്കം ചെയ്യണോ?")) return;
+  const msg = currentLang === 'ar' ? "هل تريد حذف هذا القسم؟" : "Delete this category?";
+  if (!confirm(msg)) return;
   const shopId = currentShop ? currentShop.id : 'shop1';
   categories = categories.filter(c => c.id !== id);
 
@@ -893,7 +1038,7 @@ async function saveItemFromForm() {
   const hasFlavor = document.getElementById('item-spicy-checkbox').checked;
   const shopId = currentShop ? currentShop.id : 'shop1';
 
-  if (!name || isNaN(price)) return alert("ശരിയായ പേരും വിലയും നൽകുക!");
+  if (!name || isNaN(price)) return alert(currentLang === 'ar' ? "يرجى إدخال اسم وسعر صحيح!" : "Enter valid item name and price!");
 
   let target = null;
   if (editingItemId) {
@@ -931,18 +1076,18 @@ function startEditItem(id) {
   const item = items.find(i => i.id === id);
   if (!item) return;
   editingItemId = item.id;
-  document.getElementById('item-form-title').innerText = `ഐറ്റം എഡിറ്റ് ചെയ്യുക: "${item.name}"`;
+  document.getElementById('item-form-title').innerText = `Edit Item: "${item.name}"`;
   document.getElementById('item-name-input').value = item.name;
   document.getElementById('item-price-input').value = item.price;
   document.getElementById('item-cat-select').value = item.catId;
   document.getElementById('item-spicy-checkbox').checked = item.hasFlavor;
-  document.getElementById('btn-save-item').innerText = "Update Item";
+  document.getElementById('btn-save-item').innerText = "Update";
   document.getElementById('btn-cancel-edit').style.display = 'inline-block';
 }
 
 function resetItemForm() {
   editingItemId = null;
-  document.getElementById('item-form-title').innerText = "പുതിയ ഐറ്റം ചേർക്കുക:";
+  document.getElementById('item-form-title').innerText = "Add Menu Item:";
   document.getElementById('item-name-input').value = "";
   document.getElementById('item-price-input').value = "";
   document.getElementById('item-spicy-checkbox').checked = false;
@@ -1043,12 +1188,12 @@ async function saveShopProfile() {
         phone: shop.phone,
         printer_mode: printerMode
       });
-      alert("ഷോപ്പ് വിവരങ്ങൾ സേവ് ചെയ്തു!");
+      alert(currentLang === 'ar' ? "تم حفظ بيانات المنشأة بنجاح!" : "Shop settings saved!");
     } catch(e) {}
   }
 }
 
-// --- Keyboard Support ---
+// --- Physical Keyboard Support ---
 window.addEventListener('keydown', (e) => {
   const overlay = document.getElementById('pin-lock-overlay');
   if (overlay && overlay.style.display !== 'none') {
