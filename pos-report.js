@@ -3,7 +3,7 @@
 // ==========================================================
 
 let cachedActiveReportOrders = [];
-let currentViewingLevel = "Full Day";
+let currentViewingLevel = "Full Day Total";
 
 // --- Open Report Modal & Initialize Filters ---
 async function openShiftAndZReportModal() {
@@ -29,10 +29,10 @@ async function updateShiftDropdownOptions(selectedDate) {
     <option value="CURRENT">⚡ നിലവിലെ ഷിഫ്റ്റ് (Shift #${currentShiftNo} - Active)</option>
   `;
 
-  // Find unique shifts present in orders for this business date
   const shopId = currentShop ? currentShop.id : 'shop1';
   let dateOrders = orderHistory.filter(o => o.business_date === selectedDate);
 
+  // If online, check Supabase for any other recorded shifts on this date
   if (supabaseClient && navigator.onLine) {
     try {
       const { data } = await supabaseClient
@@ -63,7 +63,6 @@ async function updateShiftDropdownOptions(selectedDate) {
     selector.appendChild(opt);
   });
 
-  // Retain selection if valid, otherwise fallback to ALL
   if (Array.from(selector.options).some(o => o.value === prevSelected)) {
     selector.value = prevSelected;
   } else {
@@ -157,7 +156,7 @@ async function loadAndRenderReport() {
     });
   });
 
-  // 5. Update UI Cards & Info
+  // 5. Update KPI Cards & Info
   const cashEl = document.getElementById('kpi-cash-val');
   if (cashEl) cashEl.innerText = totalCash.toFixed(2);
 
@@ -210,7 +209,7 @@ async function executeShiftClosing() {
     return;
   }
 
-  // Filter current active shift orders
+  // Active shift orders
   const shiftOrders = orderHistory.filter(o => o.business_date === bDate && Number(o.shift_no) === Number(currentShiftNo));
 
   let totalCash = 0;
@@ -242,16 +241,17 @@ async function executeShiftClosing() {
     closing_note: `Shift #${currentShiftNo} Closed`
   };
 
-  // 1. Cloud Persistence
+  // 1. Cloud Persistence to 'shift_closings'
   if (supabaseClient && navigator.onLine) {
     try {
-      await supabaseClient.from('shift_closings').insert([shiftClosingRecord]);
+      const { error } = await supabaseClient.from('shift_closings').insert([shiftClosingRecord]);
+      if (error) console.warn("Shift closing insert error:", error);
     } catch (e) {
       console.warn("Shift closing save failed:", e);
     }
   }
 
-  // 2. Print Official Shift X-Report
+  // 2. Print Official Shift X-Report Slip
   printShiftXReportSlip(shiftClosingRecord, shiftOrders);
 
   // 3. Increment Shift Number for Next Employee
@@ -301,10 +301,11 @@ async function executeZDailyClosing() {
     closed_by: 'Manager'
   };
 
-  // 1. Cloud Persistence
+  // 1. Cloud Persistence to 'daily_closings'
   if (supabaseClient && navigator.onLine) {
     try {
-      await supabaseClient.from('daily_closings').insert([dailyClosingRecord]);
+      const { error } = await supabaseClient.from('daily_closings').insert([dailyClosingRecord]);
+      if (error) console.warn("Daily closing insert error:", error);
     } catch (e) {
       console.warn("Daily closing save failed:", e);
     }
@@ -410,7 +411,7 @@ function printFullDayZReportSlip(dailyRec, dayOrders) {
   setTimeout(() => window.print(), 250);
 }
 
-// --- Print Currently Viewed Filter (Slip) ---
+// --- Print Filtered Sales Slip ---
 function printSelectedReportSlip() {
   closeModals();
   const datePicker = document.getElementById('rep-calendar-picker');
