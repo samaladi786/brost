@@ -1,5 +1,5 @@
 // ==========================================================
-// POS REPORT ENGINE - SHIFT (X-REPORT) & DAILY (Z-REPORT)
+// POS REPORT ENGINE - BILINGUAL (EN / AR) SHIFT & Z-REPORT
 // ==========================================================
 
 let cachedActiveReportOrders = [];
@@ -23,16 +23,20 @@ async function updateShiftDropdownOptions(selectedDate) {
   const selector = document.getElementById('rep-shift-selector');
   if (!selector) return;
 
+  const lang = localStorage.getItem('pos_lang') || 'en';
   const prevSelected = selector.value;
+
+  const fullDayLabel = lang === 'ar' ? '🌟 إجمالي اليوم (Full Day)' : '🌟 Full Day Total (إجمالي اليوم)';
+  const activeShiftLabel = lang === 'ar' ? `⚡ الوردية الحالية (Shift #${currentShiftNo})` : `⚡ Active Live Shift #${currentShiftNo}`;
+
   selector.innerHTML = `
-    <option value="ALL">🌟 അന്നത്തെ ആകെ കച്ചവടം (Full Day)</option>
-    <option value="CURRENT">⚡ നിലവിലെ ഷിഫ്റ്റ് (Shift #${currentShiftNo} - Active)</option>
+    <option value="ALL">${fullDayLabel}</option>
+    <option value="CURRENT">${activeShiftLabel}</option>
   `;
 
   const shopId = currentShop ? currentShop.id : 'shop1';
   let dateOrders = orderHistory.filter(o => o.business_date === selectedDate);
 
-  // If online, check Supabase for any other recorded shifts on this date
   if (supabaseClient && navigator.onLine) {
     try {
       const { data } = await supabaseClient
@@ -55,11 +59,10 @@ async function updateShiftDropdownOptions(selectedDate) {
     if (o.shift_no) shiftsSet.add(Number(o.shift_no));
   });
 
-  // Sort and append shift options
   Array.from(shiftsSet).sort((a, b) => a - b).forEach(sNo => {
     const opt = document.createElement('option');
     opt.value = String(sNo);
-    opt.innerText = `🧑‍💼 ഷിഫ്റ്റ് #${sNo} (Shift ${sNo})`;
+    opt.innerText = lang === 'ar' ? `🧑‍💼 وردية رقم #${sNo}` : `🧑‍💼 Shift #${sNo}`;
     selector.appendChild(opt);
   });
 
@@ -72,8 +75,6 @@ async function updateShiftDropdownOptions(selectedDate) {
 
 // --- Filter Change Listener ---
 async function onReportFilterChange() {
-  const datePicker = document.getElementById('rep-calendar-picker');
-  const selectedDate = datePicker ? datePicker.value : getSaudiBusinessDate();
   await loadAndRenderReport();
 }
 
@@ -84,8 +85,9 @@ async function loadAndRenderReport() {
   const shiftSelector = document.getElementById('rep-shift-selector');
   const selectedShiftFilter = shiftSelector ? shiftSelector.value : "ALL";
   const shopId = currentShop ? currentShop.id : 'shop1';
+  const lang = localStorage.getItem('pos_lang') || 'en';
 
-  // 1. Local Orders for this date
+  // 1. Local Orders
   let dateOrders = orderHistory.filter(o => o.business_date === selectedDate);
 
   // 2. Fetch from Supabase if Online & Merge
@@ -111,14 +113,14 @@ async function loadAndRenderReport() {
   let filtered = [];
   if (selectedShiftFilter === "ALL") {
     filtered = dateOrders;
-    currentViewingLevel = "Full Day Total";
+    currentViewingLevel = lang === 'ar' ? "إجمالي اليوم بالكامل" : "Full Day Total";
   } else if (selectedShiftFilter === "CURRENT") {
     filtered = dateOrders.filter(o => Number(o.shift_no) === Number(currentShiftNo));
-    currentViewingLevel = `Active Live Shift #${currentShiftNo}`;
+    currentViewingLevel = lang === 'ar' ? `الوردية النشطة #${currentShiftNo}` : `Active Live Shift #${currentShiftNo}`;
   } else {
     const targetShiftNo = Number(selectedShiftFilter);
     filtered = dateOrders.filter(o => Number(o.shift_no) === targetShiftNo);
-    currentViewingLevel = `Shift #${targetShiftNo}`;
+    currentViewingLevel = lang === 'ar' ? `وردية رقم #${targetShiftNo}` : `Shift #${targetShiftNo}`;
   }
 
   cachedActiveReportOrders = filtered;
@@ -156,7 +158,7 @@ async function loadAndRenderReport() {
     });
   });
 
-  // 5. Update KPI Cards & Info
+  // 5. Update UI KPI Cards
   const cashEl = document.getElementById('kpi-cash-val');
   if (cashEl) cashEl.innerText = totalCash.toFixed(2);
 
@@ -167,7 +169,7 @@ async function loadAndRenderReport() {
   if (totalEl) totalEl.innerText = grandTotal.toFixed(2);
 
   const billsCountEl = document.getElementById('kpi-bills-count');
-  if (billsCountEl) billsCountEl.innerText = `${filtered.length} Bills`;
+  if (billsCountEl) billsCountEl.innerText = lang === 'ar' ? `${filtered.length} فواتير` : `${filtered.length} Bills`;
 
   const repDateEl = document.getElementById('rep-date-display');
   if (repDateEl) repDateEl.innerText = selectedDate;
@@ -184,7 +186,8 @@ async function loadAndRenderReport() {
     itemsTbody.innerHTML = '';
     const itemNames = Object.keys(itemMap);
     if (itemNames.length === 0) {
-      itemsTbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#64748b; padding:10px;">ഐറ്റങ്ങൾ വിറ്റിട്ടില്ല</td></tr>`;
+      const emptyMsg = lang === 'ar' ? "لا توجد مبيعات مسجلة" : "No items sold";
+      itemsTbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#64748b; padding:10px;">${emptyMsg}</td></tr>`;
     } else {
       itemNames.sort().forEach(name => {
         const row = itemMap[name];
@@ -200,16 +203,18 @@ async function loadAndRenderReport() {
   }
 }
 
-// --- Execute Employee Shift Closing (X-Report) ---
+// --- Execute Shift Closing (X-Report) ---
 async function executeShiftClosing() {
   const shopId = currentShop ? currentShop.id : 'shop1';
   const bDate = getSaudiBusinessDate();
+  const lang = localStorage.getItem('pos_lang') || 'en';
 
-  if (!confirm(`ഈ ഷിഫ്റ്റ് (Shift #${currentShiftNo}) പൂർണ്ണമായി ക്ലോസ് ചെയ്യണോ?\nഇതോടെ അടുത്ത ജീവനക്കാരനായി പുതിയ ഷിഫ്റ്റ് (#${currentShiftNo + 1}) ആരംഭിക്കും.`)) {
-    return;
-  }
+  const confirmMsg = lang === 'ar'
+    ? `هل تريد إغلاق الوردية الحالية (Shift #${currentShiftNo})؟\nسيتم فتح وردية جديدة تلقائياً برقم (#${currentShiftNo + 1}).`
+    : `Close active shift (Shift #${currentShiftNo})?\nA new shift (#${currentShiftNo + 1}) will begin immediately.`;
 
-  // Active shift orders
+  if (!confirm(confirmMsg)) return;
+
   const shiftOrders = orderHistory.filter(o => o.business_date === bDate && Number(o.shift_no) === Number(currentShiftNo));
 
   let totalCash = 0;
@@ -241,24 +246,27 @@ async function executeShiftClosing() {
     closing_note: `Shift #${currentShiftNo} Closed`
   };
 
-  // 1. Cloud Persistence to 'shift_closings'
+  // 1. Supabase Cloud Sync
   if (supabaseClient && navigator.onLine) {
     try {
-      const { error } = await supabaseClient.from('shift_closings').insert([shiftClosingRecord]);
-      if (error) console.warn("Shift closing insert error:", error);
+      await supabaseClient.from('shift_closings').insert([shiftClosingRecord]);
     } catch (e) {
-      console.warn("Shift closing save failed:", e);
+      console.warn("Shift closing sync notice:", e);
     }
   }
 
-  // 2. Print Official Shift X-Report Slip
+  // 2. Print Bilingual Shift X-Report Slip
   printShiftXReportSlip(shiftClosingRecord, shiftOrders);
 
-  // 3. Increment Shift Number for Next Employee
+  // 3. Increment Shift Number
   currentShiftNo += 1;
   saveLocalState(shopId);
 
-  alert(`ഷിഫ്റ്റ് #${currentShiftNo - 1} വിജയകരമായി ക്ലോസ് ചെയ്തു!\nഅടുത്ത ഷിഫ്റ്റ് (#${currentShiftNo}) ആരംഭിച്ചു.`);
+  const alertMsg = lang === 'ar'
+    ? `تم إغلاق الوردية #${currentShiftNo - 1} بنجاح!\nبدأت الوردية الجديدة #${currentShiftNo}.`
+    : `Shift #${currentShiftNo - 1} closed successfully!\nShift #${currentShiftNo} has started.`;
+
+  alert(alertMsg);
   closeModals();
 }
 
@@ -266,12 +274,14 @@ async function executeShiftClosing() {
 async function executeZDailyClosing() {
   const shopId = currentShop ? currentShop.id : 'shop1';
   const bDate = getSaudiBusinessDate();
+  const lang = localStorage.getItem('pos_lang') || 'en';
 
-  if (!confirm(`ഇന്നത്തെ മുഴുവൻ ബിസിനസ്സും ക്ലൗഡിൽ സ്ഥിരമായി ക്ലോസ് ചെയ്യണോ (Z-Closing)?\nഅന്നത്തെ എല്ലാ ഷിഫ്റ്റുകളും ഇതിൽ ഫൈനൽ ആകും.`)) {
-    return;
-  }
+  const confirmMsg = lang === 'ar'
+    ? `هل تريد إغلاق مبيعات اليوم بالكامل (تقرير Z النهائي)؟`
+    : `Perform full day end Z-Closing audit?`;
 
-  // All orders for this business date
+  if (!confirm(confirmMsg)) return;
+
   const dayOrders = orderHistory.filter(o => o.business_date === bDate);
 
   let totalCash = 0;
@@ -301,24 +311,25 @@ async function executeZDailyClosing() {
     closed_by: 'Manager'
   };
 
-  // 1. Cloud Persistence to 'daily_closings'
   if (supabaseClient && navigator.onLine) {
     try {
-      const { error } = await supabaseClient.from('daily_closings').insert([dailyClosingRecord]);
-      if (error) console.warn("Daily closing insert error:", error);
+      await supabaseClient.from('daily_closings').insert([dailyClosingRecord]);
     } catch (e) {
-      console.warn("Daily closing save failed:", e);
+      console.warn("Daily closing sync notice:", e);
     }
   }
 
-  // 2. Print Official Z-Report Slip
   printFullDayZReportSlip(dailyClosingRecord, dayOrders);
 
-  alert("ഇന്നത്തെ ബിസിനസ്സ് വിജയകരമായി ക്ലൗഡിൽ ക്ലോസ് ചെയ്തു (Z-Report Completed)!");
+  const alertMsg = lang === 'ar'
+    ? "تم إغلاق حسابات اليوم بالكامل وحفظها في السحابة بنجاح!"
+    : "Day completed and synchronized with cloud (Z-Report finalized)!";
+
+  alert(alertMsg);
   closeModals();
 }
 
-// --- Thermal Printing: Shift X-Report ---
+// --- Bilingual Thermal Print: Shift X-Report ---
 function printShiftXReportSlip(shiftRec, shiftOrders) {
   let itemMap = {};
   shiftOrders.forEach(o => {
@@ -340,23 +351,25 @@ function printShiftXReportSlip(shiftRec, shiftOrders) {
 
   document.getElementById('print-area').innerHTML = `
     <div class="receipt-center">
-      <h3>${shop.nameAr}</h3>
-      <h2>*** SHIFT X-REPORT ***</h2>
-      <h3 style="margin:2px 0;">SHIFT #${shiftRec.shift_no}</h3>
-      <div>Staff: ${shiftRec.employee_name}</div>
-      <div>Shift Date: ${shiftRec.business_date}</div>
-      <div>Print Time: ${new Date().toLocaleTimeString()}</div>
+      <h2 style="margin:2px 0;">${shop.nameAr}</h2>
+      <div style="font-size:12px; font-weight:bold;">${currentShop ? currentShop.name : shop.nameEn}</div>
+      <h3 style="margin:4px 0;">*** SHIFT X-REPORT ***</h3>
+      <div style="font-weight:bold; font-size:13px;">تقرير إغلاق الوردية</div>
+      <h2 style="margin:2px 0;">SHIFT #${shiftRec.shift_no}</h2>
+      <div>Cashier: ${shiftRec.employee_name}</div>
+      <div>Shift Date / التاريخ: ${shiftRec.business_date}</div>
+      <div>Printed: ${new Date().toLocaleTimeString()}</div>
     </div>
     <div class="receipt-line"></div>
-    <div class="receipt-row"><span>Total Bills:</span><span>${shiftRec.bills_count}</span></div>
-    <div class="receipt-row"><span>Cash Sales:</span><span>${shiftRec.cash_sales.toFixed(2)} SAR</span></div>
-    <div class="receipt-row"><span>Mada / Card:</span><span>${shiftRec.card_sales.toFixed(2)} SAR</span></div>
-    <div class="receipt-row"><span>VAT (15%):</span><span>${shiftRec.vat_amount.toFixed(2)} SAR</span></div>
+    <div class="receipt-row"><span>عدد الفواتير (Bills Count):</span><span>${shiftRec.bills_count}</span></div>
+    <div class="receipt-row"><span>المبيعات النقدية (Cash):</span><span>${shiftRec.cash_sales.toFixed(2)} SAR</span></div>
+    <div class="receipt-row"><span>مبيعات الشبكة (Mada/Card):</span><span>${shiftRec.card_sales.toFixed(2)} SAR</span></div>
+    <div class="receipt-row"><span>ضريبة القيمة المضافة (VAT):</span><span>${shiftRec.vat_amount.toFixed(2)} SAR</span></div>
     <div class="receipt-line"></div>
-    <div class="receipt-row receipt-bold" style="font-size:15px;"><span>SHIFT TOTAL:</span><span>${shiftRec.total_sales.toFixed(2)} SAR</span></div>
+    <div class="receipt-row receipt-bold" style="font-size:14px;"><span>إجمالي الوردية (TOTAL):</span><span>${shiftRec.total_sales.toFixed(2)} SAR</span></div>
     <div class="receipt-line"></div>
-    <div class="receipt-center receipt-bold" style="margin:4px 0;">SHIFT ITEMS BREAKDOWN</div>
-    <div class="receipt-row receipt-bold"><span>ITEM</span><span>QTY</span><span>AMOUNT</span></div>
+    <div class="receipt-center receipt-bold" style="margin:4px 0;">الأصناف المباعة / ITEMS BREAKDOWN</div>
+    <div class="receipt-row receipt-bold"><span>ITEM / الصنف</span><span>العدد</span><span>المجموع</span></div>
     <div class="receipt-line"></div>
     ${itemsRows || '<div class="receipt-center">No Items</div>'}
     <div class="receipt-line"></div>
@@ -364,7 +377,7 @@ function printShiftXReportSlip(shiftRec, shiftOrders) {
   setTimeout(() => window.print(), 250);
 }
 
-// --- Thermal Printing: Full Day Z-Report ---
+// --- Bilingual Thermal Print: Full Day Z-Report ---
 function printFullDayZReportSlip(dailyRec, dayOrders) {
   let itemMap = {};
   dayOrders.forEach(o => {
@@ -386,24 +399,25 @@ function printFullDayZReportSlip(dailyRec, dayOrders) {
 
   document.getElementById('print-area').innerHTML = `
     <div class="receipt-center">
-      <h3>${shop.nameAr}</h3>
-      <h2>*** OFFICIAL Z-REPORT ***</h2>
-      <h3 style="margin:2px 0;">FULL DAY AUDIT</h3>
-      <div>Shift Date: ${dailyRec.business_date}</div>
-      <div>Total Shifts: ${dailyRec.total_shifts}</div>
+      <h2 style="margin:2px 0;">${shop.nameAr}</h2>
+      <div style="font-size:12px; font-weight:bold;">${currentShop ? currentShop.name : shop.nameEn}</div>
+      <h3 style="margin:4px 0;">*** OFFICIAL Z-REPORT ***</h3>
+      <div style="font-weight:bold; font-size:13px;">التقرير النهائي لليوم (Z)</div>
+      <div>Shift Date / التاريخ: ${dailyRec.business_date}</div>
+      <div>Total Shifts / إجمالي الورديات: ${dailyRec.total_shifts}</div>
       <div>Closed By: ${dailyRec.closed_by}</div>
-      <div>Print Time: ${new Date().toLocaleTimeString()}</div>
+      <div>Printed: ${new Date().toLocaleTimeString()}</div>
     </div>
     <div class="receipt-line"></div>
-    <div class="receipt-row"><span>Total Bills:</span><span>${dailyRec.bills_count}</span></div>
-    <div class="receipt-row"><span>Cash Sales:</span><span>${dailyRec.cash_sales.toFixed(2)} SAR</span></div>
-    <div class="receipt-row"><span>Mada / Card:</span><span>${dailyRec.card_sales.toFixed(2)} SAR</span></div>
-    <div class="receipt-row"><span>Total VAT:</span><span>${dailyRec.vat_amount.toFixed(2)} SAR</span></div>
+    <div class="receipt-row"><span>إجمالي الفواتير (Bills):</span><span>${dailyRec.bills_count}</span></div>
+    <div class="receipt-row"><span>المبيعات النقدية (Cash):</span><span>${dailyRec.cash_sales.toFixed(2)} SAR</span></div>
+    <div class="receipt-row"><span>مبيعات الشبكة (Mada/Card):</span><span>${dailyRec.card_sales.toFixed(2)} SAR</span></div>
+    <div class="receipt-row"><span>إجمالي الضريبة (VAT 15%):</span><span>${dailyRec.vat_amount.toFixed(2)} SAR</span></div>
     <div class="receipt-line"></div>
-    <div class="receipt-row receipt-bold" style="font-size:15px;"><span>GRAND TOTAL:</span><span>${dailyRec.total_sales.toFixed(2)} SAR</span></div>
+    <div class="receipt-row receipt-bold" style="font-size:15px;"><span>الإجمالي العام (GRAND TOTAL):</span><span>${dailyRec.total_sales.toFixed(2)} SAR</span></div>
     <div class="receipt-line"></div>
-    <div class="receipt-center receipt-bold" style="margin:4px 0;">DAY ITEMS BREAKDOWN</div>
-    <div class="receipt-row receipt-bold"><span>ITEM</span><span>QTY</span><span>AMOUNT</span></div>
+    <div class="receipt-center receipt-bold" style="margin:4px 0;">مبيعات الأصناف / DAY ITEMS BREAKDOWN</div>
+    <div class="receipt-row receipt-bold"><span>ITEM / الصنف</span><span>العدد</span><span>المجموع</span></div>
     <div class="receipt-line"></div>
     ${itemsRows || '<div class="receipt-center">No Items</div>'}
     <div class="receipt-line"></div>
@@ -411,7 +425,7 @@ function printFullDayZReportSlip(dailyRec, dayOrders) {
   setTimeout(() => window.print(), 250);
 }
 
-// --- Print Filtered Sales Slip ---
+// --- Bilingual Thermal Print: Filtered Sales Slip ---
 function printSelectedReportSlip() {
   closeModals();
   const datePicker = document.getElementById('rep-calendar-picker');
@@ -449,22 +463,22 @@ function printSelectedReportSlip() {
 
   document.getElementById('print-area').innerHTML = `
     <div class="receipt-center">
-      <h3>${shop.nameAr}</h3>
-      <h2>SALES REPORT SLIP</h2>
-      <div style="font-weight:bold;">${currentViewingLevel}</div>
-      <div>Date: ${selectedDate}</div>
-      <div>Print Time: ${new Date().toLocaleTimeString()}</div>
+      <h2 style="margin:2px 0;">${shop.nameAr}</h2>
+      <h3 style="margin:2px 0;">SALES REPORT / تقرير المبيعات</h3>
+      <div style="font-weight:bold; font-size:13px;">${currentViewingLevel}</div>
+      <div>Date / التاريخ: ${selectedDate}</div>
+      <div>Printed: ${new Date().toLocaleTimeString()}</div>
     </div>
     <div class="receipt-line"></div>
-    <div class="receipt-row"><span>Total Bills:</span><span>${cachedActiveReportOrders.length}</span></div>
-    <div class="receipt-row"><span>Cash Sales:</span><span>${totalCash.toFixed(2)} SAR</span></div>
-    <div class="receipt-row"><span>Mada / Card:</span><span>${totalCard.toFixed(2)} SAR</span></div>
-    <div class="receipt-row"><span>Total VAT:</span><span>${totalVat.toFixed(2)} SAR</span></div>
+    <div class="receipt-row"><span>عدد الفواتير (Bills):</span><span>${cachedActiveReportOrders.length}</span></div>
+    <div class="receipt-row"><span>نقداً (Cash):</span><span>${totalCash.toFixed(2)} SAR</span></div>
+    <div class="receipt-row"><span>شبكة / مدى (Mada):</span><span>${totalCard.toFixed(2)} SAR</span></div>
+    <div class="receipt-row"><span>ضريبة (VAT 15%):</span><span>${totalVat.toFixed(2)} SAR</span></div>
     <div class="receipt-line"></div>
-    <div class="receipt-row receipt-bold" style="font-size:15px;"><span>TOTAL:</span><span>${grandTotal.toFixed(2)} SAR</span></div>
+    <div class="receipt-row receipt-bold" style="font-size:14px;"><span>المجموع (TOTAL):</span><span>${grandTotal.toFixed(2)} SAR</span></div>
     <div class="receipt-line"></div>
-    <div class="receipt-center receipt-bold" style="margin:4px 0;">ITEMS BREAKDOWN</div>
-    <div class="receipt-row receipt-bold"><span>ITEM</span><span>QTY</span><span>AMOUNT</span></div>
+    <div class="receipt-center receipt-bold" style="margin:4px 0;">الأصناف / ITEMS BREAKDOWN</div>
+    <div class="receipt-row receipt-bold"><span>ITEM / الصنف</span><span>العدد</span><span>المجموع</span></div>
     <div class="receipt-line"></div>
     ${itemsRows || '<div class="receipt-center">No Items</div>'}
     <div class="receipt-line"></div>
