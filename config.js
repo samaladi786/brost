@@ -11,10 +11,10 @@ window.GLOBAL_REPORT_PORTAL_URL = "https://samaladi786.github.io/aladi/";
 window.SHOPS_CONFIG = [
   {
     id: 'shop1',
-    name: 'NASSER BIN EID ALMAHMADI', //[cite: 1]
-    tagline: 'Main Supermarket Branch', //[cite: 1]
-    url: 'https://elubqoicerkldrufqcbj.supabase.co', //[cite: 1]
-    key: 'sb_publishable_zsEKreCmounELozZ5EQ3Lg_aXyut9EK', //[cite: 1]
+    name: 'BROST', //[cite: 1]
+    tagline: 'BROST POS', //[cite: 1]
+    url: 'https://rgsoehlmucocfmoblxvr.supabase.co', //[cite: 1]
+    key: 'sb_publishable_HBaYFMLtuNSD2ZcKffAbzA_-dkXWKCU', //[cite: 1]
     pin: '1234', //[cite: 1]
     themeGradient: 'from-emerald-950 via-slate-900 to-teal-950', //[cite: 1]
     accentColor: 'text-emerald-400', //[cite: 1]
