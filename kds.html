@@ -5,16 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Kitchen Display System (KDS) - Pro Station Edition</title>
 
-  <!-- Auto Clear Stale Cache & Service Worker -->
+  <!-- Auto Clear Cache -->
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(regs => {
         for (let reg of regs) reg.unregister();
-      });
-    }
-    if ('caches' in window) {
-      caches.keys().then(names => {
-        for (let name of names) caches.delete(name);
       });
     }
   </script>
@@ -26,63 +21,38 @@
     * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 0; }
     body { background: #0f172a; color: #f8fafc; height: 100vh; width: 100vw; display: flex; flex-direction: column; overflow: hidden; }
 
-    /* ================= 4-DIGIT PIN DIRECT LOCK SCREEN ================= */
-    #kds-pin-overlay {
-      position: fixed; inset: 0; background: #0b1120; z-index: 9999;
-      display: flex; flex-direction: column; justify-content: center; align-items: center;
-      padding: 10px; overflow-y: auto;
+    /* ================= 4-DIGIT PIN DIRECT LOCK SCREEN (SAME AS INDEX) ================= */
+    #pin-lock-overlay {
+      position: fixed; inset: 0; background: #0f172a; z-index: 9999;
+      display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px;
     }
     .pin-modal-card {
-      background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 14px 18px;
-      max-width: 330px; width: 100%; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.7);
-      margin: auto;
+      background: #1e293b; border: 1px solid #334155; border-radius: 20px; padding: 24px 20px;
+      max-width: 350px; width: 100%; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.6);
     }
+    .pin-dots-row {
+      display: flex; justify-content: center; gap: 14px; margin: 16px 0;
+    }
+    .pin-dot {
+      width: 18px; height: 18px; border-radius: 50%; border: 2px solid #475569; background: transparent; transition: all 0.15s ease;
+    }
+    .pin-dot.filled { background: #f59e0b; border-color: #f59e0b; box-shadow: 0 0 10px #f59e0b; }
     
-    /* 4 Visual Indicator Dots */
-    .pin-dots-container {
-      display: flex; justify-content: center; gap: 12px; margin: 10px 0 6px 0;
-    }
-    .pin-dot-circle {
-      width: 16px; height: 16px; border-radius: 50%; border: 2px solid #475569;
-      background: #0f172a; transition: all 0.15s ease;
-    }
-    .pin-dot-circle.filled {
-      background: #f59e0b; border-color: #f59e0b; box-shadow: 0 0 8px #f59e0b;
-    }
-    .pin-dot-circle.error {
-      background: #ef4444 !important; border-color: #ef4444 !important;
-    }
-
-    .pin-error-text {
-      color: #ef4444; font-size: 11px; font-weight: bold; min-height: 16px; margin-bottom: 4px;
-    }
-
-    /* Compact Numpad */
     .numpad-grid {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 2px;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 8px;
     }
     .num-key {
-      background: #0f172a; border: 1px solid #334155; color: #f8fafc; font-size: 20px; font-weight: bold;
-      padding: 10px 0; border-radius: 10px; cursor: pointer; transition: 0.1s; user-select: none;
+      background: #0f172a; border: 1px solid #334155; color: #f8fafc; font-size: 22px; font-weight: bold;
+      padding: 14px 0; border-radius: 12px; cursor: pointer; transition: 0.1s; user-select: none;
       touch-action: manipulation;
     }
-    .num-key:active { transform: scale(0.92); background: #334155; border-color: #f59e0b; }
-    .num-key.backspace { font-size: 16px; color: #ef4444; }
+    .num-key:active { transform: scale(0.94); background: #334155; }
+    .num-key.backspace { font-size: 18px; color: #ef4444; }
 
-    /* Direct Branch Quick Selector */
-    .quick-branch-area {
-      margin-top: 10px; padding-top: 8px; border-top: 1px dashed #334155;
-    }
-    .branch-pill-grid {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 4px;
-    }
-    .branch-pill-btn {
-      background: #0f172a; border: 1px solid #475569; color: #cbd5e1; padding: 7px 4px;
-      border-radius: 8px; font-size: 11px; font-weight: bold; cursor: pointer;
-      transition: 0.15s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .branch-pill-btn:hover, .branch-pill-btn:active {
-      border-color: #f59e0b; color: #fff; background: #334155; transform: translateY(-1px);
+    /* Master PIN Branch Picker Modal */
+    #master-branch-picker {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 10000;
+      justify-content: center; align-items: center; padding: 20px;
     }
 
     /* ================= TOP HEADER ================= */
@@ -188,48 +158,44 @@
 </head>
 <body>
 
-  <!-- ================= 4-DIGIT PIN DIRECT LOCK OVERLAY ================= -->
-  <div id="kds-pin-overlay">
+  <!-- ================= 4-DIGIT PIN LOCK OVERLAY ================= -->
+  <div id="pin-lock-overlay">
     <div class="pin-modal-card">
-      <div style="font-size:28px; line-height:1;">🧑‍🍳</div>
-      <h2 style="color:#f8fafc; font-size:16px; margin-top:2px;">KDS KITCHEN PIN</h2>
-      <p style="color:#94a3b8; font-size:11px;">4-അക്ക PIN നൽകുക അല്ലെങ്കിൽ ഷോപ്പ് തിരഞ്ഞെടുക്കുക</p>
+      <div style="font-size:32px; margin-bottom:4px;">🧑‍🍳</div>
+      <h2 style="color:#f8fafc; font-size:18px;">KDS KITCHEN PIN</h2>
+      <p style="color:#94a3b8; font-size:12px; margin-top:2px;">Enter 4-Digit Shop PIN</p>
       
-      <!-- 4 Visual Dynamic Indicator Circles -->
-      <div class="pin-dots-container">
-        <div class="pin-dot-circle" id="circle-0"></div>
-        <div class="pin-dot-circle" id="circle-1"></div>
-        <div class="pin-dot-circle" id="circle-2"></div>
-        <div class="pin-dot-circle" id="circle-3"></div>
+      <div class="pin-dots-row">
+        <div class="pin-dot" id="dot-0"></div>
+        <div class="pin-dot" id="dot-1"></div>
+        <div class="pin-dot" id="dot-2"></div>
+        <div class="pin-dot" id="dot-3"></div>
       </div>
 
-      <div class="pin-error-text" id="pin-error-msg"></div>
-
-      <!-- Touch Numpad -->
       <div class="numpad-grid">
-        <button type="button" class="num-key" onclick="pressNumpad('1')">1</button>
-        <button type="button" class="num-key" onclick="pressNumpad('2')">2</button>
-        <button type="button" class="num-key" onclick="pressNumpad('3')">3</button>
-        <button type="button" class="num-key" onclick="pressNumpad('4')">4</button>
-        <button type="button" class="num-key" onclick="pressNumpad('5')">5</button>
-        <button type="button" class="num-key" onclick="pressNumpad('6')">6</button>
-        <button type="button" class="num-key" onclick="pressNumpad('7')">7</button>
-        <button type="button" class="num-key" onclick="pressNumpad('8')">8</button>
-        <button type="button" class="num-key" onclick="pressNumpad('9')">9</button>
-        <button type="button" class="num-key" onclick="clearPinInput()" style="font-size:11px; color:#94a3b8;">CLEAR</button>
-        <button type="button" class="num-key" onclick="pressNumpad('0')">0</button>
+        <button type="button" class="num-key" onclick="pressKey('1')">1</button>
+        <button type="button" class="num-key" onclick="pressKey('2')">2</button>
+        <button type="button" class="num-key" onclick="pressKey('3')">3</button>
+        <button type="button" class="num-key" onclick="pressKey('4')">4</button>
+        <button type="button" class="num-key" onclick="pressKey('5')">5</button>
+        <button type="button" class="num-key" onclick="pressKey('6')">6</button>
+        <button type="button" class="num-key" onclick="pressKey('7')">7</button>
+        <button type="button" class="num-key" onclick="pressKey('8')">8</button>
+        <button type="button" class="num-key" onclick="pressKey('9')">9</button>
+        <button type="button" class="num-key" onclick="clearPinInput()" style="font-size:14px; color:#94a3b8;">CLEAR</button>
+        <button type="button" class="num-key" onclick="pressKey('0')">0</button>
         <button type="button" class="num-key backspace" onclick="pressBackspace()">⌫</button>
       </div>
+    </div>
+  </div>
 
-      <button type="button" onclick="submitPinCheck()" class="btn-top" style="width:100%; background:#16a34a; border:none; padding:10px; font-size:14px; margin-top:8px;">
-        തുറക്കുക (LOGIN)
-      </button>
-
-      <!-- 1-Click Direct Branch Buttons -->
-      <div class="quick-branch-area">
-        <div style="font-size:10px; color:#94a3b8; margin-bottom:4px;">നേരിട്ട് തുറക്കാൻ ഷോപ്പിൽ ക്ലിക്ക് ചെയ്യുക:</div>
-        <div class="branch-pill-grid" id="quick-branches-container"></div>
-      </div>
+  <!-- Master Branch Picker Modal -->
+  <div id="master-branch-picker">
+    <div class="pin-modal-card" style="max-width:440px;">
+      <h3 style="color:#facc15;">🔑 MASTER KDS ACCESS</h3>
+      <p style="color:#94a3b8; font-size:12px; margin: 8px 0 16px 0;">Select Branch to Open:</p>
+      <div id="master-branches-container" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"></div>
+      <button onclick="document.getElementById('master-branch-picker').style.display='none'" class="btn-top" style="margin-top:14px; width:100%;">Cancel</button>
     </div>
   </div>
 
@@ -244,17 +210,17 @@
     <!-- Live vs History Toggle -->
     <div class="view-tabs">
       <button class="tab-btn active" id="tab-live" onclick="switchView('live')">
-        🔥 ലൈവ് ഓർഡറുകൾ (<span id="live-count">0</span>)
+        🔥 Live Orders (<span id="live-count">0</span>)
       </button>
       <button class="tab-btn" id="tab-history" onclick="switchView('history')">
-        📜 കഴിഞ്ഞവ (Cloud History)
+        📜 History (Cloud)
       </button>
     </div>
 
     <div class="header-controls">
       <!-- Station Filter -->
       <select id="station-filter-select" class="header-select" onchange="onStationFilterChange()">
-        <option value="All">Station: All (എല്ലാം)</option>
+        <option value="All">Station: All</option>
         <option value="Main Kitchen">Station: Main Kitchen</option>
         <option value="Broast Station">Station: Broast Station</option>
         <option value="Burger Station">Station: Burger Station</option>
@@ -269,7 +235,7 @@
         <option value="mute">🔇 Mute</option>
       </select>
 
-      <button class="btn-top" onclick="triggerAlertSound()">🔊 ടെസ്റ്റ്</button>
+      <button class="btn-top" onclick="triggerAlertSound()">🔊 Test</button>
       <button class="btn-top btn-switch" onclick="lockKDS()">🔒 Logout</button>
     </div>
   </div>
@@ -278,7 +244,7 @@
   <div class="orders-grid" id="kds-orders-container">
     <div class="empty-state">
       <div style="font-size: 50px; margin-bottom: 10px;">🧑‍🍳</div>
-      <div>ഓർഡറുകൾ ഒന്നും വന്നിട്ടില്ല (Waiting for orders...)</div>
+      <div>Waiting for orders...</div>
     </div>
   </div>
 
@@ -286,7 +252,7 @@
   <div id="history-view">
     <div class="history-toolbar">
       <input type="text" id="history-search-input" class="search-box" 
-        placeholder="🔍 ടോക്കൺ (#01) അല്ലെങ്കിൽ കസ്റ്റമർ ഫോൺ തിരയുക..." oninput="filterHistoryList()">
+        placeholder="🔍 Search Token (#01) or Phone..." oninput="filterHistoryList()">
       <button class="btn-top" onclick="fetchHistoryFromCloud()" style="background:#0284c7;">🔄 Refresh Cloud History</button>
       <span style="color:#94a3b8; font-size:13px;" id="history-count-text"></span>
     </div>
@@ -309,30 +275,15 @@
   </div>
 
   <script>
-    function safeGet(key, def = null) {
-      try { return localStorage.getItem(key) || def; } catch(e) { return def; }
-    }
-    function safeSet(key, val) {
-      try { localStorage.setItem(key, val); } catch(e) {}
-    }
-
-    // Default Fallback shops with PIN mapping
     const FALLBACK_SHOPS = [
-      { id: 'shop1', name: 'NASSER BIN EID', url: 'https://elubqoicerkldrufqcbj.supabase.co', key: 'sb_publishable_zsEKreCmounELozZ5EQ3Lg_aXyut9EK', pin: '1234' },[cite: 1]
-      { id: 'shop2', name: 'BOOFIYA', url: 'https://qkjcviszzdptssvpguwc.supabase.co', key: 'sb_publishable_J0Z4b7NoP3VuDKdbC0WeIg_OQAlpnLQ', pin: '1111' },[cite: 1]
-      { id: 'shop3', name: 'TAJ SPORTS', url: 'https://garpkohthpeirdhcwthk.supabase.co', key: 'sb_publishable_TNhOZnpYuthYHmSJSlyhaw_R6RS1jcY', pin: '3333' },[cite: 1]
-      { id: 'shop4', name: 'MUSAD SPORTS', url: 'https://mwxbakqoipcwblhukrfs.supabase.co', key: 'sb_publishable_OfuR1PeffNa4NWUhpwV3gg_pwqovQZT', pin: '2222' }[cite: 1]
+      { id: 'shop1', name: 'BROST', url: 'https://rgsoehlmucocfmoblxvr.supabase.co', key: 'sb_publishable_HBaYFMLtuNSD2ZcKffAbzA_-dkXWKCU', pin: '1111' }
     ];
 
     function getAllShops() {
-      let shops = FALLBACK_SHOPS;
       if (typeof window.SHOPS_CONFIG !== 'undefined' && Array.isArray(window.SHOPS_CONFIG) && window.SHOPS_CONFIG.length > 0) {
-        shops = window.SHOPS_CONFIG.map((s, idx) => ({
-          ...s,
-          pin: s.pin || (FALLBACK_SHOPS[idx] ? FALLBACK_SHOPS[idx].pin : '1234')
-        }));
+        return window.SHOPS_CONFIG;
       }
-      return shops;
+      return FALLBACK_SHOPS;
     }
 
     let enteredPin = "";
@@ -341,14 +292,14 @@
     let liveOrders = [];
     let historyOrders = [];
     let currentView = 'live';
-    let currentStation = safeGet('kds_selected_station', 'All');
+    let currentStation = localStorage.getItem('kds_selected_station') || 'All';
 
     let localChannel = null;
     try {
       if (typeof BroadcastChannel !== 'undefined') {
         localChannel = new BroadcastChannel('broast_pos_channel');
       }
-    } catch(e) { localChannel = null; }
+    } catch(e) {}
 
     function getSaudiBusinessDate() {
       const now = new Date();
@@ -359,24 +310,13 @@
       return saudiTime.toISOString().slice(0, 10);
     }
 
-    // --- Interactive Dot Numpad Logic ---
-    function updateVisualDots() {
-      for (let i = 0; i < 4; i++) {
-        const dot = document.getElementById(`circle-${i}`);
-        if (dot) {
-          dot.classList.remove('error');
-          dot.classList.toggle('filled', i < enteredPin.length);
-        }
-      }
-    }
-
-    function pressNumpad(num) {
+    // --- PIN LOGIC (EXACTLY AS INDEX.HTML) ---
+    function pressKey(num) {
       if (enteredPin.length < 4) {
         enteredPin += String(num);
-        clearErrorText();
-        updateVisualDots();
+        updatePinDots();
         if (enteredPin.length === 4) {
-          setTimeout(submitPinCheck, 120);
+          setTimeout(verify4DigitPin, 100);
         }
       }
     }
@@ -384,123 +324,104 @@
     function pressBackspace() {
       if (enteredPin.length > 0) {
         enteredPin = enteredPin.slice(0, -1);
-        clearErrorText();
-        updateVisualDots();
+        updatePinDots();
       }
     }
 
     function clearPinInput() {
       enteredPin = "";
-      clearErrorText();
-      updateVisualDots();
+      updatePinDots();
     }
 
-    function clearErrorText() {
-      const err = document.getElementById('pin-error-msg');
-      if (err) err.innerText = '';
-    }
-
-    function flashError() {
+    function updatePinDots() {
       for (let i = 0; i < 4; i++) {
-        const dot = document.getElementById(`circle-${i}`);
-        if (dot) dot.classList.add('error');
+        const dot = document.getElementById(`dot-${i}`);
+        if (dot) dot.classList.toggle('filled', i < enteredPin.length);
       }
-      const err = document.getElementById('pin-error-msg');
-      if (err) err.innerText = '❌ തെറ്റായ PIN! (1234, 1111 etc.)';
-      setTimeout(clearPinInput, 700);
     }
 
-    function submitPinCheck() {
-      const pinStr = String(enteredPin).trim();
-      if (!pinStr) return;
-
-      const masterPin = typeof window.MASTER_PIN !== 'undefined' ? String(window.MASTER_PIN).trim() : '0000';[cite: 1]
+    function verify4DigitPin() {
+      const masterPin = typeof window.MASTER_PIN !== 'undefined' ? String(window.MASTER_PIN).trim() : "0000";
       const shops = getAllShops();
 
-      // Master PIN opens first branch
-      if (pinStr === masterPin) {
-        activateKdsShop(shops[0]);
+      // Master Admin PIN
+      if (enteredPin === masterPin) {
+        openMasterBranchPicker();
         return;
       }
 
-      // Check against all shops
-      const matched = shops.find(s => String(s.pin).trim() === pinStr);
-      if (matched) {
-        activateKdsShop(matched);
+      // Exact Shop PIN match
+      const matchedShop = shops.find(s => String(s.pin).trim() === enteredPin);
+      if (matchedShop) {
+        activateKdsShop(matchedShop);
       } else {
-        flashError();
+        alert("Thettaya PIN number! Veendum nalkuka.");
+        clearPinInput();
       }
     }
 
-    // Render Quick Branch Buttons
-    function renderQuickBranchButtons() {
-      const container = document.getElementById('quick-branches-container');
-      if (!container) return;
+    function openMasterBranchPicker() {
+      const picker = document.getElementById('master-branch-picker');
+      const container = document.getElementById('master-branches-container');
       container.innerHTML = '';
+      picker.style.display = 'flex';
+
       getAllShops().forEach(s => {
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = 'branch-pill-btn';
-        btn.innerHTML = `${s.name.split(' ')[0]} <span style="color:#f59e0b;">(${s.pin})</span>`;
-        btn.onclick = () => activateKdsShop(s);
+        btn.className = 'btn-top';
+        btn.style.cssText = 'padding:14px; font-size:13px; background:#0f172a; border:1px solid #475569;';
+        btn.innerText = `${s.name} (${s.pin})`;
+        btn.onclick = () => {
+          picker.style.display = 'none';
+          activateKdsShop(s);
+        };
         container.appendChild(btn);
       });
     }
 
     async function activateKdsShop(s) {
+      currentShop = s;
+      localStorage.setItem('kds_active_shop_id', s.id);
+      document.getElementById('pin-lock-overlay').style.display = 'none';
+      clearPinInput();
+
+      document.getElementById('header-shop-name').innerText = `🍗 ${s.name} (KDS)`;
+      document.getElementById('business-date-badge').innerText = `📅 Shift: ${getSaudiBusinessDate()}`;
+
+      document.getElementById('station-filter-select').value = currentStation;
+      const savedSound = localStorage.getItem('kds_sound_mode') || 'chime';
+      document.getElementById('sound-type-select').value = savedSound;
+
       try {
-        currentShop = s;
-        safeSet('kds_active_shop_id', s.id);
+        liveOrders = JSON.parse(localStorage.getItem(`kds_live_${s.id}`)) || [];
+        if (!Array.isArray(liveOrders)) liveOrders = [];
+      } catch(e) { liveOrders = []; }
 
-        const overlay = document.getElementById('kds-pin-overlay');
-        if (overlay) overlay.style.display = 'none';
-        clearPinInput();
+      try {
+        historyOrders = JSON.parse(localStorage.getItem(`kds_history_${s.id}`)) || [];
+        if (!Array.isArray(historyOrders)) historyOrders = [];
+      } catch(e) { historyOrders = []; }
 
-        const headName = document.getElementById('header-shop-name');
-        if (headName) headName.innerText = `🍗 ${s.name} (KDS)`;
+      renderLiveGrid();
 
-        const dateBadge = document.getElementById('business-date-badge');
-        if (dateBadge) dateBadge.innerText = `📅 Shift: ${getSaudiBusinessDate()}`;
-
-        const stationSelect = document.getElementById('station-filter-select');
-        if (stationSelect) stationSelect.value = currentStation;
-
-        const soundSelect = document.getElementById('sound-type-select');
-        const savedSound = safeGet('kds_sound_mode', 'chime');
-        if (soundSelect) soundSelect.value = savedSound;
-
-        try {
-          liveOrders = JSON.parse(safeGet(`kds_live_${s.id}`, '[]'));
-          if (!Array.isArray(liveOrders)) liveOrders = [];
-        } catch(e) { liveOrders = []; }
-
-        try {
-          historyOrders = JSON.parse(safeGet(`kds_history_${s.id}`, '[]'));
-          if (!Array.isArray(historyOrders)) historyOrders = [];
-        } catch(e) { historyOrders = []; }
-
-        renderLiveGrid();
-
-        if (s.url && s.key && window.supabase) {
-          supabaseClient = window.supabase.createClient(s.url, s.key);
-          await fetchLiveOrdersFromCloud();
-          await fetchHistoryFromCloud();
-          listenSupabaseRealtime();
-        }
-      } catch (err) {
-        console.error("activateKdsShop Error:", err);
+      if (s.url && s.key && window.supabase) {
+        supabaseClient = window.supabase.createClient(s.url, s.key);
+        await fetchLiveOrdersFromCloud();
+        await fetchHistoryFromCloud();
+        listenSupabaseRealtime();
       }
     }
 
     function lockKDS() {
       currentShop = null;
       supabaseClient = null;
-      safeSet('kds_active_shop_id', '');
+      localStorage.removeItem('kds_active_shop_id');
       clearPinInput();
-      const overlay = document.getElementById('kds-pin-overlay');
-      if (overlay) overlay.style.display = 'flex';
+      document.getElementById('pin-lock-overlay').style.display = 'flex';
     }
 
+    // --- Audio Alert ---
     function triggerAlertSound() {
       const mode = document.getElementById('sound-type-select').value;
       if (mode === 'mute') return;
@@ -552,15 +473,16 @@
 
     function saveSoundPreference() {
       const mode = document.getElementById('sound-type-select').value;
-      safeSet('kds_sound_mode', mode);
+      localStorage.setItem('kds_sound_mode', mode);
     }
 
     function onStationFilterChange() {
       currentStation = document.getElementById('station-filter-select').value;
-      safeSet('kds_selected_station', currentStation);
+      localStorage.setItem('kds_selected_station', currentStation);
       renderLiveGrid();
     }
 
+    // --- Cloud Sync ---
     async function fetchLiveOrdersFromCloud() {
       if (!supabaseClient || !currentShop) return;
       try {
@@ -602,7 +524,7 @@
       if (!supabaseClient) return;
 
       supabaseClient
-        .channel('kds-live-orders-channel')
+        .channel('kds-live-orders-realtime')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, payload => {
           const newOrder = payload.new;
           if (newOrder.shop_id === currentShop.id && newOrder.status === 'pending') {
@@ -654,8 +576,8 @@
 
     function saveLocalKdsState() {
       if (currentShop) {
-        safeSet(`kds_live_${currentShop.id}`, JSON.stringify(liveOrders));
-        safeSet(`kds_history_${currentShop.id}`, JSON.stringify(historyOrders));
+        localStorage.setItem(`kds_live_${currentShop.id}`, JSON.stringify(liveOrders));
+        localStorage.setItem(`kds_history_${currentShop.id}`, JSON.stringify(historyOrders));
       }
     }
 
@@ -699,7 +621,7 @@
             .eq('id', orderId);
         } catch(e) {}
       }
-      alert(`${order.token} വീണ്ടും ലൈവ് കിച്ചനിലേക്ക് തിരികെ മാറ്റി!`);
+      alert(`${order.token} live kitchenilekku thirike maati!`);
     }
 
     function switchView(view) {
@@ -745,7 +667,7 @@
         container.innerHTML = `
           <div class="empty-state">
             <div style="font-size: 50px; margin-bottom: 10px;">🧑‍🍳</div>
-            <div>${currentStation === 'All' ? 'പെൻഡിങ് ഓർഡറുകൾ ഒന്നുമില്ല (All Completed!)' : `${currentStation} സെക്ഷനിൽ ഓർഡറുകൾ ഒന്നുമില്ല.`}</div>
+            <div>${currentStation === 'All' ? 'All Orders Completed!' : `${currentStation} - No pending orders`}</div>
           </div>
         `;
         return;
@@ -792,7 +714,7 @@
           </div>
           <div class="card-actions">
             <button type="button" class="btn-done-single" onclick="completeOrderSingleClick(${order.id})">
-              ✅ കംപ്ലീറ്റ് (Done)
+              ✅ COMPLETE (Done)
             </button>
           </div>
         `;
@@ -814,11 +736,11 @@
         });
       }
 
-      document.getElementById('history-count-text').innerText = `${list.length} കഴിഞ്ഞ ഓർഡറുകൾ (Cloud)`;
+      document.getElementById('history-count-text').innerText = `${list.length} Orders (Cloud)`;
       tbody.innerHTML = '';
 
       if (list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#64748b; padding:20px;">ഓർഡറുകൾ ഒന്നും കണ്ടെത്തിയില്ല</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#64748b; padding:20px;">No Orders Found</td></tr>`;
         return;
       }
 
@@ -868,24 +790,22 @@
       });
     }, 1000);
 
-    // Keyboard support for Physical Numpad
+    // Keyboard support (Same as index.html)
     window.addEventListener('keydown', (e) => {
-      const overlay = document.getElementById('kds-pin-overlay');
+      const overlay = document.getElementById('pin-lock-overlay');
       if (overlay && overlay.style.display !== 'none') {
-        if (e.key >= '0' && e.key <= '9') pressNumpad(e.key);
+        if (e.key >= '0' && e.key <= '9') pressKey(e.key);
         else if (e.key === 'Backspace') pressBackspace();
-        else if (e.key === 'Enter') submitPinCheck();
       }
     });
 
-    // Startup
-    renderQuickBranchButtons();
-    const savedShopId = safeGet('kds_active_shop_id');
-    const existingShop = getAllShops().find(s => s.id === savedShopId);
-    if (existingShop) {
-      activateKdsShop(existingShop);
+    // Check existing active session
+    const activeShopId = localStorage.getItem('kds_active_shop_id');
+    const existing = getAllShops().find(s => s.id === activeShopId);
+    if (existing) {
+      activateKdsShop(existing);
     } else {
-      document.getElementById('kds-pin-overlay').style.display = 'flex';
+      document.getElementById('pin-lock-overlay').style.display = 'flex';
     }
   </script>
 </body>
