@@ -2,10 +2,10 @@
 <html lang="en" dir="ltr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Broasted POS - Bilingual Enterprise Edition</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Broasted POS - Enterprise Smart Edition</title>
 
-  <!-- PWA Manifest & App Config -->
+  <!-- PWA & App Manifest -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0f172a">
   <link rel="apple-touch-icon" href="icon-192.png">
@@ -31,35 +31,37 @@
 
   <style>
     * { box-sizing: border-box; font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 0; }
-    body { display: flex; height: 100vh; background: #f1f5f9; overflow: hidden; }
+    html, body {
+      background: #f1f5f9; height: 100%; width: 100%; overflow-x: hidden; position: relative;
+    }
+    body { display: flex; overflow: hidden; height: 100vh; }
 
     /* RTL Layout Rules */
     body[dir="rtl"] { direction: rtl; }
     body[dir="rtl"] .menu-panel { border-right: none; border-left: 2px solid #cbd5e1; }
-    body[dir="rtl"] .shop-badge { margin-left: 0; margin-right: 6px; }
     body[dir="rtl"] .set-table td, body[dir="rtl"] .set-table th,
     body[dir="rtl"] .rep-table td, body[dir="rtl"] .rep-table th { text-align: right; }
 
     /* ================= 4-DIGIT PIN LOCK OVERLAY ================= */
     #pin-lock-overlay {
       position: fixed; inset: 0; background: #0f172a; z-index: 9999;
-      display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px;
+      display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 16px;
     }
     .pin-modal-card {
-      background: #1e293b; border: 1px solid #334155; border-radius: 20px; padding: 24px 20px;
-      max-width: 350px; width: 100%; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+      background: #1e293b; border: 1px solid #334155; border-radius: 20px; padding: 22px 18px;
+      max-width: 330px; width: 100%; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.6);
     }
-    .pin-dots-row { display: flex; justify-content: center; gap: 14px; margin: 14px 0 8px 0; }
+    .pin-dots-row { display: flex; justify-content: center; gap: 12px; margin: 12px 0 6px 0; }
     .pin-dot {
-      width: 18px; height: 18px; border-radius: 50%; border: 2px solid #475569; background: transparent; transition: all 0.15s ease;
+      width: 16px; height: 16px; border-radius: 50%; border: 2px solid #475569; background: transparent; transition: all 0.15s ease;
     }
     .pin-dot.filled { background: #38bdf8; border-color: #38bdf8; box-shadow: 0 0 10px #38bdf8; }
     .pin-error-text { color: #ef4444; font-size: 13px; font-weight: bold; min-height: 20px; margin-bottom: 4px; }
 
-    .numpad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 6px; }
+    .numpad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 6px; }
     .num-key {
-      background: #0f172a; border: 1px solid #334155; color: #f8fafc; font-size: 22px; font-weight: bold;
-      padding: 13px 0; border-radius: 12px; cursor: pointer; transition: 0.1s; user-select: none;
+      background: #0f172a; border: 1px solid #334155; color: #f8fafc; font-size: 20px; font-weight: bold;
+      padding: 12px 0; border-radius: 10px; cursor: pointer; transition: 0.1s; user-select: none;
       touch-action: manipulation;
     }
     .num-key:active { transform: scale(0.94); background: #334155; }
@@ -67,112 +69,139 @@
 
     .direct-branch-btn {
       width: 100%; background: #0f172a; border: 1px solid #38bdf8; color: #38bdf8;
-      padding: 10px; border-radius: 10px; font-weight: bold; font-size: 14px;
-      margin-top: 12px; cursor: pointer; transition: 0.15s;
+      padding: 9px; border-radius: 10px; font-weight: bold; font-size: 13px;
+      margin-top: 10px; cursor: pointer; transition: 0.15s;
     }
     .direct-branch-btn:hover { background: #38bdf8; color: #000; }
 
     /* Master Branch Picker Modal */
     #master-branch-picker {
       display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 10000;
-      justify-content: center; align-items: center; padding: 20px;
+      justify-content: center; align-items: center; padding: 16px;
     }
 
     /* ================= MAIN POS INTERFACE ================= */
-    .menu-panel { flex: 6.8; display: flex; flex-direction: column; padding: 12px 16px; border-right: 2px solid #cbd5e1; }
-    .top-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .top-actions { display: flex; gap: 8px; align-items: center; }
-    .btn-top { background: #1e293b; color: #fff; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 12px; }
+    .menu-panel { flex: 6.8; display: flex; flex-direction: column; padding: 10px 14px; border-right: 2px solid #cbd5e1; overflow: hidden; }
+    .top-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px; }
+    .top-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    
+    .btn-top {
+      background: #1e293b; color: #fff; border: none; padding: 6px 10px; border-radius: 6px;
+      cursor: pointer; font-weight: bold; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;
+    }
     .btn-lang { background: #475569; font-weight: 800; border: 1px solid #64748b; }
+    .btn-accounts { background: #047857; color: #fff; } /* Future Module Link */
+    .btn-bills-log { background: #4338ca; }
+    .btn-petty { background: #d97706; }
     .btn-report { background: #0284c7; }
-    .btn-kds-link { background: #f59e0b; color: #000; text-decoration: none; padding: 8px 12px; border-radius: 8px; font-weight: bold; font-size: 12px; }
+    .btn-kds-link { background: #f59e0b; color: #000; text-decoration: none; padding: 6px 10px; border-radius: 6px; font-weight: bold; font-size: 11px; }
     .btn-logout { background: #ef4444; }
-    .shop-badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; margin-left: 6px; }
+    .shop-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: bold; margin-left: 6px; }
 
     /* Order Options Bar */
     .order-bar {
-      display: flex; gap: 10px; align-items: center; background: #ffffff; padding: 10px;
-      border-radius: 10px; margin-bottom: 10px; border: 1px solid #e2e8f0;
+      display: flex; gap: 6px; align-items: center; background: #ffffff; padding: 8px;
+      border-radius: 8px; margin-bottom: 8px; border: 1px solid #e2e8f0; flex-wrap: wrap;
     }
     .type-btn {
-      flex: 1; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px;
-      background: #f8fafc; cursor: pointer; font-weight: bold; font-size: 13px;
+      flex: 1; padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 6px;
+      background: #f8fafc; cursor: pointer; font-weight: bold; font-size: 12px; min-width: 90px;
     }
     .type-btn.active { background: #e11d48; color: #fff; border-color: #e11d48; }
-    .phone-input { flex: 1.5; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; }
+    .phone-input { flex: 1.4; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; min-width: 120px; }
+    .table-input { width: 90px; padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; text-align: center; font-weight: bold; }
 
-    /* Navigation */
-    .nav-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
-    .btn-back { background: #e2e8f0; border: 1px solid #cbd5e1; padding: 6px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; display: none; }
-    .current-title { font-size: 16px; font-weight: bold; color: #334155; }
+    /* ================= STICKY TOP CAPSULE CATEGORIES BAR ================= */
+    .cat-pills-wrapper {
+      display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 10px 2px;
+      margin-bottom: 6px; scrollbar-width: thin; -webkit-overflow-scrolling: touch;
+    }
+    .cat-pills-wrapper::-webkit-scrollbar { height: 4px; }
+    .cat-pills-wrapper::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    
+    .cat-pill {
+      display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px;
+      background: #ffffff; border: 1px solid #cbd5e1; border-radius: 20px;
+      font-size: 13px; font-weight: 700; color: #334155; cursor: pointer;
+      white-space: nowrap; transition: 0.1s; user-select: none;
+    }
+    .cat-pill:active { transform: scale(0.96); }
+    .cat-pill.active {
+      background: #0f172a; color: #facc15; border-color: #0f172a; box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+    .cat-pill-icon { font-size: 16px; }
 
     /* POS Items Grid */
-    .grid-container { flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 12px; overflow-y: auto; align-content: start; }
+    .grid-container {
+      flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 10px; overflow-y: auto; align-content: start; padding-bottom: 10px;
+    }
     .pos-card {
-      background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0;
+      background: #ffffff; border-radius: 10px; border: 1px solid #e2e8f0;
       cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.04); display: flex;
-      flex-direction: column; overflow: hidden; height: 135px; transition: 0.1s; text-align: center;
+      flex-direction: column; overflow: hidden; height: 130px; transition: 0.1s; text-align: center;
     }
     .pos-card:active { transform: scale(0.96); border-color: #e11d48; }
-    .card-img { width: 100%; height: 80px; object-fit: cover; background: #f8fafc; }
-    .card-icon { height: 80px; display: flex; align-items: center; justify-content: center; font-size: 36px; background: #f8fafc; }
-    .card-info { padding: 6px; flex: 1; display: flex; flex-direction: column; justify-content: center; }
-    .card-info h4 { font-size: 13px; color: #0f172a; line-height: 1.2; }
-    .card-info .price { color: #e11d48; font-weight: bold; font-size: 13px; margin-top: 2px; }
+    .card-img { width: 100%; height: 75px; object-fit: cover; background: #f8fafc; }
+    .card-icon { height: 75px; display: flex; align-items: center; justify-content: center; font-size: 32px; background: #f8fafc; }
+    .card-info { padding: 4px; flex: 1; display: flex; flex-direction: column; justify-content: center; }
+    .card-info h4 { font-size: 12px; color: #0f172a; line-height: 1.2; }
+    .card-info .price { color: #e11d48; font-weight: bold; font-size: 13px; margin-top: 1px; }
 
-    /* Cart Panel */
-    .cart-panel { flex: 3.2; background: #ffffff; display: flex; flex-direction: column; padding: 12px; }
-    .cart-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; }
-    .token-badge { background: #fee2e2; color: #dc2626; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 13px; }
-    .btn-clear { background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+    /* Cart Panel (Desktop) */
+    .cart-panel { flex: 3.2; background: #ffffff; display: flex; flex-direction: column; padding: 10px 12px; border-left: 1px solid #cbd5e1; }
+    .cart-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 6px; }
+    .token-badge { background: #fee2e2; color: #dc2626; padding: 3px 8px; border-radius: 20px; font-weight: bold; font-size: 12px; }
+    .btn-clear { background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; padding: 3px 6px; border-radius: 6px; cursor: pointer; font-size: 11px; }
 
-    .cart-items { flex: 1; overflow-y: auto; margin-top: 8px; }
-    .cart-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f8fafc; }
-    .qty-ctrl { display: flex; align-items: center; gap: 4px; margin: 0 6px; }
-    .qty-btn { width: 24px; height: 24px; border-radius: 4px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; font-weight: bold; }
+    .cart-items { flex: 1; overflow-y: auto; margin-top: 6px; }
+    .cart-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #f8fafc; }
+    .qty-ctrl { display: flex; align-items: center; gap: 4px; margin: 0 4px; }
+    .qty-btn { width: 22px; height: 22px; border-radius: 4px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; font-weight: bold; }
 
     /* Totals & Payments */
-    .totals { border-top: 2px solid #e2e8f0; padding-top: 10px; }
-    .row { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 13px; }
-    .total-bold { font-size: 18px; font-weight: bold; color: #0f172a; margin: 6px 0; }
+    .totals { border-top: 2px solid #e2e8f0; padding-top: 8px; }
+    .row { display: flex; justify-content: space-between; margin-bottom: 3px; font-size: 12px; }
+    .total-bold { font-size: 17px; font-weight: bold; color: #0f172a; margin: 4px 0; }
     
-    .pay-btn-group { display: flex; gap: 8px; margin-top: 8px; }
-    .btn-pay-cash { flex: 1; padding: 13px; background: #16a34a; color: #fff; border: none; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; }
-    .btn-pay-card { flex: 1; padding: 13px; background: #2563eb; color: #fff; border: none; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; }
+    .pay-btn-group { display: flex; gap: 6px; margin-top: 6px; }
+    .btn-pay-cash { flex: 1; padding: 11px; background: #16a34a; color: #fff; border: none; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer; }
+    .btn-pay-card { flex: 1; padding: 11px; background: #2563eb; color: #fff; border: none; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer; }
+    .btn-pay-split { flex: 0.9; padding: 11px; background: #7c3aed; color: #fff; border: none; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer; }
+
+    /* ================= MOBILE RESPONSIVE STYLES ================= */
+    @media (max-width: 768px) {
+      body { flex-direction: column; overflow-y: auto; }
+      .menu-panel { border-right: none; border-bottom: 2px solid #cbd5e1; padding: 8px; flex: none; height: 60vh; }
+      .cart-panel { flex: none; min-height: 40vh; border-left: none; }
+      .grid-container { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+      .pos-card { height: 115px; }
+      .card-img, .card-icon { height: 65px; }
+    }
 
     /* Modals Baseline */
-    .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 100; }
-    .modal-box { background: #fff; padding: 20px; border-radius: 12px; width: 380px; text-align: center; }
-    .modal-btn-row { display: flex; gap: 8px; margin-top: 15px; }
-    .btn-cancel { background: #ef4444; color: #fff; flex: 1; padding: 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
-    .btn-confirm { background: #16a34a; color: #fff; flex: 1; padding: 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+    .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 200; padding: 10px; }
+    .modal-box { background: #fff; padding: 18px; border-radius: 12px; width: 400px; max-width: 95%; text-align: center; }
+    .modal-btn-row { display: flex; gap: 8px; margin-top: 14px; }
+    .btn-cancel { background: #ef4444; color: #fff; flex: 1; padding: 9px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+    .btn-confirm { background: #16a34a; color: #fff; flex: 1; padding: 9px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
 
-    /* ================= TOP KPI SUMMARY CARDS IN REPORT ================= */
-    .kpi-cards-grid {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 12px 0;
-    }
-    .kpi-card {
-      padding: 12px 8px; border-radius: 10px; text-align: center; color: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
+    /* Top KPI Cards in Report */
+    .kpi-cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0; }
+    .kpi-card { padding: 10px 6px; border-radius: 8px; text-align: center; color: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
     .kpi-cash { background: linear-gradient(135deg, #15803d, #16a34a); }
     .kpi-card-bank { background: linear-gradient(135deg, #1d4ed8, #2563eb); }
     .kpi-total { background: linear-gradient(135deg, #0f172a, #334155); }
-    .kpi-title { font-size: 11px; text-transform: uppercase; font-weight: bold; opacity: 0.9; }
-    .kpi-val { font-size: 18px; font-weight: 900; margin-top: 4px; }
+    .kpi-title { font-size: 10px; text-transform: uppercase; font-weight: bold; opacity: 0.9; }
+    .kpi-val { font-size: 16px; font-weight: 900; margin-top: 2px; }
 
-    /* Settings Box & Tables */
-    .settings-box { width: 880px; max-width: 95%; max-height: 88vh; overflow-y: auto; text-align: left; }
-    .set-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12px; }
-    .set-table td, .set-table th { padding: 6px; border: 1px solid #e2e8f0; text-align: left; }
-    .set-table th { background: #f8fafc; }
-    .thumb-preview { width: 38px; height: 38px; object-fit: cover; border-radius: 4px; border: 1px solid #cbd5e1; }
+    /* Tables */
+    .set-table, .rep-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 8px; }
+    .set-table td, .set-table th, .rep-table td, .rep-table th { padding: 5px 6px; border: 1px solid #e2e8f0; text-align: left; }
+    .set-table th, .rep-table th { background: #f8fafc; }
+    .thumb-preview { width: 34px; height: 34px; object-fit: cover; border-radius: 4px; border: 1px solid #cbd5e1; }
 
-    /* Report Table */
-    .rep-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
-    .rep-table th, .rep-table td { padding: 6px 8px; border: 1px solid #cbd5e1; text-align: left; }
-    .rep-table th { background: #f1f5f9; }
-
-    /* Thermal 80mm Print CSS (Bilingual Format) */
+    /* Thermal 80mm Print CSS */
     #print-area { display: none; }
     @media print {
       body * { visibility: hidden !important; }
@@ -183,10 +212,10 @@
       }
       .receipt-center { text-align: center; }
       .receipt-bold { font-weight: bold; }
-      .receipt-line { border-bottom: 1px dashed #000; margin: 5px 0; }
-      .receipt-row { display: flex; justify-content: space-between; margin: 3px 0; }
-      .qr-center { display: flex; justify-content: center; margin: 8px 0; }
-      .cut-line { border-bottom: 2px dashed #000; margin: 15px 0 10px 0; text-align: center; font-size: 10px; }
+      .receipt-line { border-bottom: 1px dashed #000; margin: 4px 0; }
+      .receipt-row { display: flex; justify-content: space-between; margin: 2px 0; }
+      .qr-center { display: flex; justify-content: center; margin: 6px 0; }
+      .cut-line { border-bottom: 2px dashed #000; margin: 12px 0 8px 0; text-align: center; font-size: 10px; }
     }
   </style>
 </head>
@@ -195,9 +224,9 @@
   <!-- ================= PIN LOCK SCREEN ================= -->
   <div id="pin-lock-overlay">
     <div class="pin-modal-card">
-      <div style="font-size:36px; margin-bottom:4px;">🔒</div>
-      <h2 style="color:#f8fafc; font-size:18px;" id="ui-pin-title">ENTER 4-DIGIT PIN</h2>
-      <p style="color:#94a3b8; font-size:12px; margin-top:2px;" id="ui-pin-subtitle">Enter Shop PIN</p>
+      <div style="font-size:32px; margin-bottom:2px;">🔒</div>
+      <h2 style="color:#f8fafc; font-size:17px;" id="ui-pin-title">ENTER 4-DIGIT PIN</h2>
+      <p style="color:#94a3b8; font-size:11px; margin-top:2px;" id="ui-pin-subtitle">Enter Shop PIN</p>
       
       <div class="pin-dots-row">
         <div class="pin-dot" id="dot-0"></div>
@@ -218,7 +247,7 @@
         <button type="button" class="num-key" onclick="pressKey('7')">7</button>
         <button type="button" class="num-key" onclick="pressKey('8')">8</button>
         <button type="button" class="num-key" onclick="pressKey('9')">9</button>
-        <button type="button" class="num-key" onclick="clearPinInput()" style="font-size:13px; color:#94a3b8;" id="ui-pin-clear">CLEAR</button>
+        <button type="button" class="num-key" onclick="clearPinInput()" style="font-size:12px; color:#94a3b8;" id="ui-pin-clear">CLEAR</button>
         <button type="button" class="num-key" onclick="pressKey('0')">0</button>
         <button type="button" class="num-key backspace" onclick="pressBackspace()">⌫</button>
       </div>
@@ -231,11 +260,11 @@
 
   <!-- Master Branch Picker Modal -->
   <div id="master-branch-picker">
-    <div class="pin-modal-card" style="max-width:440px;">
-      <h3 style="color:#facc15;">🔑 MASTER ADMIN ACCESS</h3>
-      <p style="color:#94a3b8; font-size:12px; margin: 8px 0 16px 0;" id="ui-master-select-text">Select Branch to Open:</p>
-      <div id="master-branches-container" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"></div>
-      <button onclick="document.getElementById('master-branch-picker').style.display='none'" class="btn-top" style="margin-top:14px; width:100%;" id="ui-master-cancel">Cancel</button>
+    <div class="pin-modal-card" style="max-width:400px;">
+      <h3 style="color:#facc15; font-size:16px;">🔑 MASTER ADMIN ACCESS</h3>
+      <p style="color:#94a3b8; font-size:11px; margin: 6px 0 12px 0;" id="ui-master-select-text">Select Branch to Open:</p>
+      <div id="master-branches-container" style="display:grid; grid-template-columns:1fr 1fr; gap:8px;"></div>
+      <button onclick="document.getElementById('master-branch-picker').style.display='none'" class="btn-top" style="margin-top:12px; width:100%;" id="ui-master-cancel">Cancel</button>
     </div>
   </div>
 
@@ -244,37 +273,48 @@
     <div class="top-header">
       <div>
         <div style="display:flex; align-items:center;">
-          <h2 id="top-shop-name">🍗 Broasted POS</h2>
+          <h2 id="top-shop-name" style="font-size:18px;">🍗 Broasted POS</h2>
           <span id="top-shop-badge" class="shop-badge"></span>
-          <span id="business-date-badge" style="font-size:11px; background:#e2e8f0; color:#334155; padding:3px 8px; border-radius:6px; margin-left:6px; font-weight:bold;"></span>
-          <span id="network-status-badge" style="font-size:11px; padding:3px 8px; border-radius:6px; margin-left:6px; font-weight:bold; background:#16a34a; color:#fff;">ONLINE</span>
+          <span id="business-date-badge" style="font-size:10px; background:#e2e8f0; color:#334155; padding:2px 6px; border-radius:4px; margin-left:4px; font-weight:bold;"></span>
+          <span id="network-status-badge" style="font-size:10px; padding:2px 6px; border-radius:4px; margin-left:4px; font-weight:bold; background:#16a34a; color:#fff;">ONLINE</span>
         </div>
-        <small style="color:#64748b;" id="current-date-time"></small>
+        <small style="color:#64748b; font-size:11px;" id="current-date-time"></small>
       </div>
+
       <div class="top-actions">
-        <!-- Language Switch Button -->
+        <!-- 1. Language Switch -->
         <button class="btn-top btn-lang" id="btn-lang-toggle" onclick="toggleLanguage()">🌐 العربية</button>
-        <a href="kds.html" target="_blank" class="btn-kds-link" id="ui-btn-kds">📺 KDS Screen</a>
+        <!-- 2. Future Accounting Module Link -->
+        <button class="btn-top btn-accounts" onclick="openAccountsModule()" id="ui-btn-accounts">💼 Accounts & HR</button>
+        <!-- 3. Recent Bills Log / Reprint / Void -->
+        <button class="btn-top btn-bills-log" onclick="openRecentBillsModal()" id="ui-btn-recent-bills">🧾 Bills & Void</button>
+        <!-- 4. Petty Cash Drawer-out -->
+        <button class="btn-top btn-petty" onclick="openPettyCashModal()" id="ui-btn-petty">💸 Petty Cash</button>
+        <!-- 5. KDS Screen Link -->
+        <a href="kds.html" target="_blank" class="btn-kds-link" id="ui-btn-kds">📺 KDS</a>
+        <!-- 6. Financial Reports -->
         <button class="btn-top btn-report" onclick="openShiftAndZReportModal()" id="ui-btn-reports">📊 Reports</button>
+        <!-- 7. Settings & Logout -->
         <button class="btn-top" onclick="openSettingsModal()" id="ui-btn-settings">⚙️ Settings</button>
         <button class="btn-top btn-logout" onclick="lockPOS()" id="ui-btn-logout">🔒 Logout</button>
       </div>
     </div>
 
-    <!-- Order Options Bar -->
+    <!-- Order Options Bar (Takeaway, Dine-in with Table No, Phone Order) -->
     <div class="order-bar">
       <button class="type-btn active" id="btn-type-takeaway" onclick="setOrderType('Takeaway', this)">📦 Takeaway (سفري)</button>
       <button class="type-btn" id="btn-type-dinein" onclick="setOrderType('Dine-in', this)">🍽️ Dine-in (محلي)</button>
-      <button class="type-btn" id="btn-type-phone" onclick="setOrderType('Phone Order', this)">📞 Phone Order (هاتف)</button>
+      <button class="type-btn" id="btn-type-phone" onclick="setOrderType('Phone Order', this)">📞 Phone (هاتف)</button>
+      
+      <!-- Dine-in Table Number (Auto-toggled or editable) -->
+      <input type="text" class="table-input" id="table-number-input" placeholder="Table #" style="display:none;">
       <input type="tel" class="phone-input" id="cust-phone" placeholder="Customer Mobile (Optional)">
     </div>
 
-    <!-- Navigation -->
-    <div class="nav-bar">
-      <button class="btn-back" id="btn-back" onclick="showCategories()">⬅️ Categories (Back)</button>
-      <div class="current-title" id="current-title">Main Categories</div>
-    </div>
+    <!-- ================= STICKY TOP CAPSULE CATEGORY BAR ================= -->
+    <div class="cat-pills-wrapper" id="cat-pills-bar"></div>
 
+    <!-- POS Items Grid (Always displayed for the active category) -->
     <div class="grid-container" id="pos-grid"></div>
   </div>
 
@@ -282,7 +322,7 @@
   <div class="cart-panel">
     <div class="cart-header">
       <div>
-        <strong id="ui-cart-title">Order List</strong>
+        <strong id="ui-cart-title" style="font-size:14px;">Order List</strong>
         <span class="token-badge" id="token-display">Token #01</span>
       </div>
       <button class="btn-clear" onclick="clearCart()" id="ui-btn-clear-cart">🗑️ Clear Cart</button>
@@ -295,9 +335,11 @@
       <div class="row"><span id="ui-lbl-vat">VAT (15%):</span><span id="vat">0.00 SAR</span></div>
       <div class="row total-bold"><span id="ui-lbl-total">Total:</span><span id="grand-total">0.00 SAR</span></div>
       
+      <!-- Payment Button Group (Cash, Mada, Split) -->
       <div class="pay-btn-group">
         <button class="btn-pay-cash" onclick="openCashPaymentModal()" id="ui-btn-pay-cash">💵 CASH (نقداً)</button>
-        <button class="btn-pay-card" onclick="processCardPayment()" id="ui-btn-pay-card">💳 MADA / CARD (شبكة)</button>
+        <button class="btn-pay-card" onclick="processCardPayment()" id="ui-btn-pay-card">💳 MADA (شبكة)</button>
+        <button class="btn-pay-split" onclick="openSplitPaymentModal()" id="ui-btn-pay-split">🔀 Split (مقسم)</button>
       </div>
     </div>
   </div>
@@ -306,7 +348,7 @@
   <div class="modal-backdrop" id="flavor-modal">
     <div class="modal-box">
       <h3 id="flavor-modal-title">Select Flavor</h3>
-      <div style="margin: 20px 0; display: flex; justify-content: center; gap: 20px;">
+      <div style="margin: 16px 0; display: flex; justify-content: center; gap: 20px;">
         <label><input type="radio" name="spice" value="Normal" checked> <span id="ui-flv-normal">Normal (عادي)</span></label>
         <label><input type="radio" name="spice" value="Spicy"> <span id="ui-flv-spicy">Spicy 🌶️ (حار)</span></label>
       </div>
@@ -321,10 +363,10 @@
   <div class="modal-backdrop" id="cash-modal">
     <div class="modal-box">
       <h3 id="ui-cash-modal-title">💵 Cash Payment</h3>
-      <p style="margin: 8px 0; font-size: 16px;"><span id="ui-cash-lbl-bill">Bill Amount:</span> <strong id="cash-bill-amt" style="color:#e11d48;">0.00 SAR</strong></p>
+      <p style="margin: 6px 0; font-size: 15px;"><span id="ui-cash-lbl-bill">Bill Amount:</span> <strong id="cash-bill-amt" style="color:#e11d48;">0.00 SAR</strong></p>
       <input type="number" id="cash-received-input" placeholder="Cash Received" 
-        style="width: 100%; padding: 10px; font-size: 16px; margin: 10px 0; text-align: center;" oninput="calculateChange()">
-      <div style="font-size: 16px; font-weight: bold; color: #16a34a; margin-bottom: 10px;">
+        style="width: 100%; padding: 8px; font-size: 16px; margin: 8px 0; text-align: center; border:1px solid #cbd5e1; border-radius:6px;" oninput="calculateChange()">
+      <div style="font-size: 15px; font-weight: bold; color: #16a34a; margin-bottom: 8px;">
         <span id="ui-cash-lbl-change">Change Due:</span> <span id="cash-change-amt">0.00</span> SAR
       </div>
       <div class="modal-btn-row">
@@ -334,12 +376,84 @@
     </div>
   </div>
 
+  <!-- ================= SPLIT PAYMENT MODAL (CASH + MADA) ================= -->
+  <div class="modal-backdrop" id="split-modal">
+    <div class="modal-box">
+      <h3 style="color:#7c3aed;" id="ui-split-title">🔀 Split Payment (دفع مجزأ)</h3>
+      <p style="margin: 6px 0; font-size: 14px;">Total Bill: <strong id="split-total-bill" style="color:#e11d48;">0.00 SAR</strong></p>
+      
+      <div style="text-align:left; margin: 10px 0;">
+        <label style="font-size:12px; font-weight:bold; color:#15803d;" id="ui-split-lbl-cash">💵 Cash Amount (المبلغ النقدي):</label>
+        <input type="number" id="split-cash-input" placeholder="0.00" style="width:100%; padding:8px; font-size:15px; border:1px solid #cbd5e1; border-radius:6px; margin-top:2px;" oninput="calculateSplitBalance()">
+      </div>
+
+      <div style="text-align:left; margin: 10px 0;">
+        <label style="font-size:12px; font-weight:bold; color:#1d4ed8;" id="ui-split-lbl-card">💳 Mada/Card Balance (مبلغ الشبكة):</label>
+        <input type="number" id="split-card-input" placeholder="0.00" readonly style="width:100%; padding:8px; font-size:15px; background:#f1f5f9; border:1px solid #cbd5e1; border-radius:6px; margin-top:2px; font-weight:bold; color:#1d4ed8;">
+      </div>
+
+      <div class="modal-btn-row">
+        <button class="btn-cancel" onclick="closeModals()" id="ui-btn-split-cancel">Cancel</button>
+        <button class="btn-confirm" style="background:#7c3aed;" onclick="finalizeSplitOrder()" id="ui-btn-split-confirm">Complete Split Bill</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= RECENT BILLS, REPRINT & VOID MODAL ================= -->
+  <div class="modal-backdrop" id="recent-bills-modal">
+    <div class="modal-box" style="width: 650px; max-width: 95%; max-height: 88vh; overflow-y: auto; text-align: left;">
+      <h3 style="text-align:center;" id="ui-recent-bills-title">🧾 Recent Bills, Reprint & Void Log</h3>
+      <p style="text-align:center; color:#64748b; font-size:11px;">آخر الفواتير الصادرة - إعادة طباعة أو إلغاء فاتورة</p>
+      
+      <div style="max-height: 280px; overflow-y: auto; margin-top: 10px;">
+        <table class="rep-table">
+          <thead>
+            <tr>
+              <th>Token</th>
+              <th>Time</th>
+              <th>Total</th>
+              <th>Payment</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="recent-bills-tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="modal-btn-row" style="margin-top:14px;">
+        <button class="btn-cancel" onclick="closeModals()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= PETTY CASH / DRAWER-OUT MODAL ================= -->
+  <div class="modal-backdrop" id="petty-cash-modal">
+    <div class="modal-box">
+      <h3 style="color:#d97706;" id="ui-petty-title">💸 Drawer Cash-Out (مصروفات درج النقدية)</h3>
+      <p style="font-size:12px; color:#64748b; margin:4px 0;">سحب مبلغ نقدي من الدرج للمشتريات اليومية البسيطة</p>
+      
+      <div style="margin: 10px 0; text-align:left;">
+        <label style="font-size:12px; font-weight:bold;">Amount (المبلغ):</label>
+        <input type="number" id="petty-amt-input" placeholder="SAR" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-size:15px;">
+      </div>
+      <div style="margin: 10px 0; text-align:left;">
+        <label style="font-size:12px; font-weight:bold;">Reason (السبب / البيان):</label>
+        <input type="text" id="petty-reason-input" placeholder="e.g. Milk, Onions, Cleaning" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px;">
+      </div>
+
+      <div class="modal-btn-row">
+        <button class="btn-cancel" onclick="closeModals()">Cancel</button>
+        <button class="btn-confirm" style="background:#d97706;" onclick="recordPettyCash()">Confirm Expense</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ================= SHIFT & Z-REPORT MODAL ================= -->
   <div class="modal-backdrop" id="report-modal">
     <div class="modal-box" style="width: 620px; max-width: 95%; max-height: 90vh; overflow-y: auto; text-align: left;">
       <h3 style="text-align: center;" id="ui-rep-main-title">📊 Financial & Shift Reports</h3>
       
-      <!-- Date & Shift Filter Bar -->
       <div style="display:flex; gap:8px; align-items:center; background:#f8fafc; padding:8px 12px; border-radius:8px; margin: 10px 0; border:1px solid #cbd5e1; flex-wrap:wrap;">
         <div style="flex:1;">
           <small style="font-weight:bold; color:#64748b; display:block;" id="ui-rep-lbl-date">Select Date:</small>
@@ -354,7 +468,7 @@
         </div>
       </div>
 
-      <!-- Top KPI Cards (Cash, Card/Bank, Grand Total) -->
+      <!-- Top KPI Cards -->
       <div class="kpi-cards-grid">
         <div class="kpi-card kpi-cash">
           <div class="kpi-title" id="ui-kpi-cash-title">💵 CASH (نقداً)</div>
@@ -373,16 +487,17 @@
         </div>
       </div>
 
-      <!-- Detailed Breakdown Box -->
-      <div style="font-size: 13px; line-height: 1.7; background:#fff; border:1px solid #e2e8f0; padding:10px; border-radius:8px;">
+      <!-- Detailed Breakdown Box with Petty Cash deductions -->
+      <div style="font-size: 12px; line-height: 1.7; background:#fff; border:1px solid #e2e8f0; padding:8px 12px; border-radius:8px;">
         <div class="row"><span id="ui-rep-info-shift-date">Shift Date:</span><strong id="rep-date-display">-</strong></div>
         <div class="row"><span id="ui-rep-info-level">Report Level:</span><strong id="rep-level-display">Full Day</strong></div>
+        <div class="row"><span>Petty Cash Deductions (المصروفات النثرية):</span><strong id="rep-petty-display" style="color:#d97706;">0.00 SAR</strong></div>
         <div class="row"><span id="ui-rep-info-vat">Total VAT (15%):</span><strong id="rep-vat-display">0.00 SAR</strong></div>
       </div>
 
       <!-- Item Sales Breakdown -->
-      <h4 style="margin: 12px 0 4px 0; font-size:14px;" id="ui-rep-items-title">📦 Item Sales Breakdown (تفاصيل الأصناف):</h4>
-      <div style="max-height: 160px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius:6px;">
+      <h4 style="margin: 10px 0 4px 0; font-size:13px;" id="ui-rep-items-title">📦 Item Sales Breakdown (تفاصيل الأصناف):</h4>
+      <div style="max-height: 150px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius:6px;">
         <table class="rep-table">
           <thead>
             <tr>
@@ -396,16 +511,16 @@
       </div>
 
       <!-- Action Buttons -->
-      <div class="modal-btn-row" style="flex-direction:column; gap:8px; margin-top:14px;">
-        <div style="display:flex; gap:8px;">
+      <div class="modal-btn-row" style="flex-direction:column; gap:6px; margin-top:12px;">
+        <div style="display:flex; gap:6px;">
           <button class="btn-cancel" onclick="closeModals()" id="ui-btn-rep-close">Close</button>
           <button class="btn-confirm" style="background:#0284c7;" onclick="printSelectedReportSlip()" id="ui-btn-rep-print">🖨️ Print Report Slip</button>
         </div>
-        <div style="display:flex; gap:8px;">
-          <button class="btn-top" style="flex:1; background:#f59e0b; color:#000; padding:10px; border-radius:6px;" onclick="executeShiftClosing()" id="ui-btn-shift-close">
+        <div style="display:flex; gap:6px;">
+          <button class="btn-top" style="flex:1; background:#f59e0b; color:#000; padding:9px; border-radius:6px;" onclick="executeShiftClosing()" id="ui-btn-shift-close">
             🧑‍💼 Close Active Shift (إغلاق الوردية)
           </button>
-          <button class="btn-top" style="flex:1; background:#b91c1c; padding:10px; border-radius:6px;" onclick="executeZDailyClosing()" id="ui-btn-day-close">
+          <button class="btn-top" style="flex:1; background:#b91c1c; padding:9px; border-radius:6px;" onclick="executeZDailyClosing()" id="ui-btn-day-close">
             🔒 Full Day Z-Closing (إغلاق اليوم Z)
           </button>
         </div>
@@ -415,30 +530,30 @@
 
   <!-- ================= SETTINGS MODAL ================= -->
   <div class="modal-backdrop" id="settings-modal">
-    <div class="modal-box settings-box">
+    <div class="modal-box" style="width: 840px; max-width: 95%; max-height: 88vh; overflow-y: auto; text-align: left;">
       <h3 id="ui-set-main-title">⚙️ System Settings & Mapping</h3>
 
       <!-- 1. Kitchen Station Manager -->
       <div style="background:#f8fafc; padding:10px 12px; border-radius:8px; margin-top:8px; border:1px solid #e2e8f0;" id="st-form-box">
         <h4 id="st-form-title">🧑‍🍳 Kitchen Station Management:</h4>
         <div style="display:grid; grid-template-columns: 2fr 1.5fr 1fr auto; gap:6px; margin-top:6px;">
-          <input type="text" id="new-station-name" placeholder="Station Name (e.g. Broast Section)" style="padding:6px;">
+          <input type="text" id="new-station-name" placeholder="Station Name" style="padding:6px;">
           <select id="new-station-routing" style="padding:6px;">
             <option value="Both">Both (KDS + Printer)</option>
             <option value="Display Only">Display Only (KDS)</option>
             <option value="Printer Only">Printer Only</option>
           </select>
-          <input type="text" id="new-station-pin" placeholder="PIN (1001)" maxlength="4" style="padding:6px; text-align:center;">
+          <input type="text" id="new-station-pin" placeholder="PIN" maxlength="4" style="padding:6px; text-align:center;">
           <div style="display:flex; gap:4px;">
             <button id="btn-save-st" onclick="saveKitchenStation()" style="background:#1e293b; color:#fff; border:none; padding:6px 12px; border-radius:4px; font-weight:bold; cursor:pointer;">Save</button>
             <button id="btn-cancel-st" onclick="resetStationForm()" style="display:none; background:#64748b; color:#fff; border:none; padding:6px 8px; border-radius:4px; cursor:pointer;">Cancel</button>
           </div>
         </div>
 
-        <h5 style="margin-top:10px;" id="ui-set-curr-stations">Current Stations:</h5>
-        <div style="max-height: 120px; overflow-y: auto; margin-top:4px;">
+        <h5 style="margin-top:10px;">Current Stations:</h5>
+        <div style="max-height: 110px; overflow-y: auto; margin-top:4px;">
           <table class="set-table">
-            <thead><tr><th>Station Name</th><th>Routing Mode</th><th>Station PIN</th><th>Action</th></tr></thead>
+            <thead><tr><th>Station Name</th><th>Routing</th><th>PIN</th><th>Action</th></tr></thead>
             <tbody id="stations-table-body"></tbody>
           </table>
         </div>
@@ -457,8 +572,8 @@
           </div>
         </div>
 
-        <h5 style="margin-top:10px;" id="ui-set-curr-cats">Current Categories:</h5>
-        <div style="max-height: 120px; overflow-y: auto; margin-top:4px;">
+        <h5 style="margin-top:10px;">Current Categories:</h5>
+        <div style="max-height: 110px; overflow-y: auto; margin-top:4px;">
           <table class="set-table">
             <thead><tr><th>Icon</th><th>Category Name</th><th>Kitchen Station</th><th>Action</th></tr></thead>
             <tbody id="categories-table-body"></tbody>
@@ -466,7 +581,7 @@
         </div>
       </div>
 
-      <!-- 3. Add or Edit Item -->
+      <!-- 3. Menu Item Management -->
       <div style="background:#f8fafc; padding:10px 12px; border-radius:8px; margin-top:8px; border:1px solid #e2e8f0;" id="item-form-box">
         <h4 id="item-form-title">Add Menu Item:</h4>
         <div style="display:grid; grid-template-columns: 2fr 1fr 1.5fr; gap:6px; margin-top:6px;">
@@ -481,7 +596,7 @@
           </div>
 
           <label style="display:flex; align-items:center; gap:4px; font-size:12px;">
-            <input type="checkbox" id="item-spicy-checkbox"> <span id="ui-lbl-spicy-opt">Has Spicy Option?</span>
+            <input type="checkbox" id="item-spicy-checkbox"> Has Spicy Option?
           </label>
         </div>
         <div style="margin-top:8px; display:flex; gap:6px;">
@@ -490,23 +605,22 @@
         </div>
       </div>
 
-      <!-- 4. Menu Items Table -->
-      <h4 style="margin-top:10px;" id="ui-set-curr-items">Current Menu Items:</h4>
-      <div style="max-height: 150px; overflow-y: auto;">
+      <h5 style="margin-top:10px;">Current Menu Items:</h5>
+      <div style="max-height: 130px; overflow-y: auto;">
         <table class="set-table">
           <thead><tr><th>Photo</th><th>Item</th><th>Price</th><th>Category</th><th>Spicy?</th><th>Action</th></tr></thead>
           <tbody id="settings-table-body"></tbody>
         </table>
       </div>
 
-      <!-- 5. Shop Profile & VAT -->
+      <!-- 4. Shop Profile & VAT -->
       <div style="background:#f8fafc; padding:10px 12px; border-radius:8px; margin-top:8px; border:1px solid #e2e8f0;">
-        <h4 id="ui-set-vat-title">Shop Profile & VAT Data:</h4>
+        <h4>Shop Profile & VAT Data:</h4>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 4px;">
-          <input type="text" id="set-shop-ar" placeholder="Shop Name (Arabic - اسم المنشأة)" style="padding:6px;">
+          <input type="text" id="set-shop-ar" placeholder="Shop Name (Arabic)" style="padding:6px;">
           <input type="text" id="set-shop-en" placeholder="Shop Name (English)" style="padding:6px;">
-          <input type="text" id="set-vat-no" placeholder="15-Digit VAT Number (الرقم الضريبي)" style="padding:6px;">
-          <input type="text" id="set-phone" placeholder="Telephone (رقم الهاتف)" style="padding:6px;">
+          <input type="text" id="set-vat-no" placeholder="15-Digit VAT Number" style="padding:6px;">
+          <input type="text" id="set-phone" placeholder="Telephone" style="padding:6px;">
         </div>
         <div style="margin-top:6px; display:flex; justify-content:space-between; align-items:center;">
           <select id="set-printer-mode" style="padding:6px;">
@@ -514,19 +628,19 @@
             <option value="separate">Separate Kitchen Slip</option>
             <option value="off">Customer Bill Only</option>
           </select>
-          <button onclick="saveShopProfile()" style="background:#1e293b; color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;" id="ui-btn-save-profile">Save Profile</button>
+          <button onclick="saveShopProfile()" style="background:#1e293b; color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;">Save Profile</button>
         </div>
       </div>
 
       <div class="modal-btn-row">
-        <button class="btn-cancel" onclick="closeModals()" id="ui-btn-set-close">Close</button>
+        <button class="btn-cancel" onclick="closeModals()">Close</button>
       </div>
     </div>
   </div>
 
   <div id="print-area"></div>
 
-  <!-- Modular Logic Scripts -->
+  <!-- Modular Scripts -->
   <script src="pos-core.js"></script>
   <script src="pos-report.js"></script>
 </body>
