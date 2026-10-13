@@ -15,7 +15,7 @@ window.SHOPS_CONFIG = [
     tagline: 'BROST POS', //[cite: 1]
     url: 'https://rgsoehlmucocfmoblxvr.supabase.co', //[cite: 1]
     key: 'sb_publishable_HBaYFMLtuNSD2ZcKffAbzA_-dkXWKCU', //[cite: 1]
-    pin: '1234', //[cite: 1]
+    pin: '1111', //[cite: 1]
     themeGradient: 'from-emerald-950 via-slate-900 to-teal-950', //[cite: 1]
     accentColor: 'text-emerald-400', //[cite: 1]
     badgeBg: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40', //[cite: 1]
