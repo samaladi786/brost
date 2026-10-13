@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Broasted POS - Counter Edition</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 0; }
+    body { display: flex; height: 100vh; background: #f1f5f9; overflow: hidden; }
+
+    /* Left Menu Area */
+    .menu-panel { flex: 6.8; display: flex; flex-direction: column; padding: 12px 16px; border-right: 2px solid #cbd5e1; }
+    .top-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .top-actions { display: flex; gap: 8px; }
+    .btn-top { background: #1e293b; color: #fff; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px; }
+    .btn-report { background: #0284c7; }
+    .btn-kds-link { background: #f59e0b; color: #000; text-decoration: none; padding: 8px 12px; border-radius: 8px; font-weight: bold; font-size: 13px; display: flex; align-items: center; }
+
+    /* Order Options Bar */
+    .order-bar {
+      display: flex; gap: 10px; align-items: center; background: #ffffff; padding: 10px;
+      border-radius: 10px; margin-bottom: 10px; border: 1px solid #e2e8f0;
+    }
+    .type-btn {
+      flex: 1; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px;
+      background: #f8fafc; cursor: pointer; font-weight: bold; font-size: 13px;
+    }
+    .type-btn.active { background: #e11d48; color: #fff; border-color: #e11d48; }
+    .phone-input { flex: 1.5; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; }
+
+    /* Navigation */
+    .nav-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+    .btn-back { background: #e2e8f0; border: 1px solid #cbd5e1; padding: 6px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; display: none; }
+    .current-title { font-size: 16px; font-weight: bold; color: #334155; }
+
+    /* Grid for Categories / Items */
+    .grid-container { flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; overflow-y: auto; align-content: start; }
+    .pos-card {
+      background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0;
+      cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.04); display: flex;
+      flex-direction: column; overflow: hidden; height: 140px; transition: 0.1s; text-align: center;
+    }
+    .pos-card:active { transform: scale(0.96); border-color: #e11d48; }
+    .card-img { width: 100%; height: 85px; object-fit: cover; background: #f8fafc; }
+    .card-icon { height: 85px; display: flex; align-items: center; justify-content: center; font-size: 38px; background: #f8fafc; }
+    .card-info { padding: 6px; flex: 1; display: flex; flex-direction: column; justify-content: center; }
+    .card-info h4 { font-size: 13px; color: #0f172a; line-height: 1.2; }
+    .card-info .price { color: #e11d48; font-weight: bold; font-size: 13px; margin-top: 2px; }
+
+    /* Right Cart Panel */
+    .cart-panel { flex: 3.2; background: #ffffff; display: flex; flex-direction: column; padding: 12px; }
+    .cart-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; }
+    .token-badge { background: #fee2e2; color: #dc2626; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 13px; }
+    .btn-clear { background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 11px; }
+
+    .cart-items { flex: 1; overflow-y: auto; margin-top: 8px; }
+    .cart-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f8fafc; }
+    .qty-ctrl { display: flex; align-items: center; gap: 4px; margin: 0 6px; }
+    .qty-btn { width: 24px; height: 24px; border-radius: 4px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; font-weight: bold; }
+
+    /* Totals & Payments */
+    .totals { border-top: 2px solid #e2e8f0; padding-top: 10px; }
+    .row { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 13px; }
+    .total-bold { font-size: 18px; font-weight: bold; color: #0f172a; margin: 6px 0; }
+    
+    .pay-btn-group { display: flex; gap: 8px; margin-top: 8px; }
+    .btn-pay-cash { flex: 1; padding: 12px; background: #16a34a; color: #fff; border: none; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; }
+    .btn-pay-card { flex: 1; padding: 12px; background: #2563eb; color: #fff; border: none; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; }
+
+    /* Modals */
+    .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 100; }
+    .modal-box { background: #fff; padding: 20px; border-radius: 12px; width: 360px; text-align: center; }
+    .modal-btn-row { display: flex; gap: 8px; margin-top: 15px; }
+    .btn-cancel { background: #ef4444; color: #fff; flex: 1; padding: 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+    .btn-confirm { background: #16a34a; color: #fff; flex: 1; padding: 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+
+    /* Settings Box */
+    .settings-box { width: 750px; max-width: 95%; max-height: 85vh; overflow-y: auto; text-align: left; }
+    .set-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12px; }
+    .set-table td, .set-table th { padding: 6px; border: 1px solid #e2e8f0; text-align: left; }
+    .thumb-preview { width: 40px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid #cbd5e1; }
+
+    /* Thermal 80mm Print CSS via #print-area */
+    #print-area { display: none; }
+    @media print {
+      body * { visibility: hidden !important; }
+      #print-area, #print-area * { visibility: visible !important; }
+      #print-area {
+        display: block !important; position: absolute; left: 0; top: 0;
+        width: 78mm; padding: 2mm; font-family: monospace; font-size: 12px; color: #000;
+      }
+      .receipt-center { text-align: center; }
+      .receipt-bold { font-weight: bold; }
+      .receipt-line { border-bottom: 1px dashed #000; margin: 5px 0; }
+      .receipt-row { display: flex; justify-content: space-between; margin: 3px 0; }
+      .qr-center { display: flex; justify-content: center; margin: 8px 0; }
+      .cut-line { border-bottom: 2px dashed #000; margin: 15px 0 10px 0; text-align: center; font-size: 10px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Menu Side -->
+  <div class="menu-panel">
+    <div class="top-header">
+      <div>
+        <h2 id="top-shop-name">🍗 Broasted Chicken POS</h2>
+        <small style="color:#64748b;" id="current-date-time"></small>
+      </div>
+      <div class="top-actions">
+        <a href="kds.html" target="_blank" class="btn-kds-link">📺 Open KDS Screen</a>
+        <button class="btn-top btn-report" onclick="openDailyReportModal()">📊 Z-റിപ്പോർട്ട്</button>
+        <button class="btn-top" onclick="openSettingsModal()">⚙️ Settings</button>
+      </div>
+    </div>
+
+    <!-- Order Options & Mobile -->
+    <div class="order-bar">
+      <button class="type-btn active" onclick="setOrderType('Takeaway (سفري)', this)">📦 Takeaway (سفري)</button>
+      <button class="type-btn" onclick="setOrderType('Dine-in (محلي)', this)">🍽️ Dine-in (محلي)</button>
+      <button class="type-btn" onclick="setOrderType('Phone Order (طلب هاتف)', this)">📞 Phone Order</button>
+      <input type="tel" class="phone-input" id="cust-phone" placeholder="കസ്റ്റമർ മൊബൈൽ നമ്പർ (ഓപ്ഷണൽ)">
+    </div>
+
+    <!-- Navigation Header -->
+    <div class="nav-bar">
+      <button class="btn-back" id="btn-back" onclick="showCategories()">⬅️ Categories (ബാക്ക്)</button>
+      <div class="current-title" id="current-title">മെയിൻ കാറ്റഗറികൾ (Categories)</div>
+    </div>
+
+    <div class="grid-container" id="pos-grid"></div>
+  </div>
+
+  <!-- Cart Side -->
+  <div class="cart-panel">
+    <div class="cart-header">
+      <div>
+        <strong>ഓർഡർ ലിസ്റ്റ്</strong>
+        <span class="token-badge" id="token-display">Token #01</span>
+      </div>
+      <button class="btn-clear" onclick="clearCart()">🗑️ റദ്ദാക്കുക</button>
+    </div>
+
+    <div class="cart-items" id="cart-list"></div>
+
+    <div class="totals">
+      <div class="row"><span>Subtotal:</span><span id="subtotal">0.00 SAR</span></div>
+      <div class="row"><span>VAT (15%):</span><span id="vat">0.00 SAR</span></div>
+      <div class="row total-bold"><span>Total:</span><span id="grand-total">0.00 SAR</span></div>
+      
+      <div class="pay-btn-group">
+        <button class="btn-pay-cash" onclick="openCashPaymentModal()">💵 CASH (ക്യാഷ്)</button>
+        <button class="btn-pay-card" onclick="processCardPayment()">💳 MADA / CARD</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Flavor Modal (Spicy / Normal) -->
+  <div class="modal-backdrop" id="flavor-modal">
+    <div class="modal-box">
+      <h3 id="flavor-modal-title">Select Flavor</h3>
+      <div style="margin: 20px 0; display: flex; justify-content: center; gap: 20px;">
+        <label><input type="radio" name="spice" value="Normal" checked> Normal</label>
+        <label><input type="radio" name="spice" value="Spicy"> Spicy 🌶️</label>
+      </div>
+      <div class="modal-btn-row">
+        <button class="btn-cancel" onclick="closeModals()">Cancel</button>
+        <button class="btn-confirm" onclick="confirmBroastFlavor()">Add to Bill</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cash Payment Modal -->
+  <div class="modal-backdrop" id="cash-modal">
+    <div class="modal-box">
+      <h3>💵 ക്യാഷ് പേയ്‌മെന്റ്</h3>
+      <p style="margin: 8px 0; font-size: 16px;">ബിൽ തുക: <strong id="cash-bill-amt" style="color:#e11d48;">0.00 SAR</strong></p>
+      <input type="number" id="cash-received-input" placeholder="കസ്റ്റമർ നൽകിയ തുക" 
+        style="width: 100%; padding: 10px; font-size: 16px; margin: 10px 0; text-align: center;" oninput="calculateChange()">
+      <div style="font-size: 16px; font-weight: bold; color: #16a34a; margin-bottom: 10px;">
+        ബാക്കി നൽകേണ്ടത്: <span id="cash-change-amt">0.00</span> SAR
+      </div>
+      <div class="modal-btn-row">
+        <button class="btn-cancel" onclick="closeModals()">Cancel</button>
+        <button class="btn-confirm" onclick="finalizeOrder('Cash')">Print & Complete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2-Printer Kitchen Prompt Modal -->
+  <div class="modal-backdrop" id="kitchen-prompt-modal">
+    <div class="modal-box">
+      <h3>🧑‍🍳 കിച്ചൻ പ്രിന്റർ (Kitchen Ticket)</h3>
+      <p style="margin: 10px 0; color: #334155;">കസ്റ്റമർ ബിൽ അടിച്ചു കഴിഞ്ഞു. കിച്ചൻ പ്രിന്ററിലേക്ക് സ്ലിപ്പ് അടിക്കണോ?</p>
+      <div class="modal-btn-row">
+        <button class="btn-cancel" onclick="closeModals()">വേണ്ട (Skip)</button>
+        <button class="btn-confirm" style="background:#0284c7;" onclick="printSeparateKitchenSlip()">🖨️ കിച്ചൻ പ്രിന്റ് അടിക്കുക</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Daily Sales Z-Report Modal -->
+  <div class="modal-backdrop" id="report-modal">
+    <div class="modal-box" style="width: 420px; text-align: left;">
+      <h3 style="text-align: center;">📊 ഡെയിലി സെയിൽസ് റിപ്പോർട്ട് (Z-Report)</h3>
+      <div style="border-bottom: 1px dashed #cbd5e1; margin: 8px 0;"></div>
+      <div style="font-size: 14px; line-height: 1.8; margin: 10px 0;">
+        <div class="row"><span>തീയതി:</span><strong id="rep-date"></strong></div>
+        <div class="row"><span>ആകെ ബില്ലുകൾ:</span><strong id="rep-count">0</strong></div>
+        <div class="row"><span>ക്യാഷ് (Cash):</span><strong id="rep-cash">0.00 SAR</strong></div>
+        <div class="row"><span>കാർഡ് (Card/Mada):</span><strong id="rep-card">0.00 SAR</strong></div>
+        <div class="row"><span>ആകെ വാറ്റ് (15% VAT):</span><strong id="rep-vat">0.00 SAR</strong></div>
+        <div class="row" style="font-size: 16px; border-top: 1px solid #cbd5e1; padding-top: 4px;">
+          <span>ആകെ കച്ചവടം:</span><strong id="rep-total" style="color:#16a34a;">0.00 SAR</strong>
+        </div>
+      </div>
+      <div class="modal-btn-row">
+        <button class="btn-cancel" onclick="closeModals()">Close</button>
+        <button class="btn-confirm" style="background:#0284c7;" onclick="printDailyReportSlip()">🖨️ പ്രിന്റ് റിപ്പോർട്ട്</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings & Backup Modal -->
+  <div class="modal-backdrop" id="settings-modal">
+    <div class="modal-box settings-box">
+      <h3>⚙️ സിസ്റ്റം സെറ്റിങ്സ് & ബാക്കപ്പ് മാനേജ്‌മെന്റ്</h3>
+
+      <!-- Printer Mode -->
+      <div style="background:#f8fafc; padding:10px; border-radius:8px; margin-top:8px;">
+        <h4>🖨️ പ്രിന്റർ സെറ്റിങ്സ്:</h4>
+        <div style="display:flex; align-items:center; gap:10px; margin-top:6px;">
+          <select id="set-printer-mode" style="padding:6px; border-radius:4px; border:1px solid #cbd5e1;">
+            <option value="combined">സിംഗിൾ പ്രിന്റർ (ഒരൊറ്റ റോളിൽ ബില്ലും കിച്ചൻ സ്ലിപ്പും)</option>
+            <option value="separate">രണ്ട് പ്രിന്ററുകൾ (പ്രത്യേകം കിച്ചൻ പ്രിന്റ്)</option>
+            <option value="off">കിച്ചൻ പ്രിന്റ് വേണ്ട (കസ്റ്റമർ ബിൽ മാത്രം)</option>
+          </select>
+          <button onclick="savePrinterMode()" style="background:#1e293b; color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;">Save</button>
+        </div>
+      </div>
+
+      <!-- Backup & Restore -->
+      <div style="background:#f8fafc; padding:10px; border-radius:8px; margin-top:8px;">
+        <h4>💾 ബാക്കപ്പ് & റീസ്റ്റോർ (Backup & Restore):</h4>
+        <div style="display:flex; gap:10px; margin-top:6px; align-items:center;">
+          <button onclick="exportBackupData()" style="background:#0284c7; color:#fff; border:none; padding:7px 12px; border-radius:4px; cursor:pointer; font-weight:bold;">⬇️ ബാക്കപ്പ് ഡൗൺലോഡ് (Export)</button>
+          <input type="file" id="restore-file-input" accept=".json" style="display:none;" onchange="importBackupData(event)">
+          <button onclick="document.getElementById('restore-file-input').click()" style="background:#475569; color:#fff; border:none; padding:7px 12px; border-radius:4px; cursor:pointer; font-weight:bold;">⬆️ ബാക്കപ്പ് റീസ്റ്റോർ (Restore)</button>
+        </div>
+      </div>
+
+      <!-- Shop Profile -->
+      <div style="background:#f8fafc; padding:10px; border-radius:8px; margin-top:8px;">
+        <h4>സ്ഥാപന വിവരങ്ങൾ (VAT Profile):</h4>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 4px;">
+          <input type="text" id="set-shop-ar" placeholder="ഷോപ്പ് പേര് (Arabic)" style="padding:6px;">
+          <input type="text" id="set-shop-en" placeholder="Shop Name (English)" style="padding:6px;">
+          <input type="text" id="set-vat-no" placeholder="15-Digit VAT Number" style="padding:6px;">
+          <input type="text" id="set-phone" placeholder="ഷോപ്പ് ഫോൺ നമ്പർ" style="padding:6px;">
+        </div>
+        <button onclick="saveShopProfile()" style="background:#1e293b; color:#fff; border:none; padding:6px 12px; border-radius:4px; margin-top:6px; cursor:pointer;">Save Profile</button>
+      </div>
+
+      <!-- Add or Edit Item -->
+      <div style="background:#f8fafc; padding:10px; border-radius:8px; margin-top:8px;" id="item-form-box">
+        <h4 id="item-form-title">പുതിയ ഐറ്റം ചേർക്കുക:</h4>
+        <div style="display:grid; grid-template-columns: 2fr 1fr 1.5fr; gap:6px; margin-top:6px;">
+          <input type="text" id="item-name-input" placeholder="ഐറ്റം പേര്" style="padding:6px;">
+          <input type="number" id="item-price-input" placeholder="വില (SAR)" style="padding:6px;">
+          <select id="item-cat-select" style="padding:6px;"></select>
+          
+          <div style="grid-column: span 2; display:flex; align-items:center; gap:8px;">
+            <input type="file" id="item-file-input" accept="image/*" style="font-size:12px;" onchange="handleImageFileSelect(event)">
+            <img id="item-preview-img" class="thumb-preview" style="display:none;" alt="">
+            <button type="button" id="item-remove-img-btn" onclick="removeSelectedImage()" style="display:none; font-size:10px; background:#ef4444; color:#fff; border:none; padding:2px 6px; border-radius:4px; cursor:pointer;">Remove</button>
+          </div>
+
+          <label style="display:flex; align-items:center; gap:4px; font-size:12px;">
+            <input type="checkbox" id="item-spicy-checkbox"> Spicy ഓപ്ഷൻ വേണോ?
+          </label>
+        </div>
+        <div style="margin-top:8px; display:flex; gap:6px;">
+          <button id="btn-save-item" onclick="saveItemFromForm()" style="background:#16a34a; color:#fff; border:none; padding:6px 14px; border-radius:4px; cursor:pointer; font-weight:bold;">Add Item</button>
+          <button id="btn-cancel-edit" onclick="resetItemForm()" style="display:none; background:#64748b; color:#fff; border:none; padding:6px 14px; border-radius:4px; cursor:pointer;">Cancel Edit</button>
+        </div>
+      </div>
+
+      <!-- Item Management Table -->
+      <h4 style="margin-top:10px;">നിലവിലുള്ള ഐറ്റങ്ങൾ എഡിറ്റ് ചെയ്യുക:</h4>
+      <div style="max-height: 180px; overflow-y: auto;">
+        <table class="set-table">
+          <thead><tr><th>Photo</th><th>Item</th><th>Price</th><th>Category</th><th>Spicy?</th><th>Action</th></tr></thead>
+          <tbody id="settings-table-body"></tbody>
+        </table>
+      </div>
+
+      <div class="modal-btn-row">
+        <button class="btn-cancel" onclick="closeModals()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="print-area"></div>
+
+  <script>
+    // Live KDS Communication Channel
+    const kdsChannel = new BroadcastChannel('broast_pos_channel');
+
+    const defaultShop = {
+      nameAr: "مطعم البروستد الذهبي",
+      nameEn: "Golden Broasted Restaurant",
+      vatNo: "310123456700003",
+      phone: "0551234567"
+    };
+
+    const defaultCategories = [
+      { id: "broast", name: "Broasted", icon: "🍗", img: "" },
+      { id: "potatoes", name: "Potatoes", icon: "🍟", img: "" },
+      { id: "drinks", name: "Drinks", icon: "🥤", img: "" },
+      { id: "addons", name: "Add-ons (ഇതരങ്ങൾ)", icon: "➕", img: "" }
+    ];
+
+    const defaultItems = [
+      { id: 1, name: "4 Pcs Broast", price: 18.00, catId: "broast", hasFlavor: true, img: "" },
+      { id: 2, name: "8 Pcs Broast", price: 34.00, catId: "broast", hasFlavor: true, img: "" },
+      { id: 3, name: "Potatoes Small", price: 5.00, catId: "potatoes", hasFlavor: false, img: "" },
+      { id: 4, name: "Potatoes Medium", price: 8.00, catId: "potatoes", hasFlavor: false, img: "" },
+      { id: 5, name: "Potatoes Big", price: 12.00, catId: "potatoes", hasFlavor: false, img: "" },
+      { id: 6, name: "Pepsi", price: 3.50, catId: "drinks", hasFlavor: false, img: "" },
+      { id: 7, name: "Coca Cola", price: 3.50, catId: "drinks", hasFlavor: false, img: "" },
+      { id: 8, name: "Water", price: 1.00, catId: "drinks", hasFlavor: false, img: "" },
+      { id: 9, name: "Thoom (Garlic)", price: 1.00, catId: "addons", hasFlavor: false, img: "" },
+      { id: 10, name: "Ketchup", price: 1.00, catId: "addons", hasFlavor: false, img: "" },
+      { id: 11, name: "Extra Bread", price: 1.00, catId: "addons", hasFlavor: false, img: "" }
+    ];
+
+    let shop = JSON.parse(localStorage.getItem('pos_shop')) || defaultShop;
+    let categories = JSON.parse(localStorage.getItem('pos_cats_v4')) || defaultCategories;
+    let items = JSON.parse(localStorage.getItem('pos_items_v4')) || defaultItems;
+    let orderHistory = JSON.parse(localStorage.getItem('pos_orders_v2')) || [];
+    let printerMode = localStorage.getItem('pos_printer_mode') || 'combined';
+
+    let cart = [];
+    let currentView = 'categories';
+    let selectedTempItem = null;
+    let activeOrderType = "Takeaway (سفري)";
+    let editingItemId = null;
+    let tempImageBase64 = "";
+    let lastCompletedOrder = null;
+
+    function updateHeaderInfo() {
+      document.getElementById('top-shop-name').innerText = shop.nameEn || "Broasted POS";
+      const now = new Date();
+      document.getElementById('current-date-time').innerText = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
+    }
+    setInterval(updateHeaderInfo, 1000);
+    updateHeaderInfo();
+
+    function getNextToken() {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const todaysOrders = orderHistory.filter(o => o.date === todayStr);
+      return "Token #" + String(todaysOrders.length + 1).padStart(2, '0');
+    }
+
+    function updateTokenDisplay() {
+      document.getElementById('token-display').innerText = getNextToken();
+    }
+    updateTokenDisplay();
+
+    function setOrderType(type, btn) {
+      activeOrderType = type;
+      document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    function showCategories() {
+      currentView = 'categories';
+      document.getElementById('btn-back').style.display = 'none';
+      document.getElementById('current-title').innerText = 'മെയിൻ കാറ്റഗറികൾ (Categories)';
+
+      const grid = document.getElementById('pos-grid');
+      grid.innerHTML = '';
+
+      categories.forEach(cat => {
+        const card = document.createElement('div');
+        card.className = 'pos-card';
+        card.innerHTML = `
+          ${cat.img ? `<img src="${cat.img}" class="card-img" alt="">` : `<div class="card-icon">${cat.icon || '📁'}</div>`}
+          <div class="card-info"><h4>${cat.name}</h4></div>
+        `;
+        card.onclick = () => showItemsOfCategory(cat);
+        grid.appendChild(card);
+      });
+    }
+
+    function showItemsOfCategory(cat) {
+      currentView = cat.id;
+      document.getElementById('btn-back').style.display = 'block';
+      document.getElementById('current-title').innerText = `${cat.name}`;
+
+      const grid = document.getElementById('pos-grid');
+      grid.innerHTML = '';
+
+      const filteredItems = items.filter(it => it.catId === cat.id);
+
+      filteredItems.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'pos-card';
+        card.innerHTML = `
+          ${item.img ? `<img src="${item.img}" class="card-img" alt="">` : `<div class="card-icon">🍗</div>`}
+          <div class="card-info">
+            <h4>${item.name}</h4>
+            <div class="price">${item.price.toFixed(2)} SAR</div>
+          </div>
+        `;
+        card.onclick = () => handleItemSelect(item);
+        grid.appendChild(card);
+      });
+    }
+
+    function handleItemSelect(item) {
+      if (item.hasFlavor) {
+        selectedTempItem = item;
+        document.getElementById('flavor-modal-title').innerText = item.name;
+        document.getElementById('flavor-modal').style.display = 'flex';
+      } else {
+        addToCart(item.name, item.price, item.catId);
+        showCategories();
+      }
+    }
+
+    function confirmBroastFlavor() {
+      const spice = document.querySelector('input[name="spice"]:checked').value;
+      addToCart(`${selectedTempItem.name} (${spice})`, selectedTempItem.price, selectedTempItem.catId);
+      closeModals();
+      showCategories();
+    }
+
+    function closeModals() {
+      document.querySelectorAll('.modal-backdrop').forEach(m => m.style.display = 'none');
+    }
+
+    function addToCart(name, price, catId) {
+      const exist = cart.find(i => i.name === name);
+      if (exist) {
+        exist.qty += 1;
+      } else {
+        cart.push({ name, price, qty: 1, catId: catId || "" });
+      }
+      updateCartUI();
+    }
+
+    function changeQty(index, delta) {
+      cart[index].qty += delta;
+      if (cart[index].qty <= 0) cart.splice(index, 1);
+      updateCartUI();
+    }
+
+    function clearCart() {
+      if (cart.length === 0) return;
+      if (confirm("ഈ ഓർഡർ പൂർണ്ണമായും റദ്ദാക്കണോ?")) {
+        cart = [];
+        document.getElementById('cust-phone').value = '';
+        updateCartUI();
+      }
+    }
+
+    function updateCartUI() {
+      const list = document.getElementById('cart-list');
+      list.innerHTML = "";
+      let total = 0;
+
+      cart.forEach((item, index) => {
+        const itemTotal = item.price * item.qty;
+        total += itemTotal;
+        list.innerHTML += `
+          <div class="cart-row">
+            <div style="flex:1;">
+              <strong>${item.name}</strong>
+              <div style="color:#64748b; font-size:12px;">${item.price.toFixed(2)} SAR</div>
+            </div>
+            <div class="qty-ctrl">
+              <button class="qty-btn" onclick="changeQty(${index}, -1)">-</button>
+              <span>${item.qty}</span>
+              <button class="qty-btn" onclick="changeQty(${index}, 1)">+</button>
+            </div>
+            <div style="font-weight:bold; width:60px; text-align:right;">${itemTotal.toFixed(2)}</div>
+          </div>
+        `;
+      });
+
+      const subtotal = total / 1.15;
+      const vat = total - subtotal;
+      document.getElementById('subtotal').innerText = subtotal.toFixed(2) + " SAR";
+      document.getElementById('vat').innerText = vat.toFixed(2) + " SAR";
+      document.getElementById('grand-total').innerText = total.toFixed(2) + " SAR";
+    }
+
+    function openCashPaymentModal() {
+      if (cart.length === 0) return alert("ഓർഡർ ലിസ്റ്റ് കാലിയാണ്!");
+      const total = parseFloat(document.getElementById('grand-total').innerText);
+      document.getElementById('cash-bill-amt').innerText = total.toFixed(2) + " SAR";
+      document.getElementById('cash-received-input').value = total.toFixed(2);
+      document.getElementById('cash-change-amt').innerText = "0.00";
+      document.getElementById('cash-modal').style.display = 'flex';
+      setTimeout(() => document.getElementById('cash-received-input').select(), 100);
+    }
+
+    function calculateChange() {
+      const total = parseFloat(document.getElementById('grand-total').innerText);
+      const rec = parseFloat(document.getElementById('cash-received-input').value) || 0;
+      const change = rec - total;
+      document.getElementById('cash-change-amt').innerText = (change > 0 ? change : 0).toFixed(2);
+    }
+
+    function processCardPayment() {
+      if (cart.length === 0) return alert("ഓർഡർ ലിസ്റ്റ് കാലിയാണ്!");
+      finalizeOrder('Mada/Card');
+    }
+
+    function finalizeOrder(method) {
+      closeModals();
+      const grandTotal = parseFloat(document.getElementById('grand-total').innerText);
+      const subtotal = grandTotal / 1.15;
+      const vat = grandTotal - subtotal;
+      const token = getNextToken();
+      const phone = document.getElementById('cust-phone').value.trim();
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const timeStr = new Date().toLocaleTimeString();
+
+      const orderObj = {
+        id: Date.now(),
+        date: todayStr,
+        time: timeStr,
+        token: token,
+        type: activeOrderType,
+        phone: phone,
+        items: [...cart],
+        subtotal: subtotal,
+        vat: vat,
+        total: grandTotal,
+        paymentMethod: method
+      };
+
+      orderHistory.push(orderObj);
+      localStorage.setItem('pos_orders_v2', JSON.stringify(orderHistory));
+      lastCompletedOrder = orderObj;
+
+      // Broadcast order to KDS Screen
+      broadcastToKDS(orderObj);
+
+      cart = [];
+      document.getElementById('cust-phone').value = '';
+      updateCartUI();
+      updateTokenDisplay();
+      showCategories();
+
+      handleOrderPrinting(orderObj);
+    }
+
+    function broadcastToKDS(order) {
+      // 1. Send live event
+      kdsChannel.postMessage({ type: 'NEW_ORDER', order: order });
+      
+      // 2. Persist in active KDS queue
+      let kdsActive = JSON.parse(localStorage.getItem('kds_active_orders')) || [];
+      kdsActive.push(order);
+      localStorage.setItem('kds_active_orders', JSON.stringify(kdsActive));
+    }
+
+    function getCustomerBillHTML(order) {
+      let itemsRows = order.items.map(it => `
+        <div class="receipt-row">
+          <span style="flex:2;">${it.name}</span>
+          <span style="flex:0.5; text-align:center;">${it.qty}</span>
+          <span style="flex:1; text-align:right;">${(it.price * it.qty).toFixed(2)}</span>
+        </div>
+      `).join('');
+
+      return `
+        <div class="receipt-center">
+          <h3>${shop.nameAr}</h3>
+          <div>${shop.nameEn}</div>
+          <div>VAT: ${shop.vatNo}</div>
+          <div>TEL: ${shop.phone}</div>
+          <div class="receipt-line"></div>
+          <h2 style="margin: 4px 0;">${order.token}</h2>
+          <div class="receipt-bold">${order.type}</div>
+          ${order.phone ? `<div>Mob: ${order.phone}</div>` : ''}
+          <div style="font-size:10px; margin-top:2px;">${order.date} ${order.time}</div>
+        </div>
+        <div class="receipt-line"></div>
+        <div class="receipt-row receipt-bold"><span>ITEM</span><span>QTY</span><span>TOTAL</span></div>
+        <div class="receipt-line"></div>
+        ${itemsRows}
+        <div class="receipt-line"></div>
+        <div class="receipt-row"><span>Subtotal (غير شامل):</span><span>${order.subtotal.toFixed(2)}</span></div>
+        <div class="receipt-row"><span>VAT 15% (ضريبة):</span><span>${order.vat.toFixed(2)}</span></div>
+        <div class="receipt-row receipt-bold" style="font-size:14px;"><span>TOTAL:</span><span>${order.total.toFixed(2)} SAR</span></div>
+        <div class="receipt-row"><span>Payment:</span><span>${order.paymentMethod}</span></div>
+        <div class="qr-center"><div id="print-qrcode"></div></div>
+        <div class="receipt-center" style="font-size:10px;">فاتورة ضريبية مبسطة<br>Simplified Tax Invoice</div>
+      `;
+    }
+
+    function getKitchenSlipHTML(order) {
+      let itemsRows = order.items.map(it => `
+        <div class="receipt-row" style="font-size:14px; font-weight:bold; margin:6px 0;">
+          <span style="flex:2.5;">${it.name}</span>
+          <span style="flex:1; text-align:right; font-size:16px;">[ X ${it.qty} ]</span>
+        </div>
+      `).join('');
+
+      return `
+        <div class="receipt-center">
+          <h2 style="font-size:20px; margin:2px 0;">*** KITCHEN TICKET ***</h2>
+          <h1 style="font-size:28px; margin:4px 0;">${order.token}</h1>
+          <div style="font-size:15px; font-weight:bold;">${order.type}</div>
+          ${order.phone ? `<div>Customer Mob: ${order.phone}</div>` : ''}
+          <div style="font-size:11px;">Time: ${order.time}</div>
+        </div>
+        <div class="receipt-line"></div>
+        ${itemsRows}
+        <div class="receipt-line"></div>
+      `;
+    }
+
+    function getTLV(tagNum, tagValue) {
+      const encoder = new TextEncoder();
+      const valBytes = encoder.encode(tagValue);
+      const res = new Uint8Array(2 + valBytes.length);
+      res[0] = tagNum;
+      res[1] = valBytes.length;
+      res.set(valBytes, 2);
+      return res;
+    }
+
+    function generateZatcaQRBase64(seller, vatNo, timestamp, total, vat) {
+      const t1 = getTLV(1, seller);
+      const t2 = getTLV(2, vatNo);
+      const t3 = getTLV(3, timestamp);
+      const t4 = getTLV(4, total.toFixed(2));
+      const t5 = getTLV(5, vat.toFixed(2));
+      
+      const totalLen = t1.length + t2.length + t3.length + t4.length + t5.length;
+      const combined = new Uint8Array(totalLen);
+      let offset = 0;
+      [t1, t2, t3, t4, t5].forEach(t => {
+        combined.set(t, offset);
+        offset += t.length;
+      });
+
+      let bin = '';
+      for (let i = 0; i < combined.length; i++) bin += String.fromCharCode(combined[i]);
+      return btoa(bin);
+    }
+
+    function renderQRIntoElement(elId, order) {
+      const qrData = generateZatcaQRBase64(shop.nameAr, shop.vatNo, `${order.date}T${order.time}Z`, order.total, order.vat);
+      const target = document.getElementById(elId);
+      if (target) {
+        target.innerHTML = '';
+        new QRCode(target, { text: qrData, width: 95, height: 95, correctLevel: QRCode.CorrectLevel.M });
+      }
+    }
+
+    function handleOrderPrinting(order) {
+      const printArea = document.getElementById('print-area');
+
+      if (printerMode === 'combined') {
+        printArea.innerHTML = getCustomerBillHTML(order) + `
+          <div class="cut-line">---------------- CUT HERE ----------------</div>
+        ` + getKitchenSlipHTML(order);
+        renderQRIntoElement('print-qrcode', order);
+        setTimeout(() => window.print(), 350);
+
+      } else if (printerMode === 'separate') {
+        printArea.innerHTML = getCustomerBillHTML(order);
+        renderQRIntoElement('print-qrcode', order);
+        setTimeout(() => {
+          window.print();
+          document.getElementById('kitchen-prompt-modal').style.display = 'flex';
+        }, 350);
+
+      } else {
+        printArea.innerHTML = getCustomerBillHTML(order);
+        renderQRIntoElement('print-qrcode', order);
+        setTimeout(() => window.print(), 350);
+      }
+    }
+
+    function printSeparateKitchenSlip() {
+      closeModals();
+      if (!lastCompletedOrder) return;
+      const printArea = document.getElementById('print-area');
+      printArea.innerHTML = getKitchenSlipHTML(lastCompletedOrder);
+      setTimeout(() => window.print(), 200);
+    }
+
+    function openDailyReportModal() {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const todaysOrders = orderHistory.filter(o => o.date === todayStr);
+
+      let totalCash = 0, totalCard = 0, totalVat = 0, grandTotal = 0;
+      todaysOrders.forEach(o => {
+        grandTotal += o.total;
+        totalVat += o.vat;
+        if (o.paymentMethod === 'Cash') totalCash += o.total;
+        else totalCard += o.total;
+      });
+
+      document.getElementById('rep-date').innerText = todayStr;
+      document.getElementById('rep-count').innerText = todaysOrders.length;
+      document.getElementById('rep-cash').innerText = totalCash.toFixed(2) + " SAR";
+      document.getElementById('rep-card').innerText = totalCard.toFixed(2) + " SAR";
+      document.getElementById('rep-vat').innerText = totalVat.toFixed(2) + " SAR";
+      document.getElementById('rep-total').innerText = grandTotal.toFixed(2) + " SAR";
+
+      document.getElementById('report-modal').style.display = 'flex';
+    }
+
+    function printDailyReportSlip() {
+      closeModals();
+      const todayStr = document.getElementById('rep-date').innerText;
+      const count = document.getElementById('rep-count').innerText;
+      const cash = document.getElementById('rep-cash').innerText;
+      const card = document.getElementById('rep-card').innerText;
+      const vat = document.getElementById('rep-vat').innerText;
+      const total = document.getElementById('rep-total').innerText;
+
+      document.getElementById('print-area').innerHTML = `
+        <div class="receipt-center">
+          <h3>${shop.nameAr}</h3>
+          <h2>DAILY Z-REPORT</h2>
+          <div>Date: ${todayStr} | Time: ${new Date().toLocaleTimeString()}</div>
+        </div>
+        <div class="receipt-line"></div>
+        <div class="receipt-row"><span>Total Bills:</span><span>${count}</span></div>
+        <div class="receipt-row"><span>Cash Sales:</span><span>${cash}</span></div>
+        <div class="receipt-row"><span>Card/Mada:</span><span>${card}</span></div>
+        <div class="receipt-row"><span>Total VAT:</span><span>${vat}</span></div>
+        <div class="receipt-line"></div>
+        <div class="receipt-row receipt-bold" style="font-size:15px;"><span>GRAND TOTAL:</span><span>${total}</span></div>
+        <div class="receipt-line"></div>
+      `;
+      setTimeout(() => window.print(), 250);
+    }
+
+    function handleImageFileSelect(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          const maxDim = 300;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > maxDim) {
+              height = Math.round(height * (maxDim / width));
+              width = maxDim;
+            }
+          } else {
+            if (height > maxDim) {
+              width = Math.round(width * (maxDim / height));
+              height = maxDim;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          tempImageBase64 = canvas.toDataURL('image/jpeg', 0.75);
+          document.getElementById('item-preview-img').src = tempImageBase64;
+          document.getElementById('item-preview-img').style.display = 'block';
+          document.getElementById('item-remove-img-btn').style.display = 'inline-block';
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function removeSelectedImage() {
+      tempImageBase64 = "";
+      document.getElementById('item-file-input').value = "";
+      document.getElementById('item-preview-img').src = "";
+      document.getElementById('item-preview-img').style.display = 'none';
+      document.getElementById('item-remove-img-btn').style.display = 'none';
+    }
+
+    function openSettingsModal() {
+      document.getElementById('set-shop-ar').value = shop.nameAr;
+      document.getElementById('set-shop-en').value = shop.nameEn;
+      document.getElementById('set-vat-no').value = shop.vatNo;
+      document.getElementById('set-phone').value = shop.phone;
+      document.getElementById('set-printer-mode').value = printerMode;
+
+      renderCatDropdown();
+      renderSettingsTable();
+      resetItemForm();
+      document.getElementById('settings-modal').style.display = 'flex';
+    }
+
+    function savePrinterMode() {
+      printerMode = document.getElementById('set-printer-mode').value;
+      localStorage.setItem('pos_printer_mode', printerMode);
+      alert("പ്രിന്റർ മോഡ് സേവ് ചെയ്തു!");
+    }
+
+    function saveShopProfile() {
+      shop.nameAr = document.getElementById('set-shop-ar').value.trim();
+      shop.nameEn = document.getElementById('set-shop-en').value.trim();
+      shop.vatNo = document.getElementById('set-vat-no').value.trim();
+      shop.phone = document.getElementById('set-phone').value.trim();
+      localStorage.setItem('pos_shop', JSON.stringify(shop));
+      updateHeaderInfo();
+      alert("ഷോപ്പ് വിവരങ്ങൾ സേവ് ചെയ്തു!");
+    }
+
+    function renderCatDropdown() {
+      const sel = document.getElementById('item-cat-select');
+      sel.innerHTML = '';
+      categories.forEach(c => sel.innerHTML += `<option value="${c.id}">${c.name}</option>`);
+    }
+
+    function saveItemFromForm() {
+      const name = document.getElementById('item-name-input').value.trim();
+      const price = parseFloat(document.getElementById('item-price-input').value);
+      const catId = document.getElementById('item-cat-select').value;
+      const hasFlavor = document.getElementById('item-spicy-checkbox').checked;
+
+      if (!name || isNaN(price)) return alert("ശരിയായ പേരും വിലയും നൽകുക!");
+
+      if (editingItemId) {
+        const item = items.find(i => i.id === editingItemId);
+        if (item) {
+          item.name = name;
+          item.price = price;
+          item.catId = catId;
+          item.hasFlavor = hasFlavor;
+          item.img = tempImageBase64;
+        }
+      } else {
+        items.push({
+          id: Date.now(),
+          name: name,
+          price: price,
+          catId: catId,
+          hasFlavor: hasFlavor,
+          img: tempImageBase64
+        });
+      }
+
+      localStorage.setItem('pos_items_v4', JSON.stringify(items));
+      resetItemForm();
+      renderSettingsTable();
+      showCategories();
+    }
+
+    function startEditItem(id) {
+      const item = items.find(i => i.id === id);
+      if (!item) return;
+
+      editingItemId = item.id;
+      document.getElementById('item-form-title').innerText = `ഐറ്റം എഡിറ്റ് ചെയ്യുക: "${item.name}"`;
+      document.getElementById('item-name-input').value = item.name;
+      document.getElementById('item-price-input').value = item.price;
+      document.getElementById('item-cat-select').value = item.catId;
+      document.getElementById('item-spicy-checkbox').checked = item.hasFlavor;
+      
+      tempImageBase64 = item.img || "";
+      if (tempImageBase64) {
+        document.getElementById('item-preview-img').src = tempImageBase64;
+        document.getElementById('item-preview-img').style.display = 'block';
+        document.getElementById('item-remove-img-btn').style.display = 'inline-block';
+      } else {
+        removeSelectedImage();
+      }
+
+      document.getElementById('btn-save-item').innerText = "Update Item (സേവ് ചെയ്യുക)";
+      document.getElementById('btn-cancel-edit').style.display = 'inline-block';
+      document.getElementById('item-form-box').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function resetItemForm() {
+      editingItemId = null;
+      document.getElementById('item-form-title').innerText = "പുതിയ ഐറ്റം ചേർക്കുക:";
+      document.getElementById('item-name-input').value = "";
+      document.getElementById('item-price-input').value = "";
+      document.getElementById('item-spicy-checkbox').checked = false;
+      document.getElementById('btn-save-item').innerText = "Add Item";
+      document.getElementById('btn-cancel-edit').style.display = 'none';
+      removeSelectedImage();
+    }
+
+    function renderSettingsTable() {
+      const tbody = document.getElementById('settings-table-body');
+      tbody.innerHTML = '';
+      items.forEach((item) => {
+        const cat = categories.find(c => c.id === item.catId);
+        tbody.innerHTML += `
+          <tr>
+            <td>${item.img ? `<img src="${item.img}" class="thumb-preview">` : '🍗'}</td>
+            <td><strong>${item.name}</strong></td>
+            <td>${item.price.toFixed(2)} SAR</td>
+            <td>${cat ? cat.name : item.catId}</td>
+            <td>${item.hasFlavor ? '🌶️ Yes' : 'No'}</td>
+            <td>
+              <button onclick="startEditItem(${item.id})" style="background:#0284c7; color:#fff; border:none; padding:3px 7px; border-radius:4px; cursor:pointer;">Edit</button>
+              <button onclick="deleteItem(${item.id})" style="background:#ef4444; color:#fff; border:none; padding:3px 7px; border-radius:4px; cursor:pointer;">Delete</button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function deleteItem(id) {
+      if (confirm("ഈ ഐറ്റം ഒഴിവാക്കണോ?")) {
+        items = items.filter(i => i.id !== id);
+        localStorage.setItem('pos_items_v4', JSON.stringify(items));
+        renderSettingsTable();
+        showCategories();
+      }
+    }
+
+    function exportBackupData() {
+      const backupObj = {
+        shop: shop,
+        categories: categories,
+        items: items,
+        printerMode: printerMode,
+        backupDate: new Date().toISOString()
+      };
+
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupObj, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `broast_pos_backup_${new Date().toISOString().slice(0,10)}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    function importBackupData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          if (parsed.items && parsed.categories) {
+            shop = parsed.shop || defaultShop;
+            categories = parsed.categories;
+            items = parsed.items;
+            printerMode = parsed.printerMode || 'combined';
+
+            localStorage.setItem('pos_shop', JSON.stringify(shop));
+            localStorage.setItem('pos_cats_v4', JSON.stringify(categories));
+            localStorage.setItem('pos_items_v4', JSON.stringify(items));
+            localStorage.setItem('pos_printer_mode', printerMode);
+
+            alert("ബാക്കപ്പ് വിജയകരമായി റീസ്റ്റോർ ചെയ്തു!");
+            openSettingsModal();
+            showCategories();
+          } else {
+            alert("തെറ്റായ ഫയൽ ഫോർമാറ്റ്!");
+          }
+        } catch (err) {
+          alert("ഫയൽ വായിക്കാൻ സാധിച്ചില്ല!");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    showCategories();
+  </script>
+</body>
+</html>
