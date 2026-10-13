@@ -4,6 +4,21 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Kitchen Display System (KDS) - Pro Station Edition</title>
+
+  <!-- Auto Kill Old Service Worker & Clear Stale Cache -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(regs => {
+        for (let reg of regs) reg.unregister();
+      });
+    }
+    if ('caches' in window) {
+      caches.keys().then(names => {
+        for (let name of names) caches.delete(name);
+      });
+    }
+  </script>
+
   <!-- Central Config & Supabase Client -->
   <script src="config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -23,7 +38,7 @@
     
     /* Visible PIN Box */
     .pin-display-input {
-      width: 180px; padding: 10px; font-size: 26px; font-weight: bold; text-align: center;
+      width: 190px; padding: 10px; font-size: 26px; font-weight: bold; text-align: center;
       letter-spacing: 12px; background: #0f172a; color: #facc15; border: 2px solid #475569;
       border-radius: 12px; margin: 12px auto 6px auto; outline: none; display: block;
     }
@@ -50,11 +65,11 @@
       margin-top: 14px; padding-top: 12px; border-top: 1px dashed #334155;
     }
     .branch-pill-btn {
-      background: #0f172a; border: 1px solid #475569; color: #cbd5e1; padding: 6px 10px;
-      border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; margin: 3px;
+      background: #0f172a; border: 1px solid #475569; color: #cbd5e1; padding: 8px 12px;
+      border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; margin: 3px;
       display: inline-block; transition: 0.1s;
     }
-    .branch-pill-btn:hover { border-color: #f59e0b; color: #fff; }
+    .branch-pill-btn:hover { border-color: #f59e0b; color: #fff; background: #1e293b; }
 
     /* ================= TOP HEADER ================= */
     .kds-header {
@@ -193,7 +208,7 @@
 
       <!-- Direct Branch Buttons (Fallback Access) -->
       <div class="quick-branch-area">
-        <div style="font-size:11px; color:#94a3b8; margin-bottom:4px;">നേരിട്ട് തിരഞ്ഞെടുക്കുക (Direct Branch):</div>
+        <div style="font-size:11px; color:#94a3b8; margin-bottom:6px;">നേരിട്ട് തിരഞ്ഞെടുക്കുക (Direct Branch):</div>
         <div id="quick-branches-container"></div>
       </div>
     </div>
@@ -819,7 +834,7 @@
       });
     }, 1000);
 
-    // Physical Keyboard Support
+    // Keyboard support
     window.addEventListener('keydown', (e) => {
       const overlay = document.getElementById('kds-pin-overlay');
       if (overlay && overlay.style.display !== 'none') {
