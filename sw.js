@@ -1,48 +1,40 @@
-const CACHE_NAME = 'alnassr-pos-cache-v0.3';
+const CACHE_NAME = 'brost-pos-v1';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
-  './mobile.html',
-  './master.html',
+  './kds.html',
   './config.js',
+  './pos-core.js',
+  './pos-report.js',
   './manifest.json',
-  './icon-192.png',
-  './icon-512.png',
-  './shop1.png',
-  './shop2.png',
-  './shop3.png'
+  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
+  'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'
 ];
 
-// ഫയലുകൾ കാഷെയിലേക്ക് സൂക്ഷിക്കുന്നു
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
-    }).then(() => self.skipWaiting())
+self.addEventListener('install', (e) => {
+  e.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS_TO_CACHE))
   );
+  self.skipWaiting();
 });
 
-// പഴയ കാഷെ ക്ലിയർ ചെയ്യുന്നു
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
+self.addEventListener('activate', (e) => {
+  e.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+        keys.map((key) => {
+          if (key !== CACHE_NAME) return caches.delete(key);
+        })
       );
-    }).then(() => self.clients.claim())
+    })
   );
+  self.clients.claim();
 });
 
-// നെറ്റ് ഇല്ലെങ്കിലും കാഷെയിൽ നിന്ന് ഫയൽ തുറക്കുന്നു (Offline First)
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      return cachedResponse || fetch(event.request).catch(() => {
-        // ഇന്റർനെറ്റ് ഇല്ലാത്തപ്പോൾ പ്രധാന പേജ് നൽകുന്നു
-        if (event.request.mode === 'navigate') {
-          return caches.match('./mobile.html');
-        }
-      });
+self.addEventListener('fetch', (e) => {
+  e.respondWith(
+    caches.match(e.request).then((res) => {
+      return res || fetch(e.request).catch(() => caches.match('./index.html'));
     })
   );
 });
