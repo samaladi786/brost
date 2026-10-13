@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Broasted POS - Modular Enterprise Edition</title>
+  <title>Broasted POS - Enterprise Cloud Edition</title>
 
   <!-- External Libraries & Central Config -->
   <script src="config.js"></script>
@@ -62,7 +62,7 @@
     .btn-logout { background: #ef4444; }
     .shop-badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; margin-left: 6px; }
 
-    /* Order Options */
+    /* Order Options Bar */
     .order-bar {
       display: flex; gap: 10px; align-items: center; background: #ffffff; padding: 10px;
       border-radius: 10px; margin-bottom: 10px; border: 1px solid #e2e8f0;
@@ -79,7 +79,7 @@
     .btn-back { background: #e2e8f0; border: 1px solid #cbd5e1; padding: 6px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; display: none; }
     .current-title { font-size: 16px; font-weight: bold; color: #334155; }
 
-    /* Grid */
+    /* POS Items Grid */
     .grid-container { flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 12px; overflow-y: auto; align-content: start; }
     .pos-card {
       background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0;
@@ -134,7 +134,7 @@
     .kpi-val { font-size: 18px; font-weight: 900; margin-top: 4px; }
 
     /* Settings Box & Tables */
-    .settings-box { width: 850px; max-width: 95%; max-height: 88vh; overflow-y: auto; text-align: left; }
+    .settings-box { width: 880px; max-width: 95%; max-height: 88vh; overflow-y: auto; text-align: left; }
     .set-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12px; }
     .set-table td, .set-table th { padding: 6px; border: 1px solid #e2e8f0; text-align: left; }
     .set-table th { background: #f8fafc; }
@@ -386,24 +386,27 @@
     <div class="modal-box settings-box">
       <h3>⚙️ സിസ്റ്റം സെറ്റിങ്സ് & മാപ്പിംഗ് മാനേജ്‌മെന്റ്</h3>
 
-      <!-- 1. Kitchen Station Manager (Full CRUD) -->
+      <!-- 1. Kitchen Station Manager (Full CRUD with Station PIN) -->
       <div style="background:#f8fafc; padding:10px 12px; border-radius:8px; margin-top:8px; border:1px solid #e2e8f0;" id="st-form-box">
         <h4 id="st-form-title">🧑‍🍳 കിച്ചൻ സ്റ്റേഷൻ മാനേജ്‌മെന്റ് (Add / Edit Station):</h4>
-        <div style="display:flex; gap:8px; margin-top:6px;">
-          <input type="text" id="new-station-name" placeholder="സ്റ്റേഷൻ പേര് (ഉദാ: Broast Station)" style="flex:2; padding:6px;">
-          <select id="new-station-routing" style="flex:1; padding:6px;">
+        <div style="display:grid; grid-template-columns: 2fr 1.5fr 1fr auto; gap:6px; margin-top:6px;">
+          <input type="text" id="new-station-name" placeholder="സ്റ്റേഷൻ പേര് (ഉദാ: Broast Station)" style="padding:6px;">
+          <select id="new-station-routing" style="padding:6px;">
             <option value="Both">Both (KDS + Printer)</option>
             <option value="Display Only">Display Only (KDS)</option>
             <option value="Printer Only">Printer Only</option>
           </select>
-          <button id="btn-save-st" onclick="saveKitchenStation()" style="background:#1e293b; color:#fff; border:none; padding:6px 14px; border-radius:4px; font-weight:bold; cursor:pointer;">Save Station</button>
-          <button id="btn-cancel-st" onclick="resetStationForm()" style="display:none; background:#64748b; color:#fff; border:none; padding:6px 10px; border-radius:4px; cursor:pointer;">Cancel</button>
+          <input type="text" id="new-station-pin" placeholder="PIN (ഉദാ: 1001)" maxlength="4" style="padding:6px; text-align:center;">
+          <div style="display:flex; gap:4px;">
+            <button id="btn-save-st" onclick="saveKitchenStation()" style="background:#1e293b; color:#fff; border:none; padding:6px 12px; border-radius:4px; font-weight:bold; cursor:pointer;">Save</button>
+            <button id="btn-cancel-st" onclick="resetStationForm()" style="display:none; background:#64748b; color:#fff; border:none; padding:6px 8px; border-radius:4px; cursor:pointer;">Cancel</button>
+          </div>
         </div>
 
         <h5 style="margin-top:10px;">നിലവിലുള്ള സ്റ്റേഷനുകൾ (Edit & Delete):</h5>
         <div style="max-height: 120px; overflow-y: auto; margin-top:4px;">
           <table class="set-table">
-            <thead><tr><th>Station Name</th><th>Routing Mode</th><th>Action</th></tr></thead>
+            <thead><tr><th>Station Name</th><th>Routing Mode</th><th>Station PIN</th><th>Action</th></tr></thead>
             <tbody id="stations-table-body"></tbody>
           </table>
         </div>
