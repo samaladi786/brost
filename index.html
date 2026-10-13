@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Broasted POS - Multi-Branch Cloud Edition</title>
-  <!-- Central Config & External Libraries -->
+  <title>Broasted POS - Saudi Cloud Edition</title>
+  <!-- Central Config & Libraries -->
   <script src="config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -12,41 +12,49 @@
     * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 0; }
     body { display: flex; height: 100vh; background: #f1f5f9; overflow: hidden; }
 
-    /* ================= SHOP SELECTOR OVERLAY ================= */
-    #shop-auth-overlay {
+    /* ================= 4-DIGIT DIRECT PIN LOCK SCREEN ================= */
+    #pin-lock-overlay {
       position: fixed; inset: 0; background: #0f172a; z-index: 9999;
       display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px;
     }
-    .auth-card {
-      background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 24px;
-      max-width: 650px; width: 100%; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    .pin-modal-card {
+      background: #1e293b; border: 1px solid #334155; border-radius: 20px; padding: 28px 24px;
+      max-width: 360px; width: 100%; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.6);
     }
-    .shop-select-grid {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-      gap: 12px; margin: 20px 0; max-height: 50vh; overflow-y: auto;
+    .pin-dots-row {
+      display: flex; justify-content: center; gap: 14px; margin: 20px 0;
     }
-    .shop-btn-card {
-      background: #0f172a; border: 2px solid #334155; border-radius: 12px; padding: 14px 10px;
-      cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: space-between;
-      transition: all 0.15s ease; color: #fff;
+    .pin-dot {
+      width: 18px; height: 18px; border-radius: 50%; border: 2px solid #475569; background: transparent; transition: all 0.15s ease;
     }
-    .shop-btn-card:hover { border-color: #38bdf8; transform: translateY(-2px); }
-    .shop-btn-card img { width: 55px; height: 55px; object-fit: contain; margin-bottom: 8px; border-radius: 8px; }
-    .shop-btn-card h4 { font-size: 13px; line-height: 1.2; }
-    .pin-box { display: none; margin-top: 15px; }
-    .pin-input {
-      padding: 10px 14px; font-size: 18px; text-align: center; letter-spacing: 4px;
-      border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; width: 160px;
+    .pin-dot.filled { background: #38bdf8; border-color: #38bdf8; box-shadow: 0 0 10px #38bdf8; }
+    .hidden-pin-input {
+      position: absolute; opacity: 0; pointer-events: none; width: 0; height: 0;
+    }
+    .numpad-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 10px;
+    }
+    .num-key {
+      background: #0f172a; border: 1px solid #334155; color: #f8fafc; font-size: 22px; font-weight: bold;
+      padding: 16px 0; border-radius: 12px; cursor: pointer; transition: 0.1s; user-select: none;
+    }
+    .num-key:active { transform: scale(0.94); background: #334155; }
+    .num-key.backspace { font-size: 18px; color: #ef4444; }
+
+    /* Master PIN Branch Picker Modal */
+    #master-branch-picker {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 10000;
+      justify-content: center; align-items: center; padding: 20px;
     }
 
-    /* ================= MAIN POS ================= */
+    /* ================= MAIN POS INTERFACE ================= */
     .menu-panel { flex: 6.8; display: flex; flex-direction: column; padding: 12px 16px; border-right: 2px solid #cbd5e1; }
     .top-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
     .top-actions { display: flex; gap: 8px; align-items: center; }
     .btn-top { background: #1e293b; color: #fff; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 12px; }
     .btn-report { background: #0284c7; }
     .btn-kds-link { background: #f59e0b; color: #000; text-decoration: none; padding: 8px 12px; border-radius: 8px; font-weight: bold; font-size: 12px; }
-    .btn-switch-shop { background: #ef4444; }
+    .btn-logout { background: #ef4444; }
     .shop-badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; margin-left: 6px; }
 
     /* Order Options */
@@ -102,13 +110,13 @@
 
     /* Modals */
     .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 100; }
-    .modal-box { background: #fff; padding: 20px; border-radius: 12px; width: 360px; text-align: center; }
+    .modal-box { background: #fff; padding: 20px; border-radius: 12px; width: 380px; text-align: center; }
     .modal-btn-row { display: flex; gap: 8px; margin-top: 15px; }
     .btn-cancel { background: #ef4444; color: #fff; flex: 1; padding: 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
     .btn-confirm { background: #16a34a; color: #fff; flex: 1; padding: 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
 
     /* Settings Box */
-    .settings-box { width: 750px; max-width: 95%; max-height: 85vh; overflow-y: auto; text-align: left; }
+    .settings-box { width: 780px; max-width: 95%; max-height: 85vh; overflow-y: auto; text-align: left; }
     .set-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12px; }
     .set-table td, .set-table th { padding: 6px; border: 1px solid #e2e8f0; text-align: left; }
     .thumb-preview { width: 40px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid #cbd5e1; }
@@ -133,22 +141,45 @@
 </head>
 <body>
 
-  <!-- ================= SHOP SELECTION OVERLAY ================= -->
-  <div id="shop-auth-overlay">
-    <div class="auth-card">
-      <h2 style="color:#f8fafc; margin-bottom:4px;">🏪 ബ്രാഞ്ച് തിരഞ്ഞെടുക്കുക</h2>
-      <p style="color:#94a3b8; font-size:13px;">നിങ്ങളുടെ ഷോപ്പ് തിരഞ്ഞെടുത്തു PIN നൽകുക</p>
+  <!-- ================= 4-DIGIT PIN LOCK OVERLAY ================= -->
+  <div id="pin-lock-overlay">
+    <div class="pin-modal-card">
+      <div style="font-size:36px; margin-bottom:6px;">🔒</div>
+      <h2 style="color:#f8fafc; font-size:18px;">ENTER 4-DIGIT PIN</h2>
+      <p style="color:#94a3b8; font-size:12px; margin-top:2px;">ഷോപ്പ് PIN നൽകുക</p>
       
-      <div class="shop-select-grid" id="auth-shops-list"></div>
-
-      <div class="pin-box" id="pin-prompt-box">
-        <h4 id="pin-shop-title" style="color:#38bdf8; margin-bottom:10px;"></h4>
-        <input type="password" id="pin-input" class="pin-input" maxlength="6" placeholder="PIN" onkeyup="checkPinEntry(event)">
-        <div style="margin-top:12px; display:flex; gap:10px; justify-content:center;">
-          <button onclick="cancelPinPrompt()" class="btn-top" style="background:#475569;">Cancel</button>
-          <button onclick="verifyAndLogin()" class="btn-top" style="background:#16a34a;">Login (തുറക്കുക)</button>
-        </div>
+      <div class="pin-dots-row">
+        <div class="pin-dot" id="dot-0"></div>
+        <div class="pin-dot" id="dot-1"></div>
+        <div class="pin-dot" id="dot-2"></div>
+        <div class="pin-dot" id="dot-3"></div>
       </div>
+
+      <input type="password" id="numpad-hidden-input" class="hidden-pin-input" maxlength="4" autofocus>
+
+      <div class="numpad-grid">
+        <button class="num-key" onclick="pressKey('1')">1</button>
+        <button class="num-key" onclick="pressKey('2')">2</button>
+        <button class="num-key" onclick="pressKey('3')">3</button>
+        <button class="num-key" onclick="pressKey('4')">4</button>
+        <button class="num-key" onclick="pressKey('5')">5</button>
+        <button class="num-key" onclick="pressKey('6')">6</button>
+        <button class="num-key" onclick="pressKey('7')">7</button>
+        <button class="num-key" onclick="pressKey('8')">8</button>
+        <button class="num-key" onclick="pressKey('9')">9</button>
+        <button class="num-key" onclick="clearPinInput()" style="font-size:14px; color:#94a3b8;">CLEAR</button>
+        <button class="num-key" onclick="pressKey('0')">0</button>
+        <button class="num-key backspace" onclick="pressBackspace()">⌫</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Master PIN Branch Selector -->
+  <div id="master-branch-picker">
+    <div class="pin-modal-card" style="max-width:440px;">
+      <h3 style="color:#facc15;">🔑 MASTER ADMIN ACCESS</h3>
+      <p style="color:#94a3b8; font-size:12px; margin: 8px 0 16px 0;">പ്രവർത്തിപ്പിക്കേണ്ട ബ്രാഞ്ച് തിരഞ്ഞെടുക്കുക:</p>
+      <div id="master-branches-container" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"></div>
     </div>
   </div>
 
@@ -159,18 +190,19 @@
         <div style="display:flex; align-items:center;">
           <h2 id="top-shop-name">🍗 Broasted POS</h2>
           <span id="top-shop-badge" class="shop-badge"></span>
+          <span id="business-date-badge" style="font-size:11px; background:#e2e8f0; color:#334155; padding:3px 8px; border-radius:6px; margin-left:6px; font-weight:bold;"></span>
         </div>
         <small style="color:#64748b;" id="current-date-time"></small>
       </div>
       <div class="top-actions">
         <a href="kds.html" target="_blank" class="btn-kds-link">📺 KDS സ്ക്രീൻ</a>
-        <button class="btn-top btn-report" onclick="openDailyReportModal()">📊 Z-റിപ്പോർട്ട്</button>
+        <button class="btn-top btn-report" onclick="openCloudZReportModal()">📊 Z-റിപ്പോർട്ട്</button>
         <button class="btn-top" onclick="openSettingsModal()">⚙️ Settings</button>
-        <button class="btn-top btn-switch-shop" onclick="switchShop()">🔄 Switch Branch</button>
+        <button class="btn-top btn-logout" onclick="lockPOS()">🔒 Logout</button>
       </div>
     </div>
 
-    <!-- Order Options Bar -->
+    <!-- Order Options -->
     <div class="order-bar">
       <button class="type-btn active" onclick="setOrderType('Takeaway (سفري)', this)">📦 Takeaway (سفري)</button>
       <button class="type-btn" onclick="setOrderType('Dine-in (محلي)', this)">🍽️ Dine-in (محلي)</button>
@@ -211,7 +243,7 @@
     </div>
   </div>
 
-  <!-- Flavor Modal (Spicy / Normal) -->
+  <!-- Flavor Modal -->
   <div class="modal-backdrop" id="flavor-modal">
     <div class="modal-box">
       <h3 id="flavor-modal-title">Select Flavor</h3>
@@ -243,25 +275,13 @@
     </div>
   </div>
 
-  <!-- 2-Printer Kitchen Prompt Modal -->
-  <div class="modal-backdrop" id="kitchen-prompt-modal">
-    <div class="modal-box">
-      <h3>🧑‍🍳 കിച്ചൻ പ്രിന്റർ (Kitchen Ticket)</h3>
-      <p style="margin: 10px 0; color: #334155;">കസ്റ്റമർ ബിൽ അടിച്ചു കഴിഞ്ഞു. കിച്ചൻ പ്രിന്ററിലേക്ക് സ്ലിപ്പ് അടിക്കണോ?</p>
-      <div class="modal-btn-row">
-        <button class="btn-cancel" onclick="closeModals()">വേണ്ട (Skip)</button>
-        <button class="btn-confirm" style="background:#0284c7;" onclick="printSeparateKitchenSlip()">🖨️ കിച്ചൻ പ്രിന്റ് അടിക്കുക</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Daily Sales Z-Report Modal -->
+  <!-- Cloud Z-Report & Daily Closing Modal -->
   <div class="modal-backdrop" id="report-modal">
-    <div class="modal-box" style="width: 420px; text-align: left;">
-      <h3 style="text-align: center;">📊 ഡെയിലി സെയിൽസ് റിപ്പോർട്ട് (Z-Report)</h3>
+    <div class="modal-box" style="width: 440px; text-align: left;">
+      <h3 style="text-align: center;">📊 ക്ലൗഡ് Z-റിപ്പോർട്ട് (Daily Report)</h3>
       <div style="border-bottom: 1px dashed #cbd5e1; margin: 8px 0;"></div>
       <div style="font-size: 14px; line-height: 1.8; margin: 10px 0;">
-        <div class="row"><span>തീയതി:</span><strong id="rep-date"></strong></div>
+        <div class="row"><span>ബിസിനസ്സ് തീയതി (6 AM Cutoff):</span><strong id="rep-date"></strong></div>
         <div class="row"><span>ആകെ ബില്ലുകൾ:</span><strong id="rep-count">0</strong></div>
         <div class="row"><span>ക്യാഷ് (Cash):</span><strong id="rep-cash">0.00 SAR</strong></div>
         <div class="row"><span>കാർഡ് (Card/Mada):</span><strong id="rep-card">0.00 SAR</strong></div>
@@ -270,45 +290,41 @@
           <span>ആകെ കച്ചവടം:</span><strong id="rep-total" style="color:#16a34a;">0.00 SAR</strong>
         </div>
       </div>
-      <div class="modal-btn-row">
-        <button class="btn-cancel" onclick="closeModals()">Close</button>
-        <button class="btn-confirm" style="background:#0284c7;" onclick="printDailyReportSlip()">🖨️ പ്രിന്റ് റിപ്പോർട്ട്</button>
+      <div class="modal-btn-row" style="flex-direction:column; gap:8px;">
+        <div style="display:flex; gap:8px;">
+          <button class="btn-cancel" onclick="closeModals()">Close</button>
+          <button class="btn-confirm" style="background:#0284c7;" onclick="printDailyReportSlip()">🖨️ പ്രിന്റ് റിപ്പോർട്ട്</button>
+        </div>
+        <button class="btn-top" style="background:#b91c1c; padding:10px; width:100%; border-radius:6px;" onclick="executeZDailyClosing()">
+          🔒 ഇന്നത്തെ ഷിഫ്റ്റ് ക്ലോസ് ചെയ്യുക (Close Day)
+        </button>
       </div>
     </div>
   </div>
 
-  <!-- Settings & Backup Modal -->
+  <!-- Settings & Category Management Modal -->
   <div class="modal-backdrop" id="settings-modal">
     <div class="modal-box settings-box">
-      <h3>⚙️ സിസ്റ്റം സെറ്റിങ്സ് & ഐറ്റം മാനേജ്‌മെന്റ്</h3>
+      <h3>⚙️ സിസ്റ്റം സെറ്റിങ്സ് & കാറ്റഗറി മാനേജ്‌മെന്റ്</h3>
 
-      <!-- Printer Mode -->
-      <div style="background:#f8fafc; padding:10px; border-radius:8px; margin-top:8px;">
-        <h4>🖨️ പ്രിന്റർ സെറ്റിങ്സ്:</h4>
-        <div style="display:flex; align-items:center; gap:10px; margin-top:6px;">
-          <select id="set-printer-mode" style="padding:6px; border-radius:4px; border:1px solid #cbd5e1;">
-            <option value="combined">സിംഗിൾ പ്രിന്റർ (ഒരൊറ്റ റോളിൽ ബില്ലും കിച്ചൻ സ്ലിപ്പും)</option>
-            <option value="separate">രണ്ട് പ്രിന്ററുകൾ (പ്രത്യേകം കിച്ചൻ പ്രിന്റ്)</option>
-            <option value="off">കിച്ചൻ പ്രിന്റ് വേണ്ട (കസ്റ്റമർ ബിൽ മാത്രം)</option>
+      <!-- 1. Category Creator with Kitchen Station Routing -->
+      <div style="background:#f8fafc; padding:12px; border-radius:8px; margin-top:8px;">
+        <h4>📁 പുതിയ കാറ്റഗറി നിർമ്മിക്കുക (Category & Kitchen Routing):</h4>
+        <div style="display:grid; grid-template-columns: 2fr 1fr 2fr auto; gap:6px; margin-top:6px;">
+          <input type="text" id="cat-name-input" placeholder="കാറ്റഗറി പേര് (ഉദാ: Burgers)" style="padding:6px;">
+          <input type="text" id="cat-icon-input" placeholder="ഐക്കൺ (🍔)" style="padding:6px; text-align:center;">
+          <select id="cat-station-select" style="padding:6px;">
+            <option value="Main Kitchen">Station: Main Kitchen</option>
+            <option value="Broast Station">Station: Broast Station</option>
+            <option value="Burger Station">Station: Burger Station</option>
+            <option value="Drinks Counter">Station: Drinks Counter</option>
           </select>
-          <button onclick="savePrinterMode()" style="background:#1e293b; color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;">Save</button>
+          <button onclick="saveCategoryToCloud()" style="background:#0284c7; color:#fff; border:none; padding:6px 14px; border-radius:4px; font-weight:bold; cursor:pointer;">Add Cat</button>
         </div>
       </div>
 
-      <!-- Shop Profile -->
-      <div style="background:#f8fafc; padding:10px; border-radius:8px; margin-top:8px;">
-        <h4>സ്ഥാപന വിവരങ്ങൾ (VAT Profile - Cloud Sync):</h4>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 4px;">
-          <input type="text" id="set-shop-ar" placeholder="ഷോപ്പ് പേര് (Arabic)" style="padding:6px;">
-          <input type="text" id="set-shop-en" placeholder="Shop Name (English)" style="padding:6px;">
-          <input type="text" id="set-vat-no" placeholder="15-Digit VAT Number" style="padding:6px;">
-          <input type="text" id="set-phone" placeholder="ഷോപ്പ് ഫോൺ നമ്പർ" style="padding:6px;">
-        </div>
-        <button onclick="saveShopProfile()" style="background:#1e293b; color:#fff; border:none; padding:6px 12px; border-radius:4px; margin-top:6px; cursor:pointer;">Save Profile to Cloud</button>
-      </div>
-
-      <!-- Add or Edit Item -->
-      <div style="background:#f8fafc; padding:10px; border-radius:8px; margin-top:8px;" id="item-form-box">
+      <!-- 2. Add or Edit Item -->
+      <div style="background:#f8fafc; padding:12px; border-radius:8px; margin-top:8px;" id="item-form-box">
         <h4 id="item-form-title">പുതിയ ഐറ്റം ചേർക്കുക:</h4>
         <div style="display:grid; grid-template-columns: 2fr 1fr 1.5fr; gap:6px; margin-top:6px;">
           <input type="text" id="item-name-input" placeholder="ഐറ്റം പേര്" style="padding:6px;">
@@ -331,13 +347,32 @@
         </div>
       </div>
 
-      <!-- Item Management Table -->
-      <h4 style="margin-top:10px;">നിലവിലുള്ള ഐറ്റങ്ങൾ എഡിറ്റ് ചെയ്യുക (Cloud Synced):</h4>
-      <div style="max-height: 180px; overflow-y: auto;">
+      <!-- 3. Items Management Table -->
+      <h4 style="margin-top:12px;">നിലവിലുള്ള ഐറ്റങ്ങൾ എഡിറ്റ് ചെയ്യുക (Cloud Synced):</h4>
+      <div style="max-height: 160px; overflow-y: auto;">
         <table class="set-table">
           <thead><tr><th>Photo</th><th>Item</th><th>Price</th><th>Category</th><th>Spicy?</th><th>Action</th></tr></thead>
           <tbody id="settings-table-body"></tbody>
         </table>
+      </div>
+
+      <!-- 4. Shop Profile & VAT -->
+      <div style="background:#f8fafc; padding:12px; border-radius:8px; margin-top:8px;">
+        <h4>സ്ഥാപന വിവരങ്ങൾ (VAT Profile):</h4>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 4px;">
+          <input type="text" id="set-shop-ar" placeholder="ഷോപ്പ് പേര് (Arabic)" style="padding:6px;">
+          <input type="text" id="set-shop-en" placeholder="Shop Name (English)" style="padding:6px;">
+          <input type="text" id="set-vat-no" placeholder="15-Digit VAT Number" style="padding:6px;">
+          <input type="text" id="set-phone" placeholder="ഷോപ്പ് ഫോൺ നമ്പർ" style="padding:6px;">
+        </div>
+        <div style="margin-top:6px; display:flex; justify-content:space-between; align-items:center;">
+          <select id="set-printer-mode" style="padding:6px;">
+            <option value="combined">സിംഗിൾ പ്രിന്റർ (ബില്ലും കിച്ചൻ സ്ലിപ്പും ഒന്നിച്ചു)</option>
+            <option value="separate">രണ്ട് പ്രിന്ററുകൾ (പ്രത്യേകം കിച്ചൻ പ്രിന്റ്)</option>
+            <option value="off">കിച്ചൻ പ്രിന്റ് വേണ്ട (കസ്റ്റമർ ബിൽ മാത്രം)</option>
+          </select>
+          <button onclick="saveShopProfile()" style="background:#1e293b; color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;">Save Profile</button>
+        </div>
       </div>
 
       <div class="modal-btn-row">
@@ -349,45 +384,42 @@
   <div id="print-area"></div>
 
   <script>
-    // ================= STATE & CONFIG =================
+    // ================= BUILT-IN FALLBACK SHOPS =================
+    const FALLBACK_SHOPS = [
+      { id: 'shop1', name: 'NASSER BIN EID ALMAHMADI', url: 'https://elubqoicerkldrufqcbj.supabase.co', key: 'sb_publishable_zsEKreCmounELozZ5EQ3Lg_aXyut9EK', pin: '1234' },
+      { id: 'shop2', name: 'BOOFIYA', url: 'https://qkjcviszzdptssvpguwc.supabase.co', key: 'sb_publishable_J0Z4b7NoP3VuDKdbC0WeIg_OQAlpnLQ', pin: '1111' },
+      { id: 'shop3', name: 'TAJ SPORTS', url: 'https://garpkohthpeirdhcwthk.supabase.co', key: 'sb_publishable_TNhOZnpYuthYHmSJSlyhaw_R6RS1jcY', pin: '3333' },
+      { id: 'shop4', name: 'MUSAD SPORTS', url: 'https://mwxbakqoipcwblhukrfs.supabase.co', key: 'sb_publishable_OfuR1PeffNa4NWUhpwV3gg_pwqovQZT', pin: '2222' }
+    ];
+
+    function getAllShops() {
+      if (typeof window.SHOPS_CONFIG !== 'undefined' && Array.isArray(window.SHOPS_CONFIG) && window.SHOPS_CONFIG.length > 0) {
+        return window.SHOPS_CONFIG;
+      }
+      return FALLBACK_SHOPS;
+    }
+
+    let enteredPin = "";
     let currentShop = null;
-    let selectedPendingShop = null;
     let supabaseClient = null;
     const kdsChannel = new BroadcastChannel('broast_pos_channel');
 
-    const defaultShop = {
-      nameAr: "مطعم البروستد الذهبي",
-      nameEn: "Golden Broasted Restaurant",
-      vatNo: "310123456700003",
-      phone: "0551234567"
-    };
-
-    const defaultCategories = [
-      { id: "broast", name: "Broasted", icon: "🍗", img: "" },
-      { id: "potatoes", name: "Potatoes", icon: "🍟", img: "" },
-      { id: "drinks", name: "Drinks", icon: "🥤", img: "" },
-      { id: "addons", name: "Add-ons (ഇതരങ്ങൾ)", icon: "➕", img: "" }
+    let shop = { nameAr: "مطعم البروستد الذهبي", nameEn: "Golden Broasted Restaurant", vatNo: "310123456700003", phone: "0551234567" };
+    let categories = [
+      { id: "broast", name: "Broasted", icon: "🍗", station: "Broast Station" },
+      { id: "potatoes", name: "Potatoes", icon: "🍟", station: "Broast Station" },
+      { id: "drinks", name: "Drinks", icon: "🥤", station: "Drinks Counter" },
+      { id: "addons", name: "Add-ons", icon: "➕", station: "Main Kitchen" }
     ];
-
-    const defaultItems = [
+    let items = [
       { id: 1, name: "4 Pcs Broast", price: 18.00, catId: "broast", hasFlavor: true, img: "" },
       { id: 2, name: "8 Pcs Broast", price: 34.00, catId: "broast", hasFlavor: true, img: "" },
       { id: 3, name: "Potatoes Small", price: 5.00, catId: "potatoes", hasFlavor: false, img: "" },
-      { id: 4, name: "Potatoes Medium", price: 8.00, catId: "potatoes", hasFlavor: false, img: "" },
-      { id: 5, name: "Potatoes Big", price: 12.00, catId: "potatoes", hasFlavor: false, img: "" },
-      { id: 6, name: "Pepsi", price: 3.50, catId: "drinks", hasFlavor: false, img: "" },
-      { id: 7, name: "Coca Cola", price: 3.50, catId: "drinks", hasFlavor: false, img: "" },
-      { id: 8, name: "Water", price: 1.00, catId: "drinks", hasFlavor: false, img: "" },
-      { id: 9, name: "Thoom (Garlic)", price: 1.00, catId: "addons", hasFlavor: false, img: "" },
-      { id: 10, name: "Ketchup", price: 1.00, catId: "addons", hasFlavor: false, img: "" },
-      { id: 11, name: "Extra Bread", price: 1.00, catId: "addons", hasFlavor: false, img: "" }
+      { id: 4, name: "Pepsi", price: 3.50, catId: "drinks", hasFlavor: false, img: "" },
+      { id: 5, name: "Thoom (Garlic)", price: 1.00, catId: "addons", hasFlavor: false, img: "" }
     ];
-
-    let shop = defaultShop;
-    let categories = defaultCategories;
-    let items = defaultItems;
     let orderHistory = [];
-    let printerMode = localStorage.getItem('pos_printer_mode') || 'combined';
+    let printerMode = 'combined';
 
     let cart = [];
     let currentView = 'categories';
@@ -397,217 +429,167 @@
     let tempImageBase64 = "";
     let lastCompletedOrder = null;
 
-    // --- Authentication & Multi-Shop Flow ---
-    function initMultiShopAuth() {
-      const savedShopId = localStorage.getItem('pos_active_shop_id');
-      const shops = window.SHOPS_CONFIG || [];
-
-      if (savedShopId && shops.length > 0) {
-        const found = shops.find(s => s.id === savedShopId);
-        if (found) {
-          activateShop(found);
-          return;
-        }
+    // --- Saudi 6:00 AM Business Date Calculation ---
+    function getSaudiBusinessDate() {
+      const now = new Date();
+      // Convert to UTC+3 (Saudi Arabia Time)
+      const saudiTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (3 * 3600000));
+      const hours = saudiTime.getHours();
+      
+      // If before 6:00 AM, count as previous date
+      if (hours < 6) {
+        saudiTime.setDate(saudiTime.getDate() - 1);
       }
-      renderShopSelectionOverlay();
+      return saudiTime.toISOString().slice(0, 10);
     }
 
-    function renderShopSelectionOverlay() {
-      const overlay = document.getElementById('shop-auth-overlay');
-      const grid = document.getElementById('auth-shops-list');
-      const pinBox = document.getElementById('pin-prompt-box');
-      overlay.style.display = 'flex';
-      pinBox.style.display = 'none';
-      grid.innerHTML = '';
+    // --- 4-Digit Direct PIN Lock Mechanics ---
+    function pressKey(num) {
+      if (enteredPin.length < 4) {
+        enteredPin += num;
+        updatePinDots();
+        if (enteredPin.length === 4) {
+          setTimeout(verify4DigitPin, 100);
+        }
+      }
+    }
 
-      const shops = window.SHOPS_CONFIG || [];
-      shops.forEach(s => {
-        const card = document.createElement('div');
-        card.className = 'shop-btn-card';
-        card.innerHTML = `
-          <img src="${s.logo || 'shop1.png'}" onerror="this.src='https://placehold.co/60x60/334155/white?text=SHOP'" alt="">
-          <h4>${s.name}</h4>
-          <small style="color:#64748b; font-size:11px;">${s.tagline || ''}</small>
-        `;
-        card.onclick = () => promptShopPin(s);
-        grid.appendChild(card);
+    function pressBackspace() {
+      if (enteredPin.length > 0) {
+        enteredPin = enteredPin.slice(0, -1);
+        updatePinDots();
+      }
+    }
+
+    function clearPinInput() {
+      enteredPin = "";
+      updatePinDots();
+    }
+
+    function updatePinDots() {
+      for (let i = 0; i < 4; i++) {
+        const dot = document.getElementById(`dot-${i}`);
+        if (dot) dot.classList.toggle('filled', i < enteredPin.length);
+      }
+    }
+
+    function verify4DigitPin() {
+      const masterPin = typeof window.MASTER_PIN !== 'undefined' ? window.MASTER_PIN : "0000";
+      const shops = getAllShops();
+
+      // 1. Check Master Admin PIN
+      if (enteredPin === masterPin) {
+        openMasterBranchPicker();
+        return;
+      }
+
+      // 2. Direct Match with Shop PIN
+      const matchedShop = shops.find(s => s.pin === enteredPin);
+      if (matchedShop) {
+        activateShopSession(matchedShop);
+      } else {
+        alert("തെറ്റായ PIN നമ്പർ! വീണ്ടും നൽകുക.");
+        clearPinInput();
+      }
+    }
+
+    function openMasterBranchPicker() {
+      const picker = document.getElementById('master-branch-picker');
+      const container = document.getElementById('master-branches-container');
+      container.innerHTML = '';
+      picker.style.display = 'flex';
+
+      getAllShops().forEach(s => {
+        const btn = document.createElement('button');
+        btn.className = 'btn-top';
+        btn.style.cssText = 'padding:14px; font-size:13px; background:#0f172a; border:1px solid #475569;';
+        btn.innerText = s.name;
+        btn.onclick = () => {
+          picker.style.display = 'none';
+          activateShopSession(s);
+        };
+        container.appendChild(btn);
       });
     }
 
-    function promptShopPin(s) {
-      selectedPendingShop = s;
-      document.getElementById('pin-shop-title').innerText = `${s.name} PIN നൽകുക:`;
-      document.getElementById('pin-prompt-box').style.display = 'block';
-      const input = document.getElementById('pin-input');
-      input.value = '';
-      input.focus();
-    }
-
-    function cancelPinPrompt() {
-      selectedPendingShop = null;
-      document.getElementById('pin-prompt-box').style.display = 'none';
-    }
-
-    function checkPinEntry(e) {
-      if (e.key === 'Enter') verifyAndLogin();
-    }
-
-    function verifyAndLogin() {
-      const pin = document.getElementById('pin-input').value.trim();
-      const masterPin = window.MASTER_PIN || "0000";
-
-      if (selectedPendingShop && (pin === selectedPendingShop.pin || pin === masterPin)) {
-        activateShop(selectedPendingShop);
-      } else {
-        alert("തെറ്റായ PIN നമ്പർ! വീണ്ടും ശ്രമിക്കുക.");
-        document.getElementById('pin-input').value = '';
-        document.getElementById('pin-input').focus();
-      }
-    }
-
-    async function activateShop(s) {
+    async function activateShopSession(s) {
       currentShop = s;
       localStorage.setItem('pos_active_shop_id', s.id);
-      document.getElementById('shop-auth-overlay').style.display = 'none';
+      document.getElementById('pin-lock-overlay').style.display = 'none';
+      clearPinInput();
 
       document.getElementById('top-shop-name').innerText = s.name;
-      const badge = document.getElementById('top-shop-badge');
-      badge.innerText = s.id.toUpperCase();
-      badge.className = `shop-badge ${s.badgeBg || 'bg-emerald-500/20 text-emerald-300'}`;
+      document.getElementById('top-shop-badge').innerText = s.id.toUpperCase();
+      document.getElementById('business-date-badge').innerText = `📅 Shift: ${getSaudiBusinessDate()}`;
 
-      // Initialize Supabase Client
       if (s.url && s.key && window.supabase) {
         supabaseClient = window.supabase.createClient(s.url, s.key);
-        await syncCloudDataForShop(s.id);
-      } else {
-        // Fallback to local
-        loadLocalFallbackData();
-        showCategories();
+        await syncCloudData(s.id);
       }
-    }
-
-    function switchShop() {
-      if (confirm("മറ്റൊരു ഷോപ്പ് തിരഞ്ഞെടുക്കാൻ ലോഗൗട്ട് ചെയ്യണോ?")) {
-        localStorage.removeItem('pos_active_shop_id');
-        supabaseClient = null;
-        currentShop = null;
-        renderShopSelectionOverlay();
-      }
-    }
-
-    // --- Cloud Data Sync (Settings, Categories, Menu Items) ---
-    async function syncCloudDataForShop(shopId) {
-      if (!supabaseClient) return;
-
-      try {
-        // 1. Sync Shop Profile
-        const { data: shopData } = await supabaseClient
-          .from('shop_settings')
-          .select('*')
-          .eq('shop_id', shopId)
-          .single();
-
-        if (shopData) {
-          shop = {
-            nameAr: shopData.name_ar || defaultShop.nameAr,
-            nameEn: shopData.name_en || currentShop.name,
-            vatNo: shopData.vat_no || defaultShop.vatNo,
-            phone: shopData.phone || defaultShop.phone
-          };
-          printerMode = shopData.printer_mode || printerMode;
-        }
-
-        // 2. Sync Categories
-        const { data: catData } = await supabaseClient
-          .from('categories')
-          .select('*')
-          .eq('shop_id', shopId);
-
-        if (catData && catData.length > 0) {
-          categories = catData;
-        } else {
-          // Initialize defaults in cloud
-          categories = defaultCategories;
-          for (let c of defaultCategories) {
-            await supabaseClient.from('categories').upsert({
-              id: c.id,
-              shop_id: shopId,
-              name: c.name,
-              icon: c.icon,
-              img: c.img
-            });
-          }
-        }
-
-        // 3. Sync Menu Items
-        const { data: itemData } = await supabaseClient
-          .from('menu_items')
-          .select('*')
-          .eq('shop_id', shopId);
-
-        if (itemData && itemData.length > 0) {
-          items = itemData.map(i => ({
-            id: i.id,
-            name: i.name,
-            price: parseFloat(i.price),
-            catId: i.cat_id,
-            hasFlavor: i.has_flavor,
-            img: i.img
-          }));
-        } else {
-          // Initialize defaults in cloud
-          items = defaultItems;
-          for (let it of defaultItems) {
-            await supabaseClient.from('menu_items').upsert({
-              id: it.id,
-              shop_id: shopId,
-              name: it.name,
-              price: it.price,
-              cat_id: it.catId,
-              has_flavor: it.hasFlavor,
-              img: it.img
-            });
-          }
-        }
-
-        // Cache locally for offline safety
-        localStorage.setItem(`pos_shop_${shopId}`, JSON.stringify(shop));
-        localStorage.setItem(`pos_cats_${shopId}`, JSON.stringify(categories));
-        localStorage.setItem(`pos_items_${shopId}`, JSON.stringify(items));
-
-      } catch (err) {
-        console.warn("Cloud sync warning, fallback to cache:", err);
-        loadLocalFallbackData();
-      }
-
       showCategories();
+      updateTokenDisplay();
+      syncPendingOfflineOrders();
     }
 
-    function loadLocalFallbackData() {
-      const shopId = currentShop ? currentShop.id : 'default';
-      shop = JSON.parse(localStorage.getItem(`pos_shop_${shopId}`)) || defaultShop;
-      categories = JSON.parse(localStorage.getItem(`pos_cats_${shopId}`)) || defaultCategories;
-      items = JSON.parse(localStorage.getItem(`pos_items_${shopId}`)) || defaultItems;
+    function lockPOS() {
+      currentShop = null;
+      supabaseClient = null;
+      localStorage.removeItem('pos_active_shop_id');
+      clearPinInput();
+      document.getElementById('pin-lock-overlay').style.display = 'flex';
     }
 
-    // --- POS UI & Billing ---
+    // --- Cloud Sync ---
+    async function syncCloudData(shopId) {
+      if (!supabaseClient) return;
+      try {
+        // Categories
+        const { data: catData } = await supabaseClient.from('categories').select('*').eq('shop_id', shopId);
+        if (catData && catData.length > 0) categories = catData;
+
+        // Menu Items
+        const { data: itemData } = await supabaseClient.from('menu_items').select('*').eq('shop_id', shopId);
+        if (itemData && itemData.length > 0) {
+          items = itemData.map(i => ({ id: i.id, name: i.name, price: parseFloat(i.price), catId: i.cat_id, hasFlavor: i.has_flavor, img: i.img }));
+        }
+
+        // Shop Profile
+        const { data: profile } = await supabaseClient.from('shop_settings').select('*').eq('shop_id', shopId).single();
+        if (profile) {
+          shop = { nameAr: profile.name_ar, nameEn: profile.name_en, vatNo: profile.vat_no, phone: profile.phone };
+          printerMode = profile.printer_mode || 'combined';
+        }
+      } catch (err) {
+        console.warn("Cloud Sync warning:", err);
+      }
+    }
+
+    // --- POS Operations ---
     function updateHeaderInfo() {
       const now = new Date();
       document.getElementById('current-date-time').innerText = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
     }
     setInterval(updateHeaderInfo, 1000);
-    updateHeaderInfo();
 
-    function getNextToken() {
-      const todayStr = new Date().toISOString().slice(0, 10);
-      const todaysOrders = orderHistory.filter(o => o.date === todayStr);
-      return "Token #" + String(todaysOrders.length + 1).padStart(2, '0');
+    async function getNextToken() {
+      const bDate = getSaudiBusinessDate();
+      if (supabaseClient && currentShop) {
+        try {
+          const { count } = await supabaseClient
+            .from('orders')
+            .select('*', { count: 'exact', head: true })
+            .eq('shop_id', currentShop.id)
+            .eq('business_date', bDate);
+          return "Token #" + String((count || 0) + 1).padStart(2, '0');
+        } catch(e) {}
+      }
+      const todays = orderHistory.filter(o => o.business_date === bDate);
+      return "Token #" + String(todays.length + 1).padStart(2, '0');
     }
 
-    function updateTokenDisplay() {
-      document.getElementById('token-display').innerText = getNextToken();
+    async function updateTokenDisplay() {
+      document.getElementById('token-display').innerText = await getNextToken();
     }
-    updateTokenDisplay();
 
     function setOrderType(type, btn) {
       activeOrderType = type;
@@ -627,8 +609,8 @@
         const card = document.createElement('div');
         card.className = 'pos-card';
         card.innerHTML = `
-          ${cat.img ? `<img src="${cat.img}" class="card-img" alt="">` : `<div class="card-icon">${cat.icon || '📁'}</div>`}
-          <div class="card-info"><h4>${cat.name}</h4></div>
+          <div class="card-icon">${cat.icon || '📁'}</div>
+          <div class="card-info"><h4>${cat.name}</h4><small style="color:#64748b; font-size:10px;">${cat.station || ''}</small></div>
         `;
         card.onclick = () => showItemsOfCategory(cat);
         grid.appendChild(card);
@@ -642,10 +624,9 @@
 
       const grid = document.getElementById('pos-grid');
       grid.innerHTML = '';
+      const filtered = items.filter(it => it.catId === cat.id);
 
-      const filteredItems = items.filter(it => it.catId === cat.id);
-
-      filteredItems.forEach(item => {
+      filtered.forEach(item => {
         const card = document.createElement('div');
         card.className = 'pos-card';
         card.innerHTML = `
@@ -655,25 +636,25 @@
             <div class="price">${item.price.toFixed(2)} SAR</div>
           </div>
         `;
-        card.onclick = () => handleItemSelect(item);
+        card.onclick = () => handleItemSelect(item, cat);
         grid.appendChild(card);
       });
     }
 
-    function handleItemSelect(item) {
+    function handleItemSelect(item, cat) {
       if (item.hasFlavor) {
-        selectedTempItem = item;
+        selectedTempItem = { ...item, station: cat ? cat.station : 'Main Kitchen' };
         document.getElementById('flavor-modal-title').innerText = item.name;
         document.getElementById('flavor-modal').style.display = 'flex';
       } else {
-        addToCart(item.name, item.price, item.catId);
+        addToCart(item.name, item.price, cat ? cat.station : 'Main Kitchen');
         showCategories();
       }
     }
 
     function confirmBroastFlavor() {
       const spice = document.querySelector('input[name="spice"]:checked').value;
-      addToCart(`${selectedTempItem.name} (${spice})`, selectedTempItem.price, selectedTempItem.catId);
+      addToCart(`${selectedTempItem.name} (${spice})`, selectedTempItem.price, selectedTempItem.station);
       closeModals();
       showCategories();
     }
@@ -682,13 +663,10 @@
       document.querySelectorAll('.modal-backdrop').forEach(m => m.style.display = 'none');
     }
 
-    function addToCart(name, price, catId) {
+    function addToCart(name, price, station) {
       const exist = cart.find(i => i.name === name);
-      if (exist) {
-        exist.qty += 1;
-      } else {
-        cart.push({ name, price, qty: 1, catId: catId || "" });
-      }
+      if (exist) exist.qty += 1;
+      else cart.push({ name, price, qty: 1, station: station || 'Main Kitchen' });
       updateCartUI();
     }
 
@@ -719,7 +697,7 @@
           <div class="cart-row">
             <div style="flex:1;">
               <strong>${item.name}</strong>
-              <div style="color:#64748b; font-size:12px;">${item.price.toFixed(2)} SAR</div>
+              <div style="color:#64748b; font-size:11px;">${item.price.toFixed(2)} SAR | [${item.station}]</div>
             </div>
             <div class="qty-ctrl">
               <button class="qty-btn" onclick="changeQty(${index}, -1)">-</button>
@@ -760,68 +738,50 @@
       finalizeOrder('Mada/Card');
     }
 
-    // --- Order Finalization with Supabase Sync ---
+    // --- Order Finalization & Cloud Sync Queue ---
     async function finalizeOrder(method) {
       closeModals();
       const grandTotal = parseFloat(document.getElementById('grand-total').innerText);
       const subtotal = grandTotal / 1.15;
       const vat = grandTotal - subtotal;
-      const token = getNextToken();
+      const token = await getNextToken();
       const phone = document.getElementById('cust-phone').value.trim();
-      const todayStr = new Date().toISOString().slice(0, 10);
+      const bDate = getSaudiBusinessDate();
       const timeStr = new Date().toLocaleTimeString();
-      const currentShopId = currentShop ? currentShop.id : 'shop1';
+      const shopId = currentShop ? currentShop.id : 'shop1';
 
       const orderObj = {
         id: Date.now(),
-        shop_id: currentShopId,
-        date: todayStr,
+        shop_id: shopId,
+        business_date: bDate,
+        date: new Date().toISOString().slice(0,10),
         time: timeStr,
         token: token,
-        type: activeOrderType,
-        phone: phone,
+        order_type: activeOrderType,
+        customer_phone: phone,
         items: [...cart],
         subtotal: subtotal,
         vat: vat,
         total: grandTotal,
-        paymentMethod: method,
+        payment_method: method,
         status: 'pending'
       };
 
-      // 1. Local Cache
+      // 1. Local Persistence
       orderHistory.push(orderObj);
-      localStorage.setItem('pos_orders_v2', JSON.stringify(orderHistory));
+      saveToOfflineQueue(orderObj);
       lastCompletedOrder = orderObj;
 
-      // 2. Broadcast to local KDS
+      // 2. Broadcast local event to KDS
       kdsChannel.postMessage({ type: 'NEW_ORDER', order: orderObj });
 
-      // 3. Supabase Cloud Sync
-      if (supabaseClient) {
+      // 3. Cloud Sync
+      if (navigator.onLine && supabaseClient) {
         try {
-          const { error } = await supabaseClient.from('orders').insert([{
-            id: orderObj.id,
-            shop_id: currentShopId,
-            token: orderObj.token,
-            order_type: orderObj.type,
-            customer_phone: orderObj.phone,
-            items: orderObj.items,
-            subtotal: orderObj.subtotal,
-            vat: orderObj.vat,
-            total: orderObj.total,
-            payment_method: orderObj.paymentMethod,
-            status: 'pending'
-          }]);
-
-          if (error) {
-            console.error("Supabase Save Error:", error);
-            alert("Supabase Error: " + error.message);
-          } else {
-            console.log("Supabase Cloud Sync Successful!");
-          }
-        } catch (err) {
-          console.error("Network Error:", err);
-          alert("നെറ്റ്‌വർക്ക് തകരാർ കാരണം ക്ലൗഡിലേക്ക് സിങ്ക് ആയില്ല!");
+          await supabaseClient.from('orders').insert([orderObj]);
+          markSynced(orderObj.id);
+        } catch (e) {
+          console.warn("Saved locally, sync pending:", e);
         }
       }
 
@@ -830,11 +790,36 @@
       updateCartUI();
       updateTokenDisplay();
       showCategories();
-
       handleOrderPrinting(orderObj);
     }
 
-    // --- ZATCA & Thermal Printing ---
+    function saveToOfflineQueue(order) {
+      let q = JSON.parse(localStorage.getItem('pos_pending_sync')) || [];
+      q.push(order);
+      localStorage.setItem('pos_pending_sync', JSON.stringify(q));
+    }
+
+    function markSynced(orderId) {
+      let q = JSON.parse(localStorage.getItem('pos_pending_sync')) || [];
+      q = q.filter(o => o.id !== orderId);
+      localStorage.setItem('pos_pending_sync', JSON.stringify(q));
+    }
+
+    async function syncPendingOfflineOrders() {
+      if (!navigator.onLine || !supabaseClient) return;
+      let q = JSON.parse(localStorage.getItem('pos_pending_sync')) || [];
+      if (q.length === 0) return;
+
+      for (let order of q) {
+        try {
+          await supabaseClient.from('orders').upsert([order]);
+          markSynced(order.id);
+        } catch(e) {}
+      }
+    }
+    window.addEventListener('online', syncPendingOfflineOrders);
+
+    // --- Thermal Receipt Printing ---
     function getCustomerBillHTML(order) {
       let itemsRows = order.items.map(it => `
         <div class="receipt-row">
@@ -852,9 +837,9 @@
           <div>TEL: ${shop.phone}</div>
           <div class="receipt-line"></div>
           <h2 style="margin: 4px 0;">${order.token}</h2>
-          <div class="receipt-bold">${order.type}</div>
-          ${order.phone ? `<div>Mob: ${order.phone}</div>` : ''}
-          <div style="font-size:10px; margin-top:2px;">${order.date} ${order.time}</div>
+          <div class="receipt-bold">${order.order_type}</div>
+          ${order.customer_phone ? `<div style="font-weight:bold;">Customer Mob: ${order.customer_phone}</div>` : ''}
+          <div style="font-size:10px; margin-top:2px;">Shift: ${order.business_date} | Time: ${order.time}</div>
         </div>
         <div class="receipt-line"></div>
         <div class="receipt-row receipt-bold"><span>ITEM</span><span>QTY</span><span>TOTAL</span></div>
@@ -864,7 +849,7 @@
         <div class="receipt-row"><span>Subtotal (غير شامل):</span><span>${order.subtotal.toFixed(2)}</span></div>
         <div class="receipt-row"><span>VAT 15% (ضريبة):</span><span>${order.vat.toFixed(2)}</span></div>
         <div class="receipt-row receipt-bold" style="font-size:14px;"><span>TOTAL:</span><span>${order.total.toFixed(2)} SAR</span></div>
-        <div class="receipt-row"><span>Payment:</span><span>${order.paymentMethod}</span></div>
+        <div class="receipt-row"><span>Payment:</span><span>${order.payment_method}</span></div>
         <div class="qr-center"><div id="print-qrcode"></div></div>
         <div class="receipt-center" style="font-size:10px;">فاتورة ضريبية مبسطة<br>Simplified Tax Invoice</div>
       `;
@@ -882,9 +867,9 @@
         <div class="receipt-center">
           <h2 style="font-size:20px; margin:2px 0;">*** KITCHEN TICKET ***</h2>
           <h1 style="font-size:28px; margin:4px 0;">${order.token}</h1>
-          <div style="font-size:15px; font-weight:bold;">${order.type}</div>
-          ${order.phone ? `<div>Customer Mob: ${order.phone}</div>` : ''}
-          <div style="font-size:11px;">Time: ${order.time}</div>
+          <div style="font-size:15px; font-weight:bold;">${order.order_type}</div>
+          ${order.customer_phone ? `<div style="font-size:13px; font-weight:bold; margin:3px 0;">Customer Mob: ${order.customer_phone}</div>` : ''}
+          <div style="font-size:11px;">Shift: ${order.business_date} | ${order.time}</div>
         </div>
         <div class="receipt-line"></div>
         ${itemsRows}
@@ -896,9 +881,7 @@
       const encoder = new TextEncoder();
       const valBytes = encoder.encode(tagValue);
       const res = new Uint8Array(2 + valBytes.length);
-      res[0] = tagNum;
-      res[1] = valBytes.length;
-      res.set(valBytes, 2);
+      res[0] = tagNum; res[1] = valBytes.length; res.set(valBytes, 2);
       return res;
     }
 
@@ -908,15 +891,10 @@
       const t3 = getTLV(3, timestamp);
       const t4 = getTLV(4, total.toFixed(2));
       const t5 = getTLV(5, vat.toFixed(2));
-      
       const totalLen = t1.length + t2.length + t3.length + t4.length + t5.length;
       const combined = new Uint8Array(totalLen);
       let offset = 0;
-      [t1, t2, t3, t4, t5].forEach(t => {
-        combined.set(t, offset);
-        offset += t.length;
-      });
-
+      [t1, t2, t3, t4, t5].forEach(t => { combined.set(t, offset); offset += t.length; });
       let bin = '';
       for (let i = 0; i < combined.length; i++) bin += String.fromCharCode(combined[i]);
       return btoa(bin);
@@ -933,22 +911,10 @@
 
     function handleOrderPrinting(order) {
       const printArea = document.getElementById('print-area');
-
       if (printerMode === 'combined') {
-        printArea.innerHTML = getCustomerBillHTML(order) + `
-          <div class="cut-line">---------------- CUT HERE ----------------</div>
-        ` + getKitchenSlipHTML(order);
+        printArea.innerHTML = getCustomerBillHTML(order) + `<div class="cut-line">---------------- CUT HERE ----------------</div>` + getKitchenSlipHTML(order);
         renderQRIntoElement('print-qrcode', order);
         setTimeout(() => window.print(), 350);
-
-      } else if (printerMode === 'separate') {
-        printArea.innerHTML = getCustomerBillHTML(order);
-        renderQRIntoElement('print-qrcode', order);
-        setTimeout(() => {
-          window.print();
-          document.getElementById('kitchen-prompt-modal').style.display = 'flex';
-        }, 350);
-
       } else {
         printArea.innerHTML = getCustomerBillHTML(order);
         renderQRIntoElement('print-qrcode', order);
@@ -956,29 +922,31 @@
       }
     }
 
-    function printSeparateKitchenSlip() {
-      closeModals();
-      if (!lastCompletedOrder) return;
-      const printArea = document.getElementById('print-area');
-      printArea.innerHTML = getKitchenSlipHTML(lastCompletedOrder);
-      setTimeout(() => window.print(), 200);
-    }
+    // --- Cloud Z-Report & Daily Closing ---
+    async function openCloudZReportModal() {
+      const bDate = getSaudiBusinessDate();
+      const shopId = currentShop ? currentShop.id : 'shop1';
+      document.getElementById('rep-date').innerText = bDate;
 
-    // --- Reports ---
-    function openDailyReportModal() {
-      const todayStr = new Date().toISOString().slice(0, 10);
-      const todaysOrders = orderHistory.filter(o => o.date === todayStr);
+      let bills = [];
+      if (supabaseClient) {
+        try {
+          const { data } = await supabaseClient.from('orders').select('*').eq('shop_id', shopId).eq('business_date', bDate);
+          if (data) bills = data;
+        } catch(e) {}
+      } else {
+        bills = orderHistory.filter(o => o.business_date === bDate);
+      }
 
       let totalCash = 0, totalCard = 0, totalVat = 0, grandTotal = 0;
-      todaysOrders.forEach(o => {
-        grandTotal += o.total;
-        totalVat += o.vat;
-        if (o.paymentMethod === 'Cash') totalCash += o.total;
-        else totalCard += o.total;
+      bills.forEach(o => {
+        grandTotal += parseFloat(o.total || 0);
+        totalVat += parseFloat(o.vat || 0);
+        if (o.payment_method === 'Cash') totalCash += parseFloat(o.total || 0);
+        else totalCard += parseFloat(o.total || 0);
       });
 
-      document.getElementById('rep-date').innerText = todayStr;
-      document.getElementById('rep-count').innerText = todaysOrders.length;
+      document.getElementById('rep-count').innerText = bills.length;
       document.getElementById('rep-cash').innerText = totalCash.toFixed(2) + " SAR";
       document.getElementById('rep-card').innerText = totalCard.toFixed(2) + " SAR";
       document.getElementById('rep-vat').innerText = totalVat.toFixed(2) + " SAR";
@@ -987,9 +955,41 @@
       document.getElementById('report-modal').style.display = 'flex';
     }
 
+    async function executeZDailyClosing() {
+      if (!confirm("ഇന്നത്തെ ബിസിനസ്സ് ഷിഫ്റ്റ് ക്ലൗഡിൽ സ്ഥിരമായി ക്ലോസ് ചെയ്യണോ (Z-Closing)?")) return;
+      const bDate = getSaudiBusinessDate();
+      const shopId = currentShop ? currentShop.id : 'shop1';
+
+      const total = parseFloat(document.getElementById('rep-total').innerText);
+      const cash = parseFloat(document.getElementById('rep-cash').innerText);
+      const card = parseFloat(document.getElementById('rep-card').innerText);
+      const vat = parseFloat(document.getElementById('rep-vat').innerText);
+      const count = parseInt(document.getElementById('rep-count').innerText);
+
+      if (supabaseClient) {
+        try {
+          await supabaseClient.from('daily_closings').insert([{
+            shop_id: shopId,
+            business_date: bDate,
+            total_sales: total,
+            cash_sales: cash,
+            card_sales: card,
+            vat_amount: vat,
+            bills_count: count,
+            closed_by: 'Cashier'
+          }]);
+          alert("ഇന്നത്തെ ഷിഫ്റ്റ് വിജയകരമായി ക്ലൗഡിൽ ക്ലോസ് ചെയ്തു!");
+        } catch (e) {
+          alert("ക്ലോസിംഗ് എറർ: " + e.message);
+        }
+      }
+      printDailyReportSlip();
+      closeModals();
+    }
+
     function printDailyReportSlip() {
       closeModals();
-      const todayStr = document.getElementById('rep-date').innerText;
+      const bDate = document.getElementById('rep-date').innerText;
       const count = document.getElementById('rep-count').innerText;
       const cash = document.getElementById('rep-cash').innerText;
       const card = document.getElementById('rep-card').innerText;
@@ -999,8 +999,9 @@
       document.getElementById('print-area').innerHTML = `
         <div class="receipt-center">
           <h3>${shop.nameAr}</h3>
-          <h2>DAILY Z-REPORT</h2>
-          <div>Date: ${todayStr} | Time: ${new Date().toLocaleTimeString()}</div>
+          <h2>OFFICIAL Z-CLOSING REPORT</h2>
+          <div>Shift Date: ${bDate}</div>
+          <div>Print Time: ${new Date().toLocaleTimeString()}</div>
         </div>
         <div class="receipt-line"></div>
         <div class="receipt-row"><span>Total Bills:</span><span>${count}</span></div>
@@ -1014,56 +1015,41 @@
       setTimeout(() => window.print(), 250);
     }
 
-    // --- Image Resize & Canvas ---
-    function handleImageFileSelect(event) {
-      const file = event.target.files[0];
-      if (!file) return;
+    // --- Category Creator & Station Routing ---
+    async function saveCategoryToCloud() {
+      const name = document.getElementById('cat-name-input').value.trim();
+      const icon = document.getElementById('cat-icon-input').value.trim() || '📁';
+      const station = document.getElementById('cat-station-select').value;
+      const shopId = currentShop ? currentShop.id : 'shop1';
 
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const img = new Image();
-        img.onload = function() {
-          const canvas = document.createElement('canvas');
-          const maxDim = 300;
-          let width = img.width;
-          let height = img.height;
+      if (!name) return alert("കാറ്റഗറിയുടെ പേര് നൽകുക!");
+      const id = name.toLowerCase().replace(/\s+/g, '_');
 
-          if (width > height) {
-            if (width > maxDim) {
-              height = Math.round(height * (maxDim / width));
-              width = maxDim;
-            }
-          } else {
-            if (height > maxDim) {
-              width = Math.round(width * (maxDim / height));
-              height = maxDim;
-            }
-          }
+      const newCat = { id, shop_id: shopId, name, icon, station };
+      categories.push(newCat);
+      document.getElementById('cat-name-input').value = '';
+      document.getElementById('cat-icon-input').value = '';
 
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
+      renderCatDropdown();
+      showCategories();
 
-          tempImageBase64 = canvas.toDataURL('image/jpeg', 0.75);
-          document.getElementById('item-preview-img').src = tempImageBase64;
-          document.getElementById('item-preview-img').style.display = 'block';
-          document.getElementById('item-remove-img-btn').style.display = 'inline-block';
-        };
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
+      if (supabaseClient) {
+        try {
+          await supabaseClient.from('categories').upsert([newCat]);
+          alert("പുതിയ കാറ്റഗറിയും കിച്ചൻ സ്റ്റേഷനും ക്ലൗഡിൽ സേവ് ചെയ്തു!");
+        } catch(e) {
+          console.error(e);
+        }
+      }
     }
 
-    function removeSelectedImage() {
-      tempImageBase64 = "";
-      document.getElementById('item-file-input').value = "";
-      document.getElementById('item-preview-img').src = "";
-      document.getElementById('item-preview-img').style.display = 'none';
-      document.getElementById('item-remove-img-btn').style.display = 'none';
+    function renderCatDropdown() {
+      const sel = document.getElementById('item-cat-select');
+      sel.innerHTML = '';
+      categories.forEach(c => sel.innerHTML += `<option value="${c.id}">${c.name} (${c.station || 'Main'})</option>`);
     }
 
-    // --- Settings Modal & Supabase Cloud Sync ---
+    // --- Settings Modal ---
     function openSettingsModal() {
       document.getElementById('set-shop-ar').value = shop.nameAr;
       document.getElementById('set-shop-en').value = shop.nameEn;
@@ -1077,48 +1063,29 @@
       document.getElementById('settings-modal').style.display = 'flex';
     }
 
-    function savePrinterMode() {
-      printerMode = document.getElementById('set-printer-mode').value;
-      localStorage.setItem('pos_printer_mode', printerMode);
-      saveShopProfile();
-    }
-
     async function saveShopProfile() {
       shop.nameAr = document.getElementById('set-shop-ar').value.trim();
       shop.nameEn = document.getElementById('set-shop-en').value.trim();
       shop.vatNo = document.getElementById('set-vat-no').value.trim();
       shop.phone = document.getElementById('set-phone').value.trim();
+      printerMode = document.getElementById('set-printer-mode').value;
       const shopId = currentShop ? currentShop.id : 'shop1';
-
-      localStorage.setItem(`pos_shop_${shopId}`, JSON.stringify(shop));
-      updateHeaderInfo();
 
       if (supabaseClient) {
         try {
-          const { error } = await supabaseClient.from('shop_settings').upsert({
+          await supabaseClient.from('shop_settings').upsert({
             shop_id: shopId,
             name_ar: shop.nameAr,
             name_en: shop.nameEn,
             vat_no: shop.vatNo,
             phone: shop.phone,
-            printer_mode: printerMode,
-            updated_at: new Date().toISOString()
+            printer_mode: printerMode
           });
-          if (error) alert("Supabase Save Error: " + error.message);
-          else alert("ഷോപ്പ് വിവരങ്ങൾ ക്ലൗഡിൽ സേവ് ചെയ്തു!");
-        } catch (err) {
-          console.error(err);
-        }
+          alert("ഷോപ്പ് വിവരങ്ങൾ ക്ലൗഡിൽ അപ്‌ഡേറ്റ് ചെയ്തു!");
+        } catch(e) {}
       }
     }
 
-    function renderCatDropdown() {
-      const sel = document.getElementById('item-cat-select');
-      sel.innerHTML = '';
-      categories.forEach(c => sel.innerHTML += `<option value="${c.id}">${c.name}</option>`);
-    }
-
-    // --- Add / Edit Item (Directly to Supabase Cloud) ---
     async function saveItemFromForm() {
       const name = document.getElementById('item-name-input').value.trim();
       const price = parseFloat(document.getElementById('item-price-input').value);
@@ -1128,82 +1095,48 @@
 
       if (!name || isNaN(price)) return alert("ശരിയായ പേരും വിലയും നൽകുക!");
 
-      let targetItem = null;
-
+      let target = null;
       if (editingItemId) {
-        targetItem = items.find(i => i.id === editingItemId);
-        if (targetItem) {
-          targetItem.name = name;
-          targetItem.price = price;
-          targetItem.catId = catId;
-          targetItem.hasFlavor = hasFlavor;
-          if (tempImageBase64) targetItem.img = tempImageBase64;
+        target = items.find(i => i.id === editingItemId);
+        if (target) {
+          target.name = name; target.price = price; target.catId = catId; target.hasFlavor = hasFlavor;
+          if (tempImageBase64) target.img = tempImageBase64;
         }
       } else {
-        targetItem = {
-          id: Date.now(),
-          name: name,
-          price: price,
-          catId: catId,
-          hasFlavor: hasFlavor,
-          img: tempImageBase64
-        };
-        items.push(targetItem);
+        target = { id: Date.now(), name, price, catId, hasFlavor, img: tempImageBase64 };
+        items.push(target);
       }
 
-      // 1. Local Cache
-      localStorage.setItem(`pos_items_${shopId}`, JSON.stringify(items));
       resetItemForm();
       renderSettingsTable();
       showCategories();
 
-      // 2. Supabase Cloud Sync
       if (supabaseClient) {
         try {
-          const { error } = await supabaseClient.from('menu_items').upsert({
-            id: targetItem.id,
+          await supabaseClient.from('menu_items').upsert({
+            id: target.id,
             shop_id: shopId,
-            name: targetItem.name,
-            price: targetItem.price,
-            cat_id: targetItem.catId,
-            has_flavor: targetItem.hasFlavor,
-            img: targetItem.img || null
+            name: target.name,
+            price: target.price,
+            cat_id: target.catId,
+            has_flavor: target.hasFlavor,
+            img: target.img || null
           });
-
-          if (error) {
-            alert("Supabase Item Error: " + error.message);
-          } else {
-            console.log("Item Cloud Synced!");
-          }
-        } catch (err) {
-          console.error(err);
-        }
+        } catch(e) {}
       }
     }
 
     function startEditItem(id) {
       const item = items.find(i => i.id === id);
       if (!item) return;
-
       editingItemId = item.id;
       document.getElementById('item-form-title').innerText = `ഐറ്റം എഡിറ്റ് ചെയ്യുക: "${item.name}"`;
       document.getElementById('item-name-input').value = item.name;
       document.getElementById('item-price-input').value = item.price;
       document.getElementById('item-cat-select').value = item.catId;
       document.getElementById('item-spicy-checkbox').checked = item.hasFlavor;
-      
-      tempImageBase64 = item.img || "";
-      if (tempImageBase64) {
-        document.getElementById('item-preview-img').src = tempImageBase64;
-        document.getElementById('item-preview-img').style.display = 'block';
-        document.getElementById('item-remove-img-btn').style.display = 'inline-block';
-      } else {
-        removeSelectedImage();
-      }
-
-      document.getElementById('btn-save-item').innerText = "Update Item (ക്ലൗഡിൽ സേവ് ചെയ്യുക)";
+      document.getElementById('btn-save-item').innerText = "Update Item";
       document.getElementById('btn-cancel-edit').style.display = 'inline-block';
-      document.getElementById('item-form-box').scrollIntoView({ behavior: 'smooth' });
     }
 
     function resetItemForm() {
@@ -1220,7 +1153,7 @@
     function renderSettingsTable() {
       const tbody = document.getElementById('settings-table-body');
       tbody.innerHTML = '';
-      items.forEach((item) => {
+      items.forEach(item => {
         const cat = categories.find(c => c.id === item.catId);
         tbody.innerHTML += `
           <tr>
@@ -1231,33 +1164,58 @@
             <td>${item.hasFlavor ? '🌶️ Yes' : 'No'}</td>
             <td>
               <button onclick="startEditItem(${item.id})" style="background:#0284c7; color:#fff; border:none; padding:3px 7px; border-radius:4px; cursor:pointer;">Edit</button>
-              <button onclick="deleteItem(${item.id})" style="background:#ef4444; color:#fff; border:none; padding:3px 7px; border-radius:4px; cursor:pointer;">Delete</button>
             </td>
           </tr>
         `;
       });
     }
 
-    async function deleteItem(id) {
-      if (confirm("ഈ ഐറ്റം ക്ലൗഡിൽ നിന്നും പൂർണ്ണമായി ഒഴിവാക്കണോ?")) {
-        const shopId = currentShop ? currentShop.id : 'shop1';
-        items = items.filter(i => i.id !== id);
-        localStorage.setItem(`pos_items_${shopId}`, JSON.stringify(items));
-        renderSettingsTable();
-        showCategories();
-
-        if (supabaseClient) {
-          try {
-            await supabaseClient.from('menu_items').delete().match({ id: id, shop_id: shopId });
-          } catch (err) {
-            console.error(err);
-          }
-        }
-      }
+    function handleImageFileSelect(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          let width = img.width, height = img.height;
+          if (width > 300) { height = Math.round(height * (300 / width)); width = 300; }
+          canvas.width = width; canvas.height = height;
+          canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+          tempImageBase64 = canvas.toDataURL('image/jpeg', 0.75);
+          document.getElementById('item-preview-img').src = tempImageBase64;
+          document.getElementById('item-preview-img').style.display = 'block';
+          document.getElementById('item-remove-img-btn').style.display = 'inline-block';
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
     }
 
-    // Launch App
-    initMultiShopAuth();
+    function removeSelectedImage() {
+      tempImageBase64 = "";
+      document.getElementById('item-file-input').value = "";
+      document.getElementById('item-preview-img').style.display = 'none';
+      document.getElementById('item-remove-img-btn').style.display = 'none';
+    }
+
+    // Physical Keyboard Support for 4-Digit Numpad
+    window.addEventListener('keydown', (e) => {
+      const overlay = document.getElementById('pin-lock-overlay');
+      if (overlay.style.display !== 'none') {
+        if (e.key >= '0' && e.key <= '9') pressKey(e.key);
+        else if (e.key === 'Backspace') pressBackspace();
+      }
+    });
+
+    // Check existing active session
+    const activeShopId = localStorage.getItem('pos_active_shop_id');
+    const existing = getAllShops().find(s => s.id === activeShopId);
+    if (existing) {
+      activateShopSession(existing);
+    } else {
+      document.getElementById('pin-lock-overlay').style.display = 'flex';
+    }
   </script>
 </body>
 </html>
