@@ -1,25 +1,28 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kitchen Display System (KDS) - Pro Station Edition</title>
+  <title>Kitchen Display System (KDS) - Bilingual Focus Edition</title>
 
-  <!-- Auto Clear Cache -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(regs => {
-        for (let reg of regs) reg.unregister();
-      });
-    }
-  </script>
+  <!-- PWA & Fonts -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 
-  <!-- Central Config & Supabase Client -->
+  <!-- Central Config & Supabase -->
   <script src="config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <style>
-    * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 0; }
+    * { box-sizing: border-box; font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 0; }
     body { background: #0f172a; color: #f8fafc; height: 100vh; width: 100vw; display: flex; flex-direction: column; overflow: hidden; }
+
+    /* RTL Layout Rules */
+    body[dir="rtl"] { direction: rtl; }
+    body[dir="rtl"] .history-table th, body[dir="rtl"] .history-table td { text-align: right; }
 
     /* ================= 4-DIGIT PIN DIRECT LOCK SCREEN ================= */
     #pin-lock-overlay {
@@ -30,26 +33,23 @@
       background: #1e293b; border: 1px solid #334155; border-radius: 20px; padding: 24px 20px;
       max-width: 350px; width: 100%; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.6);
     }
-    .pin-dots-row {
-      display: flex; justify-content: center; gap: 14px; margin: 16px 0;
-    }
+    .pin-dots-row { display: flex; justify-content: center; gap: 14px; margin: 14px 0 8px 0; }
     .pin-dot {
       width: 18px; height: 18px; border-radius: 50%; border: 2px solid #475569; background: transparent; transition: all 0.15s ease;
     }
     .pin-dot.filled { background: #f59e0b; border-color: #f59e0b; box-shadow: 0 0 10px #f59e0b; }
-    
-    .numpad-grid {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 8px;
-    }
+    .pin-error-text { color: #ef4444; font-size: 13px; font-weight: bold; min-height: 20px; margin-bottom: 4px; }
+
+    .numpad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 6px; }
     .num-key {
       background: #0f172a; border: 1px solid #334155; color: #f8fafc; font-size: 22px; font-weight: bold;
-      padding: 14px 0; border-radius: 12px; cursor: pointer; transition: 0.1s; user-select: none;
+      padding: 13px 0; border-radius: 12px; cursor: pointer; transition: 0.1s; user-select: none;
       touch-action: manipulation;
     }
     .num-key:active { transform: scale(0.94); background: #334155; }
     .num-key.backspace { font-size: 18px; color: #ef4444; }
 
-    /* Master PIN Branch Picker Modal */
+    /* Master Branch Picker */
     #master-branch-picker {
       display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 10000;
       justify-content: center; align-items: center; padding: 20px;
@@ -57,12 +57,12 @@
 
     /* ================= TOP HEADER ================= */
     .kds-header {
-      background: #1e293b; padding: 10px 18px; display: flex; justify-content: space-between;
-      align-items: center; border-bottom: 2px solid #334155; flex-wrap: wrap; gap: 10px;
+      background: #1e293b; padding: 8px 16px; display: flex; justify-content: space-between;
+      align-items: center; border-bottom: 2px solid #334155; flex-wrap: wrap; gap: 8px;
     }
     .kds-title-area { display: flex; align-items: center; gap: 10px; }
-    .shop-name-tag { font-size: 18px; font-weight: 800; color: #facc15; }
-    .live-badge { background: #16a34a; color: #fff; font-size: 11px; padding: 3px 8px; border-radius: 20px; font-weight: bold; }
+    .shop-name-tag { font-size: 17px; font-weight: 800; color: #facc15; }
+    .live-badge { background: #16a34a; color: #fff; font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: bold; }
 
     .view-tabs { display: flex; gap: 6px; background: #0f172a; padding: 4px; border-radius: 8px; }
     .tab-btn {
@@ -71,83 +71,130 @@
     }
     .tab-btn.active { background: #334155; color: #fff; }
 
-    .header-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .header-controls { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
     .header-select {
-      background: #0f172a; color: #f8fafc; border: 1px solid #475569; padding: 6px 10px;
+      background: #0f172a; color: #f8fafc; border: 1px solid #475569; padding: 6px 8px;
       border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer;
     }
     .btn-top {
       background: #334155; color: #fff; border: 1px solid #475569; padding: 6px 12px;
       border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold;
     }
+    .btn-lang { background: #475569; border-color: #64748b; font-weight: 800; }
     .btn-switch { background: #ef4444; border-color: #dc2626; }
 
-    /* ================= LIVE ORDERS GRID ================= */
+    /* ================= COMPACT ORDERS GRID (FIFO ORDERED) ================= */
     .orders-grid {
-      flex: 1; padding: 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
-      gap: 16px; overflow-y: auto; align-content: start;
+      flex: 1; padding: 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 12px; overflow-y: auto; align-content: start;
     }
 
     .order-card {
-      background: #1e293b; border: 2px solid #f59e0b; border-radius: 12px;
-      display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-      animation: popIn 0.25s ease-out;
+      background: #1e293b; border: 2px solid #334155; border-radius: 10px;
+      display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+      cursor: pointer; transition: transform 0.1s, border-color 0.15s; user-select: none;
     }
-    @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .order-card:active { transform: scale(0.97); }
+    .order-card:hover { border-color: #38bdf8; }
 
+    /* Priority / Age Indicators */
     .card-top {
-      background: #78350f; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;
+      padding: 6px 10px; display: flex; justify-content: space-between; align-items: center;
+      background: #334155; color: #fff;
     }
-    .card-token { font-size: 24px; font-weight: 900; color: #fff; }
-    .timer-badge { font-family: monospace; font-size: 12px; font-weight: bold; padding: 3px 6px; border-radius: 4px; background: #0f172a; color: #facc15; }
-    .timer-late { background: #dc2626 !important; color: #fff; }
+    .card-card-priority-normal .card-top { background: #1e3a8a; }
+    .card-card-priority-warn .card-top { background: #b45309; }
+    .card-card-priority-urgent .card-top { background: #b91c1c; animation: pulseUrgent 1.5s infinite; }
+
+    @keyframes pulseUrgent {
+      0% { opacity: 1; }
+      50% { opacity: 0.8; }
+      100% { opacity: 1; }
+    }
+
+    .card-token { font-size: 20px; font-weight: 900; color: #fff; }
+    .timer-badge { font-family: monospace; font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 4px; background: rgba(0,0,0,0.4); color: #facc15; }
 
     .card-meta {
-      padding: 6px 14px; font-size: 12px; color: #cbd5e1; display: flex; justify-content: space-between;
+      padding: 4px 10px; font-size: 11px; color: #cbd5e1; display: flex; justify-content: space-between;
       border-bottom: 1px dashed #334155; background: #1a2234;
     }
-    .meta-phone { color: #38bdf8; font-weight: bold; }
 
-    .card-items { flex: 1; padding: 10px 14px; max-height: 250px; overflow-y: auto; }
-    .kds-item-row {
+    .card-items-compact { padding: 8px 10px; flex: 1; max-height: 140px; overflow-y: hidden; }
+    .compact-item-line {
       display: flex; justify-content: space-between; align-items: center;
-      padding: 6px 0; border-bottom: 1px solid #283548; font-size: 15px;
+      padding: 3px 0; border-bottom: 1px dotted #283548; font-size: 13px;
     }
-    .kds-item-name { font-weight: 700; color: #ffffff; }
-    .item-station-tag { font-size: 10px; color: #94a3b8; display: block; font-weight: normal; }
-    .spicy-tag { color: #ef4444; font-weight: bold; font-size: 12px; margin-left: 4px; }
-    .kds-item-qty {
-      background: #facc15; color: #000; font-weight: 900; font-size: 17px;
-      padding: 2px 9px; border-radius: 6px;
+    .compact-item-name { font-weight: 700; color: #f8fafc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; }
+    .compact-item-qty { background: #facc15; color: #000; font-weight: 900; font-size: 12px; padding: 1px 6px; border-radius: 4px; }
+    .compact-more-tag { font-size: 10px; color: #38bdf8; text-align: center; margin-top: 4px; font-weight: bold; }
+
+    .card-footer-action {
+      background: #0f172a; padding: 6px 10px; text-align: center; font-size: 11px;
+      font-weight: bold; color: #94a3b8; border-top: 1px solid #334155;
     }
 
-    .card-actions { padding: 10px 14px; background: #1a2234; border-top: 1px solid #334155; }
-    .btn-done-single {
-      width: 100%; padding: 12px; font-size: 16px; font-weight: bold; border: none;
-      border-radius: 8px; cursor: pointer; background: #16a34a; color: #fff; transition: 0.1s;
+    /* ================= ORDER FOCUS / DETAIL POP-UP MODAL ================= */
+    .modal-backdrop {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+      justify-content: center; align-items: center; z-index: 500; padding: 16px;
     }
-    .btn-done-single:active { transform: scale(0.97); background: #15803d; }
+    .focus-modal-card {
+      background: #1e293b; border: 2px solid #38bdf8; border-radius: 16px; width: 540px;
+      max-width: 95%; max-height: 92vh; display: flex; flex-direction: column; overflow: hidden;
+      box-shadow: 0 20px 45px rgba(0,0,0,0.8);
+    }
+    .focus-header {
+      background: #0f172a; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 2px solid #334155;
+    }
+    .focus-token { font-size: 34px; font-weight: 900; color: #facc15; }
+    .focus-meta { font-size: 13px; color: #cbd5e1; }
+    
+    .focus-items-list {
+      flex: 1; overflow-y: auto; padding: 16px; max-height: 50vh;
+    }
+    .focus-item-row {
+      display: flex; justify-content: space-between; align-items: center; padding: 12px 10px;
+      border-bottom: 1px solid #334155; background: #1a2234; border-radius: 8px; margin-bottom: 8px;
+    }
+    .focus-item-title { font-size: 18px; font-weight: 800; color: #ffffff; }
+    .focus-item-sub { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+    .focus-spicy-badge { background: #ef4444; color: #fff; font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 4px; margin-left: 4px; }
+    .focus-item-qty {
+      font-size: 24px; font-weight: 900; background: #facc15; color: #000;
+      padding: 4px 14px; border-radius: 8px; min-width: 60px; text-align: center;
+    }
+
+    .focus-modal-actions {
+      padding: 14px 18px; background: #0f172a; border-top: 1px solid #334155;
+      display: flex; gap: 10px;
+    }
+    .btn-focus-back {
+      flex: 1; padding: 14px; background: #475569; color: #fff; border: none;
+      border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;
+    }
+    .btn-focus-done {
+      flex: 2; padding: 14px; background: #16a34a; color: #fff; border: none;
+      border-radius: 8px; font-size: 18px; font-weight: 900; cursor: pointer;
+    }
+    .btn-focus-done:active { transform: scale(0.98); background: #15803d; }
 
     /* ================= CLOUD HISTORY VIEW (MULTI-DAY) ================= */
     #history-view {
       display: none; flex: 1; flex-direction: column; padding: 16px; overflow-y: auto;
     }
-    .history-toolbar {
-      display: flex; gap: 10px; margin-bottom: 14px; align-items: center; flex-wrap: wrap;
-    }
+    .history-toolbar { display: flex; gap: 10px; margin-bottom: 12px; align-items: center; flex-wrap: wrap; }
     .date-picker-box {
-      background: #1e293b; color: #facc15; border: 1px solid #475569; padding: 9px 12px;
+      background: #1e293b; color: #facc15; border: 1px solid #475569; padding: 8px 12px;
       border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer;
     }
     .search-box {
-      flex: 1; max-width: 350px; padding: 10px 14px; background: #1e293b; border: 1px solid #475569;
-      border-radius: 8px; color: #fff; font-size: 14px;
+      flex: 1; max-width: 320px; padding: 8px 12px; background: #1e293b; border: 1px solid #475569;
+      border-radius: 8px; color: #fff; font-size: 13px;
     }
-    .history-table {
-      width: 100%; border-collapse: collapse; background: #1e293b; border-radius: 8px; overflow: hidden;
-      font-size: 13px;
-    }
-    .history-table th, .history-table td { padding: 10px 14px; text-align: left; border-bottom: 1px solid #334155; }
+    .history-table { width: 100%; border-collapse: collapse; background: #1e293b; border-radius: 8px; overflow: hidden; font-size: 13px; }
+    .history-table th, .history-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #334155; }
     .history-table th { background: #334155; color: #facc15; font-weight: bold; }
     .btn-recall {
       background: #0284c7; color: #fff; border: none; padding: 6px 12px; border-radius: 4px;
@@ -165,9 +212,9 @@
   <!-- ================= 4-DIGIT PIN LOCK OVERLAY ================= -->
   <div id="pin-lock-overlay">
     <div class="pin-modal-card">
-      <div style="font-size:32px; margin-bottom:4px;">🧑‍🍳</div>
-      <h2 style="color:#f8fafc; font-size:18px;">KDS KITCHEN PIN</h2>
-      <p style="color:#94a3b8; font-size:12px; margin-top:2px;">Enter 4-Digit Shop PIN</p>
+      <div style="font-size:36px; margin-bottom:4px;">🧑‍🍳</div>
+      <h2 style="color:#f8fafc; font-size:18px;" id="ui-kds-pin-title">KDS KITCHEN PIN</h2>
+      <p style="color:#94a3b8; font-size:12px; margin-top:2px;" id="ui-kds-pin-sub">Enter Shop PIN</p>
       
       <div class="pin-dots-row">
         <div class="pin-dot" id="dot-0"></div>
@@ -175,6 +222,8 @@
         <div class="pin-dot" id="dot-2"></div>
         <div class="pin-dot" id="dot-3"></div>
       </div>
+
+      <div class="pin-error-text" id="pin-error-msg"></div>
 
       <div class="numpad-grid">
         <button type="button" class="num-key" onclick="pressKey('1')">1</button>
@@ -186,7 +235,7 @@
         <button type="button" class="num-key" onclick="pressKey('7')">7</button>
         <button type="button" class="num-key" onclick="pressKey('8')">8</button>
         <button type="button" class="num-key" onclick="pressKey('9')">9</button>
-        <button type="button" class="num-key" onclick="clearPinInput()" style="font-size:14px; color:#94a3b8;">CLEAR</button>
+        <button type="button" class="num-key" onclick="clearPinInput()" style="font-size:13px; color:#94a3b8;" id="ui-kds-clear">CLEAR</button>
         <button type="button" class="num-key" onclick="pressKey('0')">0</button>
         <button type="button" class="num-key backspace" onclick="pressBackspace()">⌫</button>
       </div>
@@ -197,9 +246,9 @@
   <div id="master-branch-picker">
     <div class="pin-modal-card" style="max-width:440px;">
       <h3 style="color:#facc15;">🔑 MASTER KDS ACCESS</h3>
-      <p style="color:#94a3b8; font-size:12px; margin: 8px 0 16px 0;">Select Branch to Open:</p>
+      <p style="color:#94a3b8; font-size:12px; margin: 8px 0 16px 0;" id="ui-master-sub">Select Branch to Open:</p>
       <div id="master-branches-container" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"></div>
-      <button onclick="document.getElementById('master-branch-picker').style.display='none'" class="btn-top" style="margin-top:14px; width:100%;">Cancel</button>
+      <button onclick="document.getElementById('master-branch-picker').style.display='none'" class="btn-top" style="margin-top:14px; width:100%;" id="ui-master-cancel">Cancel</button>
     </div>
   </div>
 
@@ -207,24 +256,27 @@
   <div class="kds-header">
     <div class="kds-title-area">
       <span class="shop-name-tag" id="header-shop-name">🍗 KDS</span>
-      <span class="live-badge" id="live-indicator">🟢 LIVE</span>
+      <span class="live-badge" id="live-indicator">LIVE</span>
       <span id="business-date-badge" style="font-size:11px; background:#0f172a; color:#facc15; padding:3px 8px; border-radius:6px; font-weight:bold;"></span>
     </div>
 
     <!-- Live vs History Toggle -->
     <div class="view-tabs">
       <button class="tab-btn active" id="tab-live" onclick="switchView('live')">
-        🔥 Live Orders (<span id="live-count">0</span>)
+        🔥 <span id="ui-tab-live-text">Live Orders</span> (<span id="live-count">0</span>)
       </button>
       <button class="tab-btn" id="tab-history" onclick="switchView('history')">
-        📜 History (Cloud)
+        📜 <span id="ui-tab-hist-text">History (Cloud)</span>
       </button>
     </div>
 
     <div class="header-controls">
-      <!-- Dynamic Kitchen Station Filter (Option 2) -->
+      <!-- Language Switch -->
+      <button class="btn-top btn-lang" id="btn-lang-toggle" onclick="toggleLanguage()">🌐 العربية</button>
+
+      <!-- Dynamic Station Filter -->
       <select id="station-filter-select" class="header-select" onchange="onStationFilterChange()">
-        <option value="All">Station: All (എല്ലാം)</option>
+        <option value="All">Station: All (الكل)</option>
       </select>
 
       <!-- Sound Selector -->
@@ -235,39 +287,61 @@
         <option value="mute">🔇 Mute</option>
       </select>
 
-      <button class="btn-top" onclick="triggerAlertSound()">🔊 Test</button>
-      <button class="btn-top btn-switch" onclick="lockKDS()">🔒 Logout</button>
+      <button class="btn-top" onclick="triggerAlertSound()" id="ui-btn-test-sound">🔊 Test</button>
+      <button class="btn-top btn-switch" onclick="lockKDS()" id="ui-btn-logout">🔒 Logout</button>
     </div>
   </div>
 
-  <!-- ================= VIEW 1: LIVE ORDERS GRID ================= -->
-  <div class="orders-grid" id="kds-orders-container">
-    <div class="empty-state">
-      <div style="font-size: 50px; margin-bottom: 10px;">🧑‍🍳</div>
-      <div>Waiting for orders...</div>
+  <!-- ================= VIEW 1: COMPACT LIVE ORDERS GRID (FIFO) ================= -->
+  <div class="orders-grid" id="kds-orders-container"></div>
+
+  <!-- ================= POP-UP MODAL: ORDER DETAILS & COMPLETION ================= -->
+  <div class="modal-backdrop" id="order-detail-modal">
+    <div class="focus-modal-card">
+      <div class="focus-header">
+        <div>
+          <div class="focus-token" id="modal-token">#01</div>
+          <div class="focus-meta" id="modal-type-time">Takeaway | 00:00</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 16px; font-weight: bold; color: #38bdf8;" id="modal-phone"></div>
+          <div class="timer-badge" id="modal-timer" style="display:inline-block; margin-top:4px; font-size:14px; padding:4px 8px;">⏱️ 00:00</div>
+        </div>
+      </div>
+
+      <div class="focus-items-list" id="modal-items-container"></div>
+
+      <div class="focus-modal-actions">
+        <button type="button" class="btn-focus-back" onclick="closeOrderModal()" id="ui-btn-modal-back">
+          ⬅️ Back (رجوع)
+        </button>
+        <button type="button" class="btn-focus-done" onclick="completeFocusedOrder()" id="ui-btn-modal-done">
+          ✅ Complete Order (إكمال)
+        </button>
+      </div>
     </div>
   </div>
 
-  <!-- ================= VIEW 2: CLOUD HISTORY & SEARCH (MULTI-DAY) ================= -->
+  <!-- ================= VIEW 2: MULTI-DAY CLOUD HISTORY ================= -->
   <div id="history-view">
     <div class="history-toolbar">
       <input type="date" id="history-calendar-picker" class="date-picker-box" onchange="fetchHistoryFromCloud()">
       <input type="text" id="history-search-input" class="search-box" 
         placeholder="🔍 Search Token (#01) or Phone..." oninput="filterHistoryList()">
-      <button class="btn-top" onclick="fetchHistoryFromCloud()" style="background:#0284c7;">🔄 Refresh Cloud</button>
+      <button class="btn-top" onclick="fetchHistoryFromCloud()" style="background:#0284c7;" id="ui-btn-refresh-hist">🔄 Refresh Cloud</button>
       <span style="color:#94a3b8; font-size:13px;" id="history-count-text"></span>
     </div>
     <div style="overflow-x:auto;">
       <table class="history-table">
         <thead>
           <tr>
-            <th>Token</th>
-            <th>Type</th>
-            <th>Customer Phone</th>
-            <th>Items</th>
-            <th>Shift Date</th>
-            <th>Time Completed</th>
-            <th>Action</th>
+            <th id="ui-th-token">Token</th>
+            <th id="ui-th-type">Type</th>
+            <th id="ui-th-phone">Customer Phone</th>
+            <th id="ui-th-items">Items</th>
+            <th id="ui-th-date">Shift Date</th>
+            <th id="ui-th-completed">Time Completed</th>
+            <th id="ui-th-action">Action</th>
           </tr>
         </thead>
         <tbody id="history-table-body"></tbody>
@@ -287,6 +361,104 @@
       return FALLBACK_SHOPS;
     }
 
+    // --- BILINGUAL I18N DICTIONARY ---
+    let currentLang = localStorage.getItem('kds_lang') || 'en';
+
+    const kdsI18n = {
+      en: {
+        pinTitle: "KDS KITCHEN PIN",
+        pinSub: "Enter Shop PIN",
+        pinClear: "CLEAR",
+        masterSub: "Select Branch to Open:",
+        masterCancel: "Cancel",
+        langToggle: "🌐 العربية",
+        liveTab: "Live Orders",
+        histTab: "History (Cloud)",
+        testSound: "🔊 Test",
+        logout: "🔒 Logout",
+        modalBack: "⬅️ Back (رجوع)",
+        modalDone: "✅ Complete Order (إكمال)",
+        clickDetails: "👉 Click to open details",
+        emptyKitchen: "All orders completed! Kitchen is clear.",
+        refreshCloud: "🔄 Refresh Cloud",
+        searchPlaceholder: "🔍 Search Token (#01) or Phone...",
+        thToken: "Token",
+        thType: "Type",
+        thPhone: "Customer Phone",
+        thItems: "Items",
+        thDate: "Shift Date",
+        thCompleted: "Time Completed",
+        thAction: "Action",
+        recallBtn: "↩️ Recall"
+      },
+      ar: {
+        pinTitle: "رمز الدخول لشاشة المطبخ",
+        pinSub: "أدخل الرقم السري للفرع",
+        pinClear: "مسح",
+        masterSub: "اختر الفرع لفتحه:",
+        masterCancel: "إلغاء",
+        langToggle: "🌐 English",
+        liveTab: "الطلبات الحالية",
+        histTab: "سجل الطلبات (السحابة)",
+        testSound: "🔊 فحص الصوت",
+        logout: "🔒 خروج",
+        modalBack: "⬅️ رجوع (Back)",
+        modalDone: "✅ إكمال الطلب (Done)",
+        clickDetails: "👉 اضغط لعرض التفاصيل",
+        emptyKitchen: "تم إنجاز كافة الطلبات! المطبخ جاهز.",
+        refreshCloud: "🔄 تحديث السحابة",
+        searchPlaceholder: "🔍 بحث برقم الطلب (#01) أو الجوال...",
+        thToken: "رقم الطلب",
+        thType: "نوع الطلب",
+        thPhone: "جوال العميل",
+        thItems: "الأصناف",
+        thDate: "تاريخ الوردية",
+        thCompleted: "وقت الإنجاز",
+        thAction: "إجراء",
+        recallBtn: "↩️ استرجاع"
+      }
+    };
+
+    function toggleLanguage() {
+      currentLang = currentLang === 'en' ? 'ar' : 'en';
+      localStorage.setItem('kds_lang', currentLang);
+      applyKdsLanguage(currentLang);
+    }
+
+    function applyKdsLanguage(lang) {
+      document.body.dir = lang === 'ar' ? 'rtl' : 'ltr';
+      const t = kdsI18n[lang];
+
+      const setText = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
+      const setPlaceholder = (id, val) => { const el = document.getElementById(id); if (el) el.placeholder = val; };
+
+      setText('ui-kds-pin-title', t.pinTitle);
+      setText('ui-kds-pin-sub', t.pinSub);
+      setText('ui-kds-clear', t.pinClear);
+      setText('ui-master-sub', t.masterSub);
+      setText('ui-master-cancel', t.masterCancel);
+      setText('btn-lang-toggle', t.langToggle);
+      setText('ui-tab-live-text', t.liveTab);
+      setText('ui-tab-hist-text', t.histTab);
+      setText('ui-btn-test-sound', t.testSound);
+      setText('ui-btn-logout', t.logout);
+      setText('ui-btn-modal-back', t.modalBack);
+      setText('ui-btn-modal-done', t.modalDone);
+      setText('ui-btn-refresh-hist', t.refreshCloud);
+      setPlaceholder('history-search-input', t.searchPlaceholder);
+
+      setText('ui-th-token', t.thToken);
+      setText('ui-th-type', t.thType);
+      setText('ui-th-phone', t.thPhone);
+      setText('ui-th-items', t.thItems);
+      setText('ui-th-date', t.thDate);
+      setText('ui-th-completed', t.thCompleted);
+      setText('ui-th-action', t.thAction);
+
+      renderLiveGrid();
+      if (currentView === 'history') renderHistoryTable();
+    }
+
     let enteredPin = "";
     let currentShop = null;
     let supabaseClient = null;
@@ -294,6 +466,7 @@
     let historyOrders = [];
     let currentView = 'live';
     let currentStation = localStorage.getItem('kds_selected_station') || 'All';
+    let currentlyFocusedOrderId = null;
 
     let localChannel = null;
     try {
@@ -311,7 +484,7 @@
       return saudiTime.toISOString().slice(0, 10);
     }
 
-    // --- PIN LOGIC (SHOP AUTHENTICATION) ---
+    // --- PIN AUTHENTICATION ---
     function pressKey(num) {
       if (enteredPin.length < 4) {
         enteredPin += String(num);
@@ -358,8 +531,9 @@
       if (matchedShop) {
         activateKdsShop(matchedShop);
       } else {
-        alert("Thettaya PIN number! Veendum nalkuka.");
-        clearPinInput();
+        const err = document.getElementById('pin-error-msg');
+        if (err) err.innerText = currentLang === 'ar' ? "❌ رمز غير صحيح! (1111 أو 1234)" : "❌ Invalid PIN! (1111 or 1234)";
+        setTimeout(clearPinInput, 800);
       }
     }
 
@@ -383,7 +557,7 @@
       });
     }
 
-    // --- DYNAMIC STATIONS LOADER (Option 2) ---
+    // --- LOAD DYNAMIC STATIONS ---
     async function loadDynamicStationsInKDS() {
       const select = document.getElementById('station-filter-select');
       if (!select || !currentShop) return;
@@ -408,7 +582,7 @@
         } catch(e) {}
       }
 
-      select.innerHTML = '<option value="All">Station: All (എല്ലാം)</option>';
+      select.innerHTML = `<option value="All">Station: All (الكل)</option>`;
       stations.forEach(st => {
         select.innerHTML += `<option value="${st.name}">Station: ${st.name}</option>`;
       });
@@ -448,7 +622,7 @@
         if (!Array.isArray(historyOrders)) historyOrders = [];
       } catch(e) { historyOrders = []; }
 
-      renderLiveGrid();
+      applyKdsLanguage(currentLang);
 
       if (s.url && s.key && window.supabase) {
         supabaseClient = window.supabase.createClient(s.url, s.key);
@@ -530,7 +704,7 @@
       renderLiveGrid();
     }
 
-    // --- Cloud Sync ---
+    // --- FIFO SORTED CLOUD FETCH ---
     async function fetchLiveOrdersFromCloud() {
       if (!supabaseClient || !currentShop) return;
       try {
@@ -539,7 +713,7 @@
           .select('*')
           .eq('shop_id', currentShop.id)
           .eq('status', 'pending')
-          .order('id', { ascending: true });
+          .order('id', { ascending: true }); // Strict FIFO order
 
         if (data) {
           liveOrders = data;
@@ -549,7 +723,7 @@
       } catch (e) {}
     }
 
-    // Multi-Day History Fetcher
+    // Multi-Day History Fetch
     async function fetchHistoryFromCloud() {
       if (!supabaseClient || !currentShop) return;
       const cal = document.getElementById('history-calendar-picker');
@@ -575,7 +749,6 @@
     function listenSupabaseRealtime() {
       if (!supabaseClient) return;
 
-      // 1. Orders Realtime
       supabaseClient
         .channel('kds-live-orders-realtime')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, payload => {
@@ -583,6 +756,8 @@
           if (newOrder.shop_id === currentShop.id && newOrder.status === 'pending') {
             if (!liveOrders.find(o => String(o.id) === String(newOrder.id))) {
               liveOrders.push(newOrder);
+              // Maintain strict FIFO sorting
+              liveOrders.sort((a,b) => Number(a.id) - Number(b.id));
               saveLocalKdsState();
               triggerAlertSound();
               renderLiveGrid();
@@ -598,23 +773,19 @@
             if (!historyOrders.find(o => String(o.id) === String(updated.id))) {
               historyOrders.unshift(updated);
             }
+            if (currentlyFocusedOrderId && String(currentlyFocusedOrderId) === String(updated.id)) {
+              closeOrderModal();
+            }
           } else if (updated.status === 'pending') {
             historyOrders = historyOrders.filter(o => String(o.id) !== String(updated.id));
             if (!liveOrders.find(o => String(o.id) === String(updated.id))) {
               liveOrders.push(updated);
+              liveOrders.sort((a,b) => Number(a.id) - Number(b.id));
             }
           }
           saveLocalKdsState();
           renderLiveGrid();
           if (currentView === 'history') renderHistoryTable();
-        })
-        .subscribe();
-
-      // 2. Stations Realtime
-      supabaseClient
-        .channel('kds-stations-realtime')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'kitchen_stations' }, () => {
-          loadDynamicStationsInKDS().then(() => renderLiveGrid());
         })
         .subscribe();
     }
@@ -626,6 +797,7 @@
           if (!currentShop || newOrder.shop_id === currentShop.id) {
             if (!liveOrders.find(o => String(o.id) === String(newOrder.id))) {
               liveOrders.push(newOrder);
+              liveOrders.sort((a,b) => Number(a.id) - Number(b.id));
               saveLocalKdsState();
               triggerAlertSound();
               renderLiveGrid();
@@ -642,70 +814,15 @@
       }
     }
 
-    async function completeOrderSingleClick(orderId) {
-      const order = liveOrders.find(o => String(o.id) === String(orderId));
-      if (!order) return;
-
-      order.status = 'completed';
-      order.completed_at = new Date().toLocaleTimeString();
-      liveOrders = liveOrders.filter(o => String(o.id) !== String(orderId));
-      historyOrders.unshift(order);
-      saveLocalKdsState();
-      renderLiveGrid();
-
-      if (supabaseClient) {
-        try {
-          await supabaseClient
-            .from('orders')
-            .update({ status: 'completed', completed_at: new Date().toISOString() })
-            .eq('id', orderId);
-        } catch(e) {}
-      }
-    }
-
-    async function recallOrderBackToLive(orderId) {
-      const order = historyOrders.find(o => String(o.id) === String(orderId));
-      if (!order) return;
-
-      order.status = 'pending';
-      historyOrders = historyOrders.filter(o => String(o.id) !== String(orderId));
-      liveOrders.push(order);
-      saveLocalKdsState();
-      renderHistoryTable();
-      renderLiveGrid();
-
-      if (supabaseClient) {
-        try {
-          await supabaseClient
-            .from('orders')
-            .update({ status: 'pending', completed_at: null })
-            .eq('id', orderId);
-        } catch(e) {}
-      }
-      alert(`${order.token} ലൈവ് കിച്ചനിലേക്ക് തിരികെ മാറ്റി!`);
-    }
-
-    function switchView(view) {
-      currentView = view;
-      document.getElementById('tab-live').classList.toggle('active', view === 'live');
-      document.getElementById('tab-history').classList.toggle('active', view === 'history');
-
-      if (view === 'live') {
-        document.getElementById('kds-orders-container').style.display = 'grid';
-        document.getElementById('history-view').style.display = 'none';
-        renderLiveGrid();
-      } else {
-        document.getElementById('kds-orders-container').style.display = 'none';
-        document.getElementById('history-view').style.display = 'flex';
-        fetchHistoryFromCloud();
-        renderHistoryTable();
-      }
-    }
-
+    // --- RENDER COMPACT FIFO GRID ---
     function renderLiveGrid() {
       const container = document.getElementById('kds-orders-container');
       if (!container) return;
       const now = Date.now();
+      const t = kdsI18n[currentLang];
+
+      // Strict FIFO sort
+      liveOrders.sort((a, b) => Number(a.id) - Number(b.id));
 
       let displayOrders = liveOrders.map(order => {
         let rawItems = order.items || [];
@@ -728,7 +845,7 @@
         container.innerHTML = `
           <div class="empty-state">
             <div style="font-size: 50px; margin-bottom: 10px;">🧑‍🍳</div>
-            <div>${currentStation === 'All' ? 'All Orders Completed!' : `${currentStation} - No pending orders`}</div>
+            <div>${t.emptyKitchen}</div>
           </div>
         `;
         return;
@@ -741,52 +858,175 @@
         const elapsedSec = Math.floor((now - orderTimeMs) / 1000);
         const mins = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
         const secs = String(elapsedSec % 60).padStart(2, '0');
-        const isLate = elapsedSec > 600;
+
+        let priorityClass = 'card-card-priority-normal';
+        if (elapsedSec > 600) priorityClass = 'card-card-priority-urgent';
+        else if (elapsedSec > 300) priorityClass = 'card-card-priority-warn';
 
         const custPhone = order.customer_phone || order.phone || '';
 
-        let itemsHtml = order.filteredItems.map(it => {
-          const isSpicy = (it.name || '').includes('Spicy');
-          return `
-            <div class="kds-item-row">
-              <div class="kds-item-name">
-                ${it.name || ''}
-                ${isSpicy ? `<span class="spicy-tag">🌶️ SPICY</span>` : ''}
-                <span class="item-station-tag">[${it.station || 'Main'}]</span>
-              </div>
-              <div class="kds-item-qty">X ${it.qty || 1}</div>
-            </div>
-          `;
-        }).join('');
+        // Compact visible items (first 3)
+        const visibleItems = order.filteredItems.slice(0, 3);
+        const remainingCount = order.filteredItems.length - 3;
+
+        let itemsCompactHtml = visibleItems.map(it => `
+          <div class="compact-item-line">
+            <span class="compact-item-name">${it.name || ''}</span>
+            <span class="compact-item-qty">X ${it.qty || 1}</span>
+          </div>
+        `).join('');
+
+        if (remainingCount > 0) {
+          itemsCompactHtml += `<div class="compact-more-tag">+ ${remainingCount} more items...</div>`;
+        }
 
         const card = document.createElement('div');
-        card.className = 'order-card';
+        card.className = `order-card ${priorityClass}`;
+        card.onclick = () => openOrderModal(order.id);
+
         card.innerHTML = `
           <div class="card-top">
             <span class="card-token">${order.token || 'Token'}</span>
-            <span class="timer-badge ${isLate ? 'timer-late' : ''}" id="timer-${order.id}">⏱️ ${mins}:${secs}</span>
+            <span class="timer-badge" id="timer-${order.id}">⏱️ ${mins}:${secs}</span>
           </div>
           <div class="card-meta">
-            <span>${order.order_type || order.type || 'Takeaway'}</span>
-            ${custPhone ? `<span class="meta-phone">📞 ${custPhone}</span>` : `<span>${order.time || ''}</span>`}
+            <span>${order.order_type || 'Takeaway'}</span>
+            ${custPhone ? `<span style="color:#38bdf8;">📞 ${custPhone}</span>` : `<span>${order.time || ''}</span>`}
           </div>
-          <div class="card-items">
-            ${itemsHtml}
+          <div class="card-items-compact">
+            ${itemsCompactHtml}
           </div>
-          <div class="card-actions">
-            <button type="button" class="btn-done-single" onclick="completeOrderSingleClick(${order.id})">
-              ✅ COMPLETE (Done)
-            </button>
+          <div class="card-footer-action">
+            ${t.clickDetails}
           </div>
         `;
         container.appendChild(card);
       });
     }
 
+    // --- MODAL: OPEN, BACK & COMPLETE ---
+    function openOrderModal(orderId) {
+      const order = liveOrders.find(o => String(o.id) === String(orderId));
+      if (!order) return;
+
+      currentlyFocusedOrderId = orderId;
+      document.getElementById('modal-token').innerText = order.token || 'Token';
+      document.getElementById('modal-type-time').innerText = `${order.order_type || 'Takeaway'} | ${order.business_date || ''} ${order.time || ''}`;
+      
+      const phoneEl = document.getElementById('modal-phone');
+      const phone = order.customer_phone || order.phone || '';
+      phoneEl.innerText = phone ? `📞 ${phone}` : '';
+
+      const container = document.getElementById('modal-items-container');
+      container.innerHTML = '';
+
+      let rawItems = order.items || [];
+      if (typeof rawItems === 'string') {
+        try { rawItems = JSON.parse(rawItems); } catch(e) { rawItems = []; }
+      }
+      if (!Array.isArray(rawItems)) rawItems = [];
+
+      let items = rawItems;
+      if (currentStation !== 'All') {
+        items = items.filter(it => (it.station || 'Main Kitchen') === currentStation);
+      }
+
+      items.forEach(it => {
+        const isSpicy = (it.name || '').includes('Spicy') || (it.name || '').includes('حار');
+        container.innerHTML += `
+          <div class="focus-item-row">
+            <div>
+              <div class="focus-item-title">
+                ${it.name || ''}
+                ${isSpicy ? `<span class="focus-spicy-badge">🌶️ SPICY / حار</span>` : ''}
+              </div>
+              <div class="focus-item-sub">[${it.station || 'Main Kitchen'}]</div>
+            </div>
+            <div class="focus-item-qty">X ${it.qty || 1}</div>
+          </div>
+        `;
+      });
+
+      document.getElementById('order-detail-modal').style.display = 'flex';
+    }
+
+    function closeOrderModal() {
+      currentlyFocusedOrderId = null;
+      document.getElementById('order-detail-modal').style.display = 'none';
+    }
+
+    async function completeFocusedOrder() {
+      if (!currentlyFocusedOrderId) return;
+      const orderId = currentlyFocusedOrderId;
+      const order = liveOrders.find(o => String(o.id) === String(orderId));
+      if (!order) return;
+
+      order.status = 'completed';
+      order.completed_at = new Date().toLocaleTimeString();
+      liveOrders = liveOrders.filter(o => String(o.id) !== String(orderId));
+      historyOrders.unshift(order);
+      saveLocalKdsState();
+
+      closeOrderModal();
+      renderLiveGrid();
+
+      if (supabaseClient) {
+        try {
+          await supabaseClient
+            .from('orders')
+            .update({ status: 'completed', completed_at: new Date().toISOString() })
+            .eq('id', orderId);
+        } catch(e) {}
+      }
+    }
+
+    async function recallOrderBackToLive(orderId) {
+      const order = historyOrders.find(o => String(o.id) === String(orderId));
+      if (!order) return;
+
+      order.status = 'pending';
+      historyOrders = historyOrders.filter(o => String(o.id) !== String(orderId));
+      liveOrders.push(order);
+      liveOrders.sort((a,b) => Number(a.id) - Number(b.id)); // Maintain FIFO
+      saveLocalKdsState();
+      renderHistoryTable();
+      renderLiveGrid();
+
+      if (supabaseClient) {
+        try {
+          await supabaseClient
+            .from('orders')
+            .update({ status: 'pending', completed_at: null })
+            .eq('id', orderId);
+        } catch(e) {}
+      }
+
+      const msg = currentLang === 'ar' ? `تم استرجاع الطلب ${order.token} إلى شاشة المطبخ!` : `Order ${order.token} recalled back to live kitchen!`;
+      alert(msg);
+    }
+
+    function switchView(view) {
+      currentView = view;
+      document.getElementById('tab-live').classList.toggle('active', view === 'live');
+      document.getElementById('tab-history').classList.toggle('active', view === 'history');
+
+      if (view === 'live') {
+        document.getElementById('kds-orders-container').style.display = 'grid';
+        document.getElementById('history-view').style.display = 'none';
+        renderLiveGrid();
+      } else {
+        document.getElementById('kds-orders-container').style.display = 'none';
+        document.getElementById('history-view').style.display = 'flex';
+        fetchHistoryFromCloud();
+        renderHistoryTable();
+      }
+    }
+
     function renderHistoryTable() {
       const tbody = document.getElementById('history-table-body');
       if (!tbody) return;
       const searchVal = (document.getElementById('history-search-input').value || '').toLowerCase().trim();
+      const t = kdsI18n[currentLang];
 
       let list = historyOrders;
       if (searchVal) {
@@ -797,11 +1037,12 @@
         });
       }
 
-      document.getElementById('history-count-text').innerText = `${list.length} Orders (Cloud)`;
+      document.getElementById('history-count-text').innerText = `${list.length} Orders`;
       tbody.innerHTML = '';
 
       if (list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#64748b; padding:20px;">No Orders Found for this Date</td></tr>`;
+        const noFound = currentLang === 'ar' ? "لا توجد طلبات في هذا التاريخ" : "No orders found for this date";
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#64748b; padding:20px;">${noFound}</td></tr>`;
         return;
       }
 
@@ -818,13 +1059,13 @@
         tbody.innerHTML += `
           <tr>
             <td><strong style="color:#facc15; font-size:15px;">${o.token || '-'}</strong></td>
-            <td>${o.order_type || o.type || '-'}</td>
+            <td>${o.order_type || '-'}</td>
             <td style="color:#38bdf8;">${custPhone}</td>
-            <td style="max-width:250px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${itemsSummary}</td>
+            <td style="max-width:240px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${itemsSummary}</td>
             <td>${o.business_date || '-'}</td>
             <td style="color:#10b981;">${o.completed_at ? new Date(o.completed_at).toLocaleTimeString() : 'Done'}</td>
             <td>
-              <button type="button" class="btn-recall" onclick="recallOrderBackToLive(${o.id})">↩️ Recall</button>
+              <button type="button" class="btn-recall" onclick="recallOrderBackToLive(${o.id})">${t.recallBtn}</button>
             </td>
           </tr>
         `;
@@ -835,30 +1076,33 @@
       renderHistoryTable();
     }
 
-    // Elapsed live timer
+    // Elapsed live timers (FIFO live update)
     setInterval(() => {
-      if (currentView !== 'live') return;
       const now = Date.now();
       liveOrders.forEach(order => {
+        const orderTimeMs = Number(order.id) || now;
+        const elapsedSec = Math.floor((now - orderTimeMs) / 1000);
+        const mins = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
+        const secs = String(elapsedSec % 60).padStart(2, '0');
+
         const el = document.getElementById(`timer-${order.id}`);
-        if (el) {
-          const orderTimeMs = Number(order.id) || now;
-          const elapsedSec = Math.floor((now - orderTimeMs) / 1000);
-          const mins = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
-          const secs = String(elapsedSec % 60).padStart(2, '0');
-          el.innerText = `⏱️ ${mins}:${secs}`;
-          if (elapsedSec > 600) el.classList.add('timer-late');
+        if (el) el.innerText = `⏱️ ${mins}:${secs}`;
+
+        if (currentlyFocusedOrderId && String(currentlyFocusedOrderId) === String(order.id)) {
+          const modalTimer = document.getElementById('modal-timer');
+          if (modalTimer) modalTimer.innerText = `⏱️ ${mins}:${secs}`;
         }
       });
     }, 1000);
 
-    // Physical keyboard listener
+    // Keyboard listener
     window.addEventListener('keydown', (e) => {
       const overlay = document.getElementById('pin-lock-overlay');
       if (overlay && overlay.style.display !== 'none') {
         if (e.key >= '0' && e.key <= '9') pressKey(e.key);
         else if (e.key === 'Backspace') pressBackspace();
       }
+      if (e.key === 'Escape') closeOrderModal();
     });
 
     // Auto-resume active session
