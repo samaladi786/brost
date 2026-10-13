@@ -21,7 +21,7 @@
     * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 0; }
     body { background: #0f172a; color: #f8fafc; height: 100vh; width: 100vw; display: flex; flex-direction: column; overflow: hidden; }
 
-    /* ================= 4-DIGIT PIN DIRECT LOCK SCREEN (SAME AS INDEX) ================= */
+    /* ================= 4-DIGIT PIN DIRECT LOCK SCREEN ================= */
     #pin-lock-overlay {
       position: fixed; inset: 0; background: #0f172a; z-index: 9999;
       display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px;
@@ -218,13 +218,9 @@
     </div>
 
     <div class="header-controls">
-      <!-- Station Filter -->
+      <!-- Dynamic Kitchen Station Filter -->
       <select id="station-filter-select" class="header-select" onchange="onStationFilterChange()">
-        <option value="All">Station: All</option>
-        <option value="Main Kitchen">Station: Main Kitchen</option>
-        <option value="Broast Station">Station: Broast Station</option>
-        <option value="Burger Station">Station: Burger Station</option>
-        <option value="Drinks Counter">Station: Drinks Counter</option>
+        <option value="All">Station: All (All Items)</option>
       </select>
 
       <!-- Sound Selector -->
@@ -310,7 +306,7 @@
       return saudiTime.toISOString().slice(0, 10);
     }
 
-    // --- PIN LOGIC (EXACTLY AS INDEX.HTML) ---
+    // --- PIN LOGIC ---
     function pressKey(num) {
       if (enteredPin.length < 4) {
         enteredPin += String(num);
@@ -344,13 +340,11 @@
       const masterPin = typeof window.MASTER_PIN !== 'undefined' ? String(window.MASTER_PIN).trim() : "0000";
       const shops = getAllShops();
 
-      // Master Admin PIN
       if (enteredPin === masterPin) {
         openMasterBranchPicker();
         return;
       }
 
-      // Exact Shop PIN match
       const matchedShop = shops.find(s => String(s.pin).trim() === enteredPin);
       if (matchedShop) {
         activateKdsShop(matchedShop);
@@ -380,6 +374,49 @@
       });
     }
 
+    // --- DYNAMIC KITCHEN STATIONS LOADER ---
+    async function loadDynamicStationsInKDS() {
+      const select = document.getElementById('station-filter-select');
+      if (!select || !currentShop) return;
+
+      // 1. LocalStorage-ൽ നിന്ന് കാഷെ ചെയ്ത സ്റ്റേഷനുകൾ എടുക്കുക
+      let stations = [];
+      try {
+        stations = JSON.parse(localStorage.getItem(`pos_stations_${currentShop.id}`)) || [];
+      } catch(e) {}
+
+      if (!stations || stations.length === 0) {
+        stations = [
+          { name: "Main Kitchen" },
+          { name: "Broast Station" },
+          { name: "Drinks Counter" }
+        ];
+      }
+
+      // 2. Supabase-ൽ നിന്ന് ക്ലൗഡ് സ്റ്റേഷനുകൾ ഫെച്ച് ചെയ്യുക
+      if (supabaseClient) {
+        try {
+          const { data } = await supabaseClient.from('kitchen_stations').select('*').eq('shop_id', currentShop.id);
+          if (data && data.length > 0) stations = data;
+        } catch(e) {}
+      }
+
+      // 3. Dropdown റീ-റെൻഡർ ചെയ്യുക
+      select.innerHTML = '<option value="All">Station: All (All Items)</option>';
+      stations.forEach(st => {
+        select.innerHTML += `<option value="${st.name}">Station: ${st.name}</option>`;
+      });
+
+      // നിലവിൽ സെലക്ട് ചെയ്ത സ്റ്റേഷൻ നിലനിർത്തുക
+      if (stations.some(s => s.name === currentStation)) {
+        select.value = currentStation;
+      } else {
+        currentStation = 'All';
+        select.value = 'All';
+        localStorage.setItem('kds_selected_station', 'All');
+      }
+    }
+
     async function activateKdsShop(s) {
       currentShop = s;
       localStorage.setItem('kds_active_shop_id', s.id);
@@ -389,10 +426,10 @@
       document.getElementById('header-shop-name').innerText = `🍗 ${s.name} (KDS)`;
       document.getElementById('business-date-badge').innerText = `📅 Shift: ${getSaudiBusinessDate()}`;
 
-      document.getElementById('station-filter-select').value = currentStation;
       const savedSound = localStorage.getItem('kds_sound_mode') || 'chime';
       document.getElementById('sound-type-select').value = savedSound;
 
+      // Cache load
       try {
         liveOrders = JSON.parse(localStorage.getItem(`kds_live_${s.id}`)) || [];
         if (!Array.isArray(liveOrders)) liveOrders = [];
@@ -403,14 +440,18 @@
         if (!Array.isArray(historyOrders)) historyOrders = [];
       } catch(e) { historyOrders = []; }
 
-      renderLiveGrid();
-
+      // Connect Supabase Cloud
       if (s.url && s.key && window.supabase) {
         supabaseClient = window.supabase.createClient(s.url, s.key);
+        await loadDynamicStationsInKDS();
         await fetchLiveOrdersFromCloud();
         await fetchHistoryFromCloud();
         listenSupabaseRealtime();
+      } else {
+        await loadDynamicStationsInKDS();
       }
+
+      renderLiveGrid();
     }
 
     function lockKDS() {
@@ -523,6 +564,7 @@
     function listenSupabaseRealtime() {
       if (!supabaseClient) return;
 
+      // 1. Orders Realtime
       supabaseClient
         .channel('kds-live-orders-realtime')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, payload => {
@@ -554,6 +596,14 @@
           saveLocalKdsState();
           renderLiveGrid();
           if (currentView === 'history') renderHistoryTable();
+        })
+        .subscribe();
+
+      // 2. Kitchen Stations Realtime (POS-ൽ ആഡ് ചെയ്യുമ്പോൾ ഇവിടെ റീഫ്രഷ് ചെയ്യാതെ തന്നെ വരും!)
+      supabaseClient
+        .channel('kds-stations-realtime')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'kitchen_stations' }, () => {
+          loadDynamicStationsInKDS().then(() => renderLiveGrid());
         })
         .subscribe();
     }
@@ -790,7 +840,7 @@
       });
     }, 1000);
 
-    // Keyboard support (Same as index.html)
+    // Keyboard support
     window.addEventListener('keydown', (e) => {
       const overlay = document.getElementById('pin-lock-overlay');
       if (overlay && overlay.style.display !== 'none') {
