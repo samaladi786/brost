@@ -3,19 +3,51 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Broasted POS - Counter Edition</title>
+  <title>Broasted POS - Multi-Branch Cloud Edition</title>
+  <!-- Central Config & Libraries -->
+  <script src="config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 0; }
     body { display: flex; height: 100vh; background: #f1f5f9; overflow: hidden; }
 
-    /* Left Menu Area */
+    /* ================= SHOP SELECTOR OVERLAY ================= */
+    #shop-auth-overlay {
+      position: fixed; inset: 0; background: #0f172a; z-index: 9999;
+      display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px;
+    }
+    .auth-card {
+      background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 24px;
+      max-width: 650px; width: 100%; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    }
+    .shop-select-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 12px; margin: 20px 0; max-height: 50vh; overflow-y: auto;
+    }
+    .shop-btn-card {
+      background: #0f172a; border: 2px solid #334155; border-radius: 12px; padding: 14px 10px;
+      cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+      transition: all 0.15s ease; color: #fff;
+    }
+    .shop-btn-card:hover { border-color: #38bdf8; transform: translateY(-2px); }
+    .shop-btn-card img { width: 55px; height: 55px; object-fit: contain; margin-bottom: 8px; border-radius: 8px; }
+    .shop-btn-card h4 { font-size: 13px; line-height: 1.2; }
+    .pin-box { display: none; margin-top: 15px; }
+    .pin-input {
+      padding: 10px 14px; font-size: 18px; text-align: center; letter-spacing: 4px;
+      border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; width: 160px;
+    }
+
+    /* ================= MAIN POS INTERFACE ================= */
     .menu-panel { flex: 6.8; display: flex; flex-direction: column; padding: 12px 16px; border-right: 2px solid #cbd5e1; }
     .top-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .top-actions { display: flex; gap: 8px; }
-    .btn-top { background: #1e293b; color: #fff; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px; }
+    .top-actions { display: flex; gap: 8px; align-items: center; }
+    .btn-top { background: #1e293b; color: #fff; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 12px; }
     .btn-report { background: #0284c7; }
-    .btn-kds-link { background: #f59e0b; color: #000; text-decoration: none; padding: 8px 12px; border-radius: 8px; font-weight: bold; font-size: 13px; display: flex; align-items: center; }
+    .btn-kds-link { background: #f59e0b; color: #000; text-decoration: none; padding: 8px 12px; border-radius: 8px; font-weight: bold; font-size: 12px; }
+    .btn-switch-shop { background: #ef4444; }
+    .shop-badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; margin-left: 6px; }
 
     /* Order Options Bar */
     .order-bar {
@@ -35,15 +67,15 @@
     .current-title { font-size: 16px; font-weight: bold; color: #334155; }
 
     /* Grid for Categories / Items */
-    .grid-container { flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; overflow-y: auto; align-content: start; }
+    .grid-container { flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 12px; overflow-y: auto; align-content: start; }
     .pos-card {
       background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0;
       cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.04); display: flex;
-      flex-direction: column; overflow: hidden; height: 140px; transition: 0.1s; text-align: center;
+      flex-direction: column; overflow: hidden; height: 135px; transition: 0.1s; text-align: center;
     }
     .pos-card:active { transform: scale(0.96); border-color: #e11d48; }
-    .card-img { width: 100%; height: 85px; object-fit: cover; background: #f8fafc; }
-    .card-icon { height: 85px; display: flex; align-items: center; justify-content: center; font-size: 38px; background: #f8fafc; }
+    .card-img { width: 100%; height: 80px; object-fit: cover; background: #f8fafc; }
+    .card-icon { height: 80px; display: flex; align-items: center; justify-content: center; font-size: 36px; background: #f8fafc; }
     .card-info { padding: 6px; flex: 1; display: flex; flex-direction: column; justify-content: center; }
     .card-info h4 { font-size: 13px; color: #0f172a; line-height: 1.2; }
     .card-info .price { color: #e11d48; font-weight: bold; font-size: 13px; margin-top: 2px; }
@@ -81,7 +113,7 @@
     .set-table td, .set-table th { padding: 6px; border: 1px solid #e2e8f0; text-align: left; }
     .thumb-preview { width: 40px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid #cbd5e1; }
 
-    /* Thermal 80mm Print CSS via #print-area */
+    /* Thermal 80mm Print CSS */
     #print-area { display: none; }
     @media print {
       body * { visibility: hidden !important; }
@@ -101,21 +133,44 @@
 </head>
 <body>
 
-  <!-- Menu Side -->
+  <!-- ================= SHOP SELECTION MODAL ================= -->
+  <div id="shop-auth-overlay">
+    <div class="auth-card">
+      <h2 style="color:#f8fafc; margin-bottom:4px;">🏪 ബ്രാഞ്ച് തിരഞ്ഞെടുക്കുക</h2>
+      <p style="color:#94a3b8; font-size:13px;">നിങ്ങളുടെ ഷോപ്പ് തിരഞ്ഞെടുത്തു PIN നൽകുക</p>
+      
+      <div class="shop-select-grid" id="auth-shops-list"></div>
+
+      <div class="pin-box" id="pin-prompt-box">
+        <h4 id="pin-shop-title" style="color:#38bdf8; margin-bottom:10px;"></h4>
+        <input type="password" id="pin-input" class="pin-input" maxlength="6" placeholder="PIN" onkeyup="checkPinEntry(event)">
+        <div style="margin-top:12px; display:flex; gap:10px; justify-content:center;">
+          <button onclick="cancelPinPrompt()" class="btn-top" style="background:#475569;">Cancel</button>
+          <button onclick="verifyAndLogin()" class="btn-top" style="background:#16a34a;">Login (തുറക്കുക)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MAIN POS ================= -->
   <div class="menu-panel">
     <div class="top-header">
       <div>
-        <h2 id="top-shop-name">🍗 Broasted Chicken POS</h2>
+        <div style="display:flex; align-items:center;">
+          <h2 id="top-shop-name">🍗 Broasted POS</h2>
+          <span id="top-shop-badge" class="shop-badge"></span>
+        </div>
         <small style="color:#64748b;" id="current-date-time"></small>
       </div>
       <div class="top-actions">
-        <a href="kds.html" target="_blank" class="btn-kds-link">📺 Open KDS Screen</a>
+        <a href="kds.html" target="_blank" class="btn-kds-link">📺 KDS സ്ക്രീൻ</a>
         <button class="btn-top btn-report" onclick="openDailyReportModal()">📊 Z-റിപ്പോർട്ട്</button>
         <button class="btn-top" onclick="openSettingsModal()">⚙️ Settings</button>
+        <button class="btn-top btn-switch-shop" onclick="switchShop()">🔄 Switch Branch</button>
       </div>
     </div>
 
-    <!-- Order Options & Mobile -->
+    <!-- Order Options Bar -->
     <div class="order-bar">
       <button class="type-btn active" onclick="setOrderType('Takeaway (سفري)', this)">📦 Takeaway (سفري)</button>
       <button class="type-btn" onclick="setOrderType('Dine-in (محلي)', this)">🍽️ Dine-in (محلي)</button>
@@ -123,7 +178,7 @@
       <input type="tel" class="phone-input" id="cust-phone" placeholder="കസ്റ്റമർ മൊബൈൽ നമ്പർ (ഓപ്ഷണൽ)">
     </div>
 
-    <!-- Navigation Header -->
+    <!-- Navigation -->
     <div class="nav-bar">
       <button class="btn-back" id="btn-back" onclick="showCategories()">⬅️ Categories (ബാക്ക്)</button>
       <div class="current-title" id="current-title">മെയിൻ കാറ്റഗറികൾ (Categories)</div>
@@ -132,7 +187,7 @@
     <div class="grid-container" id="pos-grid"></div>
   </div>
 
-  <!-- Cart Side -->
+  <!-- Cart Panel -->
   <div class="cart-panel">
     <div class="cart-header">
       <div>
@@ -304,7 +359,10 @@
   <div id="print-area"></div>
 
   <script>
-    // Live KDS Communication Channel
+    // ================= MULTI-SHOP & SUPABASE STATE =================
+    let currentShop = null;
+    let selectedPendingShop = null;
+    let supabaseClient = null;
     const kdsChannel = new BroadcastChannel('broast_pos_channel');
 
     const defaultShop = {
@@ -349,8 +407,104 @@
     let tempImageBase64 = "";
     let lastCompletedOrder = null;
 
+    // --- Dynamic Multi-Shop Auth Flow ---
+    function initMultiShopAuth() {
+      const savedShopId = localStorage.getItem('pos_active_shop_id');
+      const shops = window.SHOPS_CONFIG || [];
+
+      if (savedShopId && shops.length > 0) {
+        const found = shops.find(s => s.id === savedShopId);
+        if (found) {
+          activateShop(found);
+          return;
+        }
+      }
+      renderShopSelectionOverlay();
+    }
+
+    function renderShopSelectionOverlay() {
+      const overlay = document.getElementById('shop-auth-overlay');
+      const grid = document.getElementById('auth-shops-list');
+      const pinBox = document.getElementById('pin-prompt-box');
+      overlay.style.display = 'flex';
+      pinBox.style.display = 'none';
+      grid.innerHTML = '';
+
+      const shops = window.SHOPS_CONFIG || [];
+      shops.forEach(s => {
+        const card = document.createElement('div');
+        card.className = 'shop-btn-card';
+        card.innerHTML = `
+          <img src="${s.logo || 'shop1.png'}" onerror="this.src='https://placehold.co/60x60/334155/white?text=SHOP'" alt="">
+          <h4>${s.name}</h4>
+          <small style="color:#64748b; font-size:11px;">${s.tagline || ''}</small>
+        `;
+        card.onclick = () => promptShopPin(s);
+        grid.appendChild(card);
+      });
+    }
+
+    function promptShopPin(s) {
+      selectedPendingShop = s;
+      document.getElementById('pin-shop-title').innerText = `${s.name} PIN നൽകുക:`;
+      document.getElementById('pin-prompt-box').style.display = 'block';
+      const input = document.getElementById('pin-input');
+      input.value = '';
+      input.focus();
+    }
+
+    function cancelPinPrompt() {
+      selectedPendingShop = null;
+      document.getElementById('pin-prompt-box').style.display = 'none';
+    }
+
+    function checkPinEntry(e) {
+      if (e.key === 'Enter') verifyAndLogin();
+    }
+
+    function verifyAndLogin() {
+      const pin = document.getElementById('pin-input').value.trim();
+      const masterPin = window.MASTER_PIN || "0000";
+
+      if (selectedPendingShop && (pin === selectedPendingShop.pin || pin === masterPin)) {
+        activateShop(selectedPendingShop);
+      } else {
+        alert("തെറ്റായ PIN നമ്പർ! വീണ്ടും ശ്രമിക്കുക.");
+        document.getElementById('pin-input').value = '';
+        document.getElementById('pin-input').focus();
+      }
+    }
+
+    function activateShop(s) {
+      currentShop = s;
+      localStorage.setItem('pos_active_shop_id', s.id);
+      document.getElementById('shop-auth-overlay').style.display = 'none';
+
+      // Initialize Dynamic Supabase Client
+      if (s.url && s.key && window.supabase) {
+        supabaseClient = window.supabase.createClient(s.url, s.key);
+      }
+
+      // Update UI Header
+      document.getElementById('top-shop-name').innerText = s.name;
+      const badge = document.getElementById('top-shop-badge');
+      badge.innerText = s.id.toUpperCase();
+      badge.className = `shop-badge ${s.badgeBg || 'bg-emerald-500/20 text-emerald-300'}`;
+
+      showCategories();
+    }
+
+    function switchShop() {
+      if (confirm("മറ്റൊരു ഷോപ്പ് തിരഞ്ഞെടുക്കാൻ ലോഗൗട്ട് ചെയ്യണോ?")) {
+        localStorage.removeItem('pos_active_shop_id');
+        supabaseClient = null;
+        currentShop = null;
+        renderShopSelectionOverlay();
+      }
+    }
+
+    // --- POS Main Functions ---
     function updateHeaderInfo() {
-      document.getElementById('top-shop-name').innerText = shop.nameEn || "Broasted POS";
       const now = new Date();
       document.getElementById('current-date-time').innerText = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
     }
@@ -519,7 +673,7 @@
       finalizeOrder('Mada/Card');
     }
 
-    function finalizeOrder(method) {
+    async function finalizeOrder(method) {
       closeModals();
       const grandTotal = parseFloat(document.getElementById('grand-total').innerText);
       const subtotal = grandTotal / 1.15;
@@ -531,6 +685,7 @@
 
       const orderObj = {
         id: Date.now(),
+        shop_id: currentShop ? currentShop.id : 'default',
         date: todayStr,
         time: timeStr,
         token: token,
@@ -540,15 +695,37 @@
         subtotal: subtotal,
         vat: vat,
         total: grandTotal,
-        paymentMethod: method
+        paymentMethod: method,
+        status: 'pending'
       };
 
+      // 1. Local Persistence
       orderHistory.push(orderObj);
       localStorage.setItem('pos_orders_v2', JSON.stringify(orderHistory));
       lastCompletedOrder = orderObj;
 
-      // Broadcast order to KDS Screen
-      broadcastToKDS(orderObj);
+      // 2. Broadcast local event
+      kdsChannel.postMessage({ type: 'NEW_ORDER', order: orderObj });
+
+      // 3. Supabase Cloud Sync
+      if (supabaseClient) {
+        try {
+          await supabaseClient.from('orders').insert([{
+            id: orderObj.id,
+            token: orderObj.token,
+            order_type: orderObj.type,
+            customer_phone: orderObj.phone,
+            items: orderObj.items,
+            subtotal: orderObj.subtotal,
+            vat: orderObj.vat,
+            total: orderObj.total,
+            payment_method: orderObj.paymentMethod,
+            status: 'pending'
+          }]);
+        } catch (err) {
+          console.error("Supabase Sync Error:", err);
+        }
+      }
 
       cart = [];
       document.getElementById('cust-phone').value = '';
@@ -557,16 +734,6 @@
       showCategories();
 
       handleOrderPrinting(orderObj);
-    }
-
-    function broadcastToKDS(order) {
-      // 1. Send live event
-      kdsChannel.postMessage({ type: 'NEW_ORDER', order: order });
-      
-      // 2. Persist in active KDS queue
-      let kdsActive = JSON.parse(localStorage.getItem('kds_active_orders')) || [];
-      kdsActive.push(order);
-      localStorage.setItem('kds_active_orders', JSON.stringify(kdsActive));
     }
 
     function getCustomerBillHTML(order) {
@@ -581,7 +748,7 @@
       return `
         <div class="receipt-center">
           <h3>${shop.nameAr}</h3>
-          <div>${shop.nameEn}</div>
+          <div>${currentShop ? currentShop.name : shop.nameEn}</div>
           <div>VAT: ${shop.vatNo}</div>
           <div>TEL: ${shop.phone}</div>
           <div class="receipt-line"></div>
@@ -980,7 +1147,8 @@
       reader.readAsText(file);
     }
 
-    showCategories();
+    // Run Auth & Init
+    initMultiShopAuth();
   </script>
 </body>
 </html>
