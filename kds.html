@@ -96,7 +96,7 @@
 
     @media (max-width: 500px) {
       .orders-grid {
-        grid-template-columns: 1fr; /* Full width cards on mobile */
+        grid-template-columns: 1fr;
         padding: 8px;
         gap: 8px;
       }
@@ -110,7 +110,7 @@
     .order-card:active { transform: scale(0.98); }
     .order-card:hover { border-color: #38bdf8; }
 
-    /* Urgency Colors */
+    /* Priority / Age Indicators */
     .card-priority-normal .card-top { background: #1e3a8a; }
     .card-priority-warn .card-top { background: #b45309; }
     .card-priority-urgent .card-top { background: #b91c1c; animation: pulseUrgent 1.5s infinite; }
@@ -142,7 +142,7 @@
     .compact-item-qty { background: #facc15; color: #000; font-weight: 900; font-size: 12px; padding: 1px 6px; border-radius: 4px; }
     .compact-more-tag { font-size: 10px; color: #38bdf8; text-align: center; margin-top: 4px; font-weight: bold; }
 
-    /* Card Action Footer with Quick Complete */
+    /* Card Action Footer with Quick Complete Button */
     .card-footer-action {
       background: #0f172a; padding: 6px 10px; display: flex; justify-content: space-between;
       align-items: center; border-top: 1px solid #334155; gap: 8px;
@@ -154,7 +154,7 @@
     .btn-card-quick-done:active { transform: scale(0.92); background: #15803d; }
     .card-hint-text { font-size: 11px; color: #94a3b8; font-weight: bold; }
 
-    /* ================= 80MM THERMAL PAPER ROLL MODAL ================= */
+    /* ================= 80MM THERMAL PAPER ROLL POPUP MODAL ================= */
     .modal-backdrop {
       display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85);
       justify-content: center; align-items: center; z-index: 1000; padding: 12px;
@@ -178,7 +178,7 @@
     .receipt-divider { border-bottom: 1px dashed #000; margin: 6px 0; }
     .receipt-row { display: flex; justify-content: space-between; font-size: 12px; margin: 2px 0; }
 
-    /* Scrollable Thermal Items */
+    /* Scrollable Thermal Body */
     .thermal-body {
       flex: 1; overflow-y: auto; padding: 8px 14px;
     }
@@ -208,7 +208,7 @@
     }
     .btn-receipt-complete:active { transform: scale(0.97); background: #15803d; }
 
-    /* ================= MULTI-DAY HISTORY VIEW ================= */
+    /* ================= MULTI-DAY CLOUD HISTORY VIEW ================= */
     #history-view {
       display: none; flex: 1; flex-direction: column; padding: 12px; overflow-y: auto;
     }
@@ -518,13 +518,40 @@
       }
     } catch(e) {}
 
+    // --- PURE LOCAL SAUDI CALENDAR DATE (ZERO UTC .toISOString BUG) ---
+    function formatDateYMD(d) {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
     function getSaudiBusinessDate() {
       const now = new Date();
-      const saudiTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (3 * 3600000));
-      if (saudiTime.getHours() < 6) {
-        saudiTime.setDate(saudiTime.getDate() - 1);
+      const y = now.getFullYear();
+      const m = now.getMonth();
+      const d = now.getDate();
+      const h = now.getHours();
+
+      const shopId = currentShop ? currentShop.id : 'shop1';
+      const lastClosedDate = localStorage.getItem(`pos_last_closed_date_${shopId}`);
+
+      let targetDate = new Date(y, m, d);
+
+      if (h < 6) {
+        let prevDate = new Date(y, m, d);
+        prevDate.setDate(prevDate.getDate() - 1);
+        const prevDateStr = formatDateYMD(prevDate);
+
+        // Smart Cut-off: If early Z-close was already done between 5:00 and 6:00 AM
+        if (lastClosedDate === prevDateStr) {
+          targetDate = new Date(y, m, d);
+        } else {
+          targetDate = prevDate;
+        }
       }
-      return saudiTime.toISOString().slice(0, 10);
+
+      return formatDateYMD(targetDate);
     }
 
     // --- PIN AUTHENTICATION ---
@@ -747,7 +774,7 @@
       renderLiveGrid();
     }
 
-    // --- FIFO FETCH FROM CLOUD ---
+    // --- FIFO LIVE ORDERS FETCH ---
     async function fetchLiveOrdersFromCloud() {
       if (!supabaseClient || !currentShop) return;
       try {
@@ -810,10 +837,12 @@
           const updated = payload.new;
           if (updated.shop_id !== currentShop.id) return;
 
-          if (updated.status === 'completed') {
+          if (updated.status === 'completed' || updated.status === 'void') {
             liveOrders = liveOrders.filter(o => String(o.id) !== String(updated.id));
-            if (!historyOrders.find(o => String(o.id) === String(updated.id))) {
-              historyOrders.unshift(updated);
+            if (updated.status === 'completed') {
+              if (!historyOrders.find(o => String(o.id) === String(updated.id))) {
+                historyOrders.unshift(updated);
+              }
             }
             if (currentlyFocusedOrderId && String(currentlyFocusedOrderId) === String(updated.id)) {
               closeOrderModal();
@@ -845,6 +874,11 @@
               renderLiveGrid();
             }
           }
+        } else if (e.data && e.data.type === 'ORDER_VOIDED') {
+          const voidedId = e.data.orderId;
+          liveOrders = liveOrders.filter(o => String(o.id) !== String(voidedId));
+          saveLocalKdsState();
+          renderLiveGrid();
         }
       };
     }
@@ -951,7 +985,7 @@
 
     // --- QUICK COMPLETE DIRECTLY FROM CARD ---
     function executeQuickComplete(event, orderId) {
-      if (event) event.stopPropagation(); // Prevents opening the modal
+      if (event) event.stopPropagation();
       completeOrderDirect(orderId);
     }
 
