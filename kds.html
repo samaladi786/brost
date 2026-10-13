@@ -17,25 +17,26 @@
       display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px;
     }
     .pin-modal-card {
-      background: #1e293b; border: 1px solid #334155; border-radius: 20px; padding: 28px 24px;
+      background: #1e293b; border: 1px solid #334155; border-radius: 20px; padding: 26px 22px;
       max-width: 360px; width: 100%; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.6);
     }
     .pin-dots-row {
-      display: flex; justify-content: center; gap: 14px; margin: 20px 0;
+      display: flex; justify-content: center; gap: 14px; margin: 16px 0 10px 0;
     }
     .pin-dot {
       width: 18px; height: 18px; border-radius: 50%; border: 2px solid #475569; background: transparent; transition: all 0.15s ease;
     }
     .pin-dot.filled { background: #f59e0b; border-color: #f59e0b; box-shadow: 0 0 10px #f59e0b; }
-    .hidden-pin-input {
-      position: absolute; opacity: 0; pointer-events: none; width: 0; height: 0;
+    .pin-error-text {
+      color: #ef4444; font-size: 13px; font-weight: bold; min-height: 20px; margin-bottom: 8px;
     }
+
     .numpad-grid {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 10px;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 6px;
     }
     .num-key {
       background: #0f172a; border: 1px solid #334155; color: #f8fafc; font-size: 22px; font-weight: bold;
-      padding: 16px 0; border-radius: 12px; cursor: pointer; transition: 0.1s; user-select: none;
+      padding: 14px 0; border-radius: 12px; cursor: pointer; transition: 0.1s; user-select: none;
     }
     .num-key:active { transform: scale(0.94); background: #334155; }
     .num-key.backspace { font-size: 18px; color: #ef4444; }
@@ -152,7 +153,7 @@
   <!-- ================= 4-DIGIT PIN DIRECT LOCK OVERLAY ================= -->
   <div id="kds-pin-overlay">
     <div class="pin-modal-card">
-      <div style="font-size:36px; margin-bottom:6px;">🧑‍🍳</div>
+      <div style="font-size:36px; margin-bottom:4px;">🧑‍🍳</div>
       <h2 style="color:#f8fafc; font-size:18px;">KDS KITCHEN PIN</h2>
       <p style="color:#94a3b8; font-size:12px; margin-top:2px;">ഷോപ്പ് PIN നൽകുക</p>
       
@@ -163,7 +164,7 @@
         <div class="pin-dot" id="dot-3"></div>
       </div>
 
-      <input type="password" id="numpad-hidden-input" class="hidden-pin-input" maxlength="4" autofocus>
+      <div class="pin-error-text" id="pin-error-msg"></div>
 
       <div class="numpad-grid">
         <button class="num-key" onclick="pressKey('1')">1</button>
@@ -175,9 +176,18 @@
         <button class="num-key" onclick="pressKey('7')">7</button>
         <button class="num-key" onclick="pressKey('8')">8</button>
         <button class="num-key" onclick="pressKey('9')">9</button>
-        <button class="num-key" onclick="clearPinInput()" style="font-size:14px; color:#94a3b8;">CLEAR</button>
+        <button class="num-key" onclick="clearPinInput()" style="font-size:13px; color:#94a3b8;">CLEAR</button>
         <button class="num-key" onclick="pressKey('0')">0</button>
         <button class="num-key backspace" onclick="pressBackspace()">⌫</button>
+      </div>
+
+      <div style="display:flex; gap:8px; margin-top:12px;">
+        <button onclick="checkAndLoginNow()" class="btn-top" style="flex:1; background:#16a34a; border:none; padding:10px; font-size:14px;">
+          തുറക്കുക (LOGIN)
+        </button>
+        <button onclick="openMasterBranchPicker()" class="btn-top" style="background:#334155; padding:10px; font-size:12px;">
+          🏪 ബ്രാഞ്ചുകൾ
+        </button>
       </div>
     </div>
   </div>
@@ -185,9 +195,12 @@
   <!-- Master Branch Selector Modal -->
   <div id="master-branch-picker">
     <div class="pin-modal-card" style="max-width:440px;">
-      <h3 style="color:#facc15;">🔑 MASTER KDS ACCESS</h3>
-      <p style="color:#94a3b8; font-size:12px; margin: 8px 0 16px 0;">പ്രവർത്തിപ്പിക്കേണ്ട കിച്ചൻ ബ്രാഞ്ച് തിരഞ്ഞെടുക്കുക:</p>
+      <h3 style="color:#facc15;">🏪 ബ്രാഞ്ച് തിരഞ്ഞെടുക്കുക</h3>
+      <p style="color:#94a3b8; font-size:12px; margin: 8px 0 16px 0;">ലോഗിൻ ചെയ്യേണ്ട കിച്ചൻ ബ്രാഞ്ച് തിരഞ്ഞെടുക്കുക:</p>
       <div id="master-branches-container" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"></div>
+      <button onclick="document.getElementById('master-branch-picker').style.display='none'" class="btn-top" style="margin-top:14px; width:100%;">
+        Cancel
+      </button>
     </div>
   </div>
 
@@ -269,15 +282,15 @@
   <script>
     // ================= BUILT-IN FALLBACK SHOPS =================
     const FALLBACK_SHOPS = [
-      { id: 'shop1', name: 'NASSER BIN EID ALMAHMADI', url: 'https://elubqoicerkldrufqcbj.supabase.co', key: 'sb_publishable_zsEKreCmounELozZ5EQ3Lg_aXyut9EK', pin: '1234' },[cite: 3]
-      { id: 'shop2', name: 'BOOFIYA', url: 'https://qkjcviszzdptssvpguwc.supabase.co', key: 'sb_publishable_J0Z4b7NoP3VuDKdbC0WeIg_OQAlpnLQ', pin: '1111' },[cite: 3]
-      { id: 'shop3', name: 'TAJ SPORTS', url: 'https://garpkohthpeirdhcwthk.supabase.co', key: 'sb_publishable_TNhOZnpYuthYHmSJSlyhaw_R6RS1jcY', pin: '3333' },[cite: 3]
-      { id: 'shop4', name: 'MUSAD SPORTS', url: 'https://mwxbakqoipcwblhukrfs.supabase.co', key: 'sb_publishable_OfuR1PeffNa4NWUhpwV3gg_pwqovQZT', pin: '2222' }[cite: 3]
+      { id: 'shop1', name: 'NASSER BIN EID ALMAHMADI', url: 'https://elubqoicerkldrufqcbj.supabase.co', key: 'sb_publishable_zsEKreCmounELozZ5EQ3Lg_aXyut9EK', pin: '1234' },[cite: 1]
+      { id: 'shop2', name: 'BOOFIYA', url: 'https://qkjcviszzdptssvpguwc.supabase.co', key: 'sb_publishable_J0Z4b7NoP3VuDKdbC0WeIg_OQAlpnLQ', pin: '1111' },[cite: 1]
+      { id: 'shop3', name: 'TAJ SPORTS', url: 'https://garpkohthpeirdhcwthk.supabase.co', key: 'sb_publishable_TNhOZnpYuthYHmSJSlyhaw_R6RS1jcY', pin: '3333' },[cite: 1]
+      { id: 'shop4', name: 'MUSAD SPORTS', url: 'https://mwxbakqoipcwblhukrfs.supabase.co', key: 'sb_publishable_OfuR1PeffNa4NWUhpwV3gg_pwqovQZT', pin: '2222' }[cite: 1]
     ];
 
     function getAllShops() {
       if (typeof window.SHOPS_CONFIG !== 'undefined' && Array.isArray(window.SHOPS_CONFIG) && window.SHOPS_CONFIG.length > 0) {
-        return window.SHOPS_CONFIG;[cite: 3]
+        return window.SHOPS_CONFIG;[cite: 1]
       }
       return FALLBACK_SHOPS;
     }
@@ -302,13 +315,14 @@
       return saudiTime.toISOString().slice(0, 10);
     }
 
-    // --- 4-Digit Direct PIN Lock Mechanics ---
+    // --- 4-Digit Numpad Mechanics ---
     function pressKey(num) {
       if (enteredPin.length < 4) {
-        enteredPin += num;
+        enteredPin += String(num);
         updatePinDots();
+        clearErrorText();
         if (enteredPin.length === 4) {
-          setTimeout(verify4DigitPin, 100);
+          setTimeout(checkAndLoginNow, 120);
         }
       }
     }
@@ -317,12 +331,14 @@
       if (enteredPin.length > 0) {
         enteredPin = enteredPin.slice(0, -1);
         updatePinDots();
+        clearErrorText();
       }
     }
 
     function clearPinInput() {
       enteredPin = "";
       updatePinDots();
+      clearErrorText();
     }
 
     function updatePinDots() {
@@ -332,20 +348,35 @@
       }
     }
 
-    function verify4DigitPin() {
-      const masterPin = typeof window.MASTER_PIN !== 'undefined' ? window.MASTER_PIN : "0000";[cite: 3]
+    function clearErrorText() {
+      const err = document.getElementById('pin-error-msg');
+      if (err) err.innerText = "";
+    }
+
+    function showPinError(msg) {
+      const err = document.getElementById('pin-error-msg');
+      if (err) err.innerText = msg;
+    }
+
+    function checkAndLoginNow() {
+      const pinStr = String(enteredPin).trim();
+      if (!pinStr) return;
+
+      const masterPin = typeof window.MASTER_PIN !== 'undefined' ? String(window.MASTER_PIN).trim() : "0000";[cite: 1]
       const shops = getAllShops();
 
-      if (enteredPin === masterPin) {
+      // Master PIN Check
+      if (pinStr === masterPin) {
         openMasterBranchPicker();
         return;
       }
 
-      const matchedShop = shops.find(s => s.pin === enteredPin);
+      // Exact PIN Match (Loose string/number safe)
+      const matchedShop = shops.find(s => String(s.pin).trim() === pinStr);
       if (matchedShop) {
         activateKdsShop(matchedShop);
       } else {
-        alert("തെറ്റായ PIN നമ്പർ! വീണ്ടും നൽകുക.");
+        showPinError("തെറ്റായ PIN! വീണ്ടും നൽകുക.");
         clearPinInput();
       }
     }
@@ -370,30 +401,51 @@
     }
 
     async function activateKdsShop(s) {
-      currentShop = s;
-      localStorage.setItem('kds_active_shop_id', s.id);
-      document.getElementById('kds-pin-overlay').style.display = 'none';
-      clearPinInput();
+      try {
+        currentShop = s;
+        localStorage.setItem('kds_active_shop_id', s.id);
 
-      document.getElementById('header-shop-name').innerText = `🍗 ${s.name} (KDS)`;
-      document.getElementById('business-date-badge').innerText = `📅 Shift: ${getSaudiBusinessDate()}`;
+        // Hide overlay immediately
+        const overlay = document.getElementById('kds-pin-overlay');
+        if (overlay) overlay.style.display = 'none';
+        clearPinInput();
 
-      // Set saved station & sound
-      document.getElementById('station-filter-select').value = currentStation;
-      const savedSound = localStorage.getItem('kds_sound_mode') || 'chime';
-      document.getElementById('sound-type-select').value = savedSound;
+        const headName = document.getElementById('header-shop-name');
+        if (headName) headName.innerText = `🍗 ${s.name} (KDS)`;
 
-      // Load local cache immediately
-      liveOrders = JSON.parse(localStorage.getItem(`kds_live_${s.id}`)) || [];
-      historyOrders = JSON.parse(localStorage.getItem(`kds_history_${s.id}`)) || [];
-      renderLiveGrid();
+        const dateBadge = document.getElementById('business-date-badge');
+        if (dateBadge) dateBadge.innerText = `📅 Shift: ${getSaudiBusinessDate()}`;
 
-      // Connect Supabase Cloud
-      if (s.url && s.key && window.supabase) {
-        supabaseClient = window.supabase.createClient(s.url, s.key);
-        await fetchLiveOrdersFromCloud();
-        await fetchHistoryFromCloud();
-        listenSupabaseRealtime();
+        const stationSelect = document.getElementById('station-filter-select');
+        if (stationSelect) stationSelect.value = currentStation;
+
+        const soundSelect = document.getElementById('sound-type-select');
+        const savedSound = localStorage.getItem('kds_sound_mode') || 'chime';
+        if (soundSelect) soundSelect.value = savedSound;
+
+        // Safely load local cache
+        try {
+          liveOrders = JSON.parse(localStorage.getItem(`kds_live_${s.id}`)) || [];
+          if (!Array.isArray(liveOrders)) liveOrders = [];
+        } catch(e) { liveOrders = []; }
+
+        try {
+          historyOrders = JSON.parse(localStorage.getItem(`kds_history_${s.id}`)) || [];
+          if (!Array.isArray(historyOrders)) historyOrders = [];
+        } catch(e) { historyOrders = []; }
+
+        renderLiveGrid();
+
+        // Connect Supabase Cloud
+        if (s.url && s.key && window.supabase) {
+          supabaseClient = window.supabase.createClient(s.url, s.key);
+          await fetchLiveOrdersFromCloud();
+          await fetchHistoryFromCloud();
+          listenSupabaseRealtime();
+        }
+      } catch (err) {
+        console.error("Critical activateKdsShop Error:", err);
+        alert("KDS ലോഡ് ചെയ്യുന്നതിൽ എറർ: " + err.message);
       }
     }
 
@@ -470,7 +522,6 @@
     async function fetchLiveOrdersFromCloud() {
       if (!supabaseClient || !currentShop) return;
       try {
-        const bDate = getSaudiBusinessDate();
         const { data } = await supabaseClient
           .from('orders')
           .select('*')
@@ -491,7 +542,6 @@
     async function fetchHistoryFromCloud() {
       if (!supabaseClient || !currentShop) return;
       try {
-        const bDate = getSaudiBusinessDate();
         const { data } = await supabaseClient
           .from('orders')
           .select('*')
@@ -632,21 +682,29 @@
       }
     }
 
-    // --- Render Live Grid with Station Routing ---
+    // --- Render Live Grid with Station Routing & Robust Type Safety ---
     function renderLiveGrid() {
       const container = document.getElementById('kds-orders-container');
+      if (!container) return;
       const now = Date.now();
 
       // Station Filtering
       let displayOrders = liveOrders.map(order => {
-        let items = order.items || [];
+        let rawItems = order.items || [];
+        if (typeof rawItems === 'string') {
+          try { rawItems = JSON.parse(rawItems); } catch(e) { rawItems = []; }
+        }
+        if (!Array.isArray(rawItems)) rawItems = [];
+
+        let items = rawItems;
         if (currentStation !== 'All') {
           items = items.filter(it => (it.station || 'Main Kitchen') === currentStation);
         }
         return { ...order, filteredItems: items };
-      }).filter(order => order.filteredItems.length > 0);
+      }).filter(order => order.filteredItems && order.filteredItems.length > 0);
 
-      document.getElementById('live-count').innerText = displayOrders.length;
+      const countEl = document.getElementById('live-count');
+      if (countEl) countEl.innerText = displayOrders.length;
 
       if (displayOrders.length === 0) {
         container.innerHTML = `
@@ -661,7 +719,8 @@
       container.innerHTML = '';
 
       displayOrders.forEach(order => {
-        const elapsedSec = Math.floor((now - order.id) / 1000);
+        const orderTimeMs = Number(order.id) || now;
+        const elapsedSec = Math.floor((now - orderTimeMs) / 1000);
         const mins = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
         const secs = String(elapsedSec % 60).padStart(2, '0');
         const isLate = elapsedSec > 600;
@@ -673,11 +732,11 @@
           return `
             <div class="kds-item-row">
               <div class="kds-item-name">
-                ${it.name}
+                ${it.name || ''}
                 ${isSpicy ? `<span class="spicy-tag">🌶️ SPICY</span>` : ''}
                 <span class="item-station-tag">[${it.station || 'Main'}]</span>
               </div>
-              <div class="kds-item-qty">X ${it.qty}</div>
+              <div class="kds-item-qty">X ${it.qty || 1}</div>
             </div>
           `;
         }).join('');
@@ -686,7 +745,7 @@
         card.className = 'order-card';
         card.innerHTML = `
           <div class="card-top">
-            <span class="card-token">${order.token}</span>
+            <span class="card-token">${order.token || 'Token'}</span>
             <span class="timer-badge ${isLate ? 'timer-late' : ''}" id="timer-${order.id}">⏱️ ${mins}:${secs}</span>
           </div>
           <div class="card-meta">
@@ -706,10 +765,11 @@
       });
     }
 
-    // --- Render History Table ---
+    // --- Render History Table Safely ---
     function renderHistoryTable() {
       const tbody = document.getElementById('history-table-body');
-      const searchVal = document.getElementById('history-search-input').value.toLowerCase().trim();
+      if (!tbody) return;
+      const searchVal = (document.getElementById('history-search-input').value || '').toLowerCase().trim();
 
       let list = historyOrders;
       if (searchVal) {
@@ -729,12 +789,18 @@
       }
 
       list.forEach(o => {
-        const itemsSummary = (o.items || []).map(it => `${it.name} (x${it.qty})`).join(', ');
+        let rawItems = o.items || [];
+        if (typeof rawItems === 'string') {
+          try { rawItems = JSON.parse(rawItems); } catch(e) { rawItems = []; }
+        }
+        if (!Array.isArray(rawItems)) rawItems = [];
+
+        const itemsSummary = rawItems.map(it => `${it.name || ''} (x${it.qty || 1})`).join(', ');
         const custPhone = o.customer_phone || o.phone || '-';
 
         tbody.innerHTML += `
           <tr>
-            <td><strong style="color:#facc15; font-size:15px;">${o.token}</strong></td>
+            <td><strong style="color:#facc15; font-size:15px;">${o.token || '-'}</strong></td>
             <td>${o.order_type || o.type || '-'}</td>
             <td style="color:#38bdf8;">${custPhone}</td>
             <td style="max-width:250px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${itemsSummary}</td>
@@ -759,7 +825,8 @@
       liveOrders.forEach(order => {
         const el = document.getElementById(`timer-${order.id}`);
         if (el) {
-          const elapsedSec = Math.floor((now - order.id) / 1000);
+          const orderTimeMs = Number(order.id) || now;
+          const elapsedSec = Math.floor((now - orderTimeMs) / 1000);
           const mins = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
           const secs = String(elapsedSec % 60).padStart(2, '0');
           el.innerText = `⏱️ ${mins}:${secs}`;
@@ -771,9 +838,10 @@
     // Keyboard support for 4-Digit PIN
     window.addEventListener('keydown', (e) => {
       const overlay = document.getElementById('kds-pin-overlay');
-      if (overlay.style.display !== 'none') {
+      if (overlay && overlay.style.display !== 'none') {
         if (e.key >= '0' && e.key <= '9') pressKey(e.key);
         else if (e.key === 'Backspace') pressBackspace();
+        else if (e.key === 'Enter') checkAndLoginNow();
       }
     });
 
