@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Broasted POS - Multi-Branch Cloud Edition</title>
-  <!-- Central Config & Libraries -->
+  <!-- Central Config & External Libraries -->
   <script src="config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -39,7 +39,7 @@
       border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; width: 160px;
     }
 
-    /* ================= MAIN POS INTERFACE ================= */
+    /* ================= MAIN POS ================= */
     .menu-panel { flex: 6.8; display: flex; flex-direction: column; padding: 12px 16px; border-right: 2px solid #cbd5e1; }
     .top-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
     .top-actions { display: flex; gap: 8px; align-items: center; }
@@ -49,7 +49,7 @@
     .btn-switch-shop { background: #ef4444; }
     .shop-badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; margin-left: 6px; }
 
-    /* Order Options Bar */
+    /* Order Options */
     .order-bar {
       display: flex; gap: 10px; align-items: center; background: #ffffff; padding: 10px;
       border-radius: 10px; margin-bottom: 10px; border: 1px solid #e2e8f0;
@@ -66,7 +66,7 @@
     .btn-back { background: #e2e8f0; border: 1px solid #cbd5e1; padding: 6px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; display: none; }
     .current-title { font-size: 16px; font-weight: bold; color: #334155; }
 
-    /* Grid for Categories / Items */
+    /* Grid */
     .grid-container { flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 12px; overflow-y: auto; align-content: start; }
     .pos-card {
       background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0;
@@ -80,7 +80,7 @@
     .card-info h4 { font-size: 13px; color: #0f172a; line-height: 1.2; }
     .card-info .price { color: #e11d48; font-weight: bold; font-size: 13px; margin-top: 2px; }
 
-    /* Right Cart Panel */
+    /* Cart Panel */
     .cart-panel { flex: 3.2; background: #ffffff; display: flex; flex-direction: column; padding: 12px; }
     .cart-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; }
     .token-badge { background: #fee2e2; color: #dc2626; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 13px; }
@@ -133,7 +133,7 @@
 </head>
 <body>
 
-  <!-- ================= SHOP SELECTION MODAL ================= -->
+  <!-- ================= SHOP SELECTION OVERLAY ================= -->
   <div id="shop-auth-overlay">
     <div class="auth-card">
       <h2 style="color:#f8fafc; margin-bottom:4px;">🏪 ബ്രാഞ്ച് തിരഞ്ഞെടുക്കുക</h2>
@@ -152,7 +152,7 @@
     </div>
   </div>
 
-  <!-- ================= MAIN POS ================= -->
+  <!-- ================= MAIN POS INTERFACE ================= -->
   <div class="menu-panel">
     <div class="top-header">
       <div>
@@ -280,7 +280,7 @@
   <!-- Settings & Backup Modal -->
   <div class="modal-backdrop" id="settings-modal">
     <div class="modal-box settings-box">
-      <h3>⚙️ സിസ്റ്റം സെറ്റിങ്സ് & ബാക്കപ്പ് മാനേജ്‌മെന്റ്</h3>
+      <h3>⚙️ സിസ്റ്റം സെറ്റിങ്സ് & ഐറ്റം മാനേജ്‌മെന്റ്</h3>
 
       <!-- Printer Mode -->
       <div style="background:#f8fafc; padding:10px; border-radius:8px; margin-top:8px;">
@@ -295,26 +295,16 @@
         </div>
       </div>
 
-      <!-- Backup & Restore -->
-      <div style="background:#f8fafc; padding:10px; border-radius:8px; margin-top:8px;">
-        <h4>💾 ബാക്കപ്പ് & റീസ്റ്റോർ (Backup & Restore):</h4>
-        <div style="display:flex; gap:10px; margin-top:6px; align-items:center;">
-          <button onclick="exportBackupData()" style="background:#0284c7; color:#fff; border:none; padding:7px 12px; border-radius:4px; cursor:pointer; font-weight:bold;">⬇️ ബാക്കപ്പ് ഡൗൺലോഡ് (Export)</button>
-          <input type="file" id="restore-file-input" accept=".json" style="display:none;" onchange="importBackupData(event)">
-          <button onclick="document.getElementById('restore-file-input').click()" style="background:#475569; color:#fff; border:none; padding:7px 12px; border-radius:4px; cursor:pointer; font-weight:bold;">⬆️ ബാക്കപ്പ് റീസ്റ്റോർ (Restore)</button>
-        </div>
-      </div>
-
       <!-- Shop Profile -->
       <div style="background:#f8fafc; padding:10px; border-radius:8px; margin-top:8px;">
-        <h4>സ്ഥാപന വിവരങ്ങൾ (VAT Profile):</h4>
+        <h4>സ്ഥാപന വിവരങ്ങൾ (VAT Profile - Cloud Sync):</h4>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 4px;">
           <input type="text" id="set-shop-ar" placeholder="ഷോപ്പ് പേര് (Arabic)" style="padding:6px;">
           <input type="text" id="set-shop-en" placeholder="Shop Name (English)" style="padding:6px;">
           <input type="text" id="set-vat-no" placeholder="15-Digit VAT Number" style="padding:6px;">
           <input type="text" id="set-phone" placeholder="ഷോപ്പ് ഫോൺ നമ്പർ" style="padding:6px;">
         </div>
-        <button onclick="saveShopProfile()" style="background:#1e293b; color:#fff; border:none; padding:6px 12px; border-radius:4px; margin-top:6px; cursor:pointer;">Save Profile</button>
+        <button onclick="saveShopProfile()" style="background:#1e293b; color:#fff; border:none; padding:6px 12px; border-radius:4px; margin-top:6px; cursor:pointer;">Save Profile to Cloud</button>
       </div>
 
       <!-- Add or Edit Item -->
@@ -342,7 +332,7 @@
       </div>
 
       <!-- Item Management Table -->
-      <h4 style="margin-top:10px;">നിലവിലുള്ള ഐറ്റങ്ങൾ എഡിറ്റ് ചെയ്യുക:</h4>
+      <h4 style="margin-top:10px;">നിലവിലുള്ള ഐറ്റങ്ങൾ എഡിറ്റ് ചെയ്യുക (Cloud Synced):</h4>
       <div style="max-height: 180px; overflow-y: auto;">
         <table class="set-table">
           <thead><tr><th>Photo</th><th>Item</th><th>Price</th><th>Category</th><th>Spicy?</th><th>Action</th></tr></thead>
@@ -359,7 +349,7 @@
   <div id="print-area"></div>
 
   <script>
-    // ================= MULTI-SHOP & SUPABASE STATE =================
+    // ================= STATE & CONFIG =================
     let currentShop = null;
     let selectedPendingShop = null;
     let supabaseClient = null;
@@ -393,10 +383,10 @@
       { id: 11, name: "Extra Bread", price: 1.00, catId: "addons", hasFlavor: false, img: "" }
     ];
 
-    let shop = JSON.parse(localStorage.getItem('pos_shop')) || defaultShop;
-    let categories = JSON.parse(localStorage.getItem('pos_cats_v4')) || defaultCategories;
-    let items = JSON.parse(localStorage.getItem('pos_items_v4')) || defaultItems;
-    let orderHistory = JSON.parse(localStorage.getItem('pos_orders_v2')) || [];
+    let shop = defaultShop;
+    let categories = defaultCategories;
+    let items = defaultItems;
+    let orderHistory = [];
     let printerMode = localStorage.getItem('pos_printer_mode') || 'combined';
 
     let cart = [];
@@ -407,7 +397,7 @@
     let tempImageBase64 = "";
     let lastCompletedOrder = null;
 
-    // --- Dynamic Multi-Shop Auth Flow ---
+    // --- Authentication & Multi-Shop Flow ---
     function initMultiShopAuth() {
       const savedShopId = localStorage.getItem('pos_active_shop_id');
       const shops = window.SHOPS_CONFIG || [];
@@ -475,23 +465,25 @@
       }
     }
 
-    function activateShop(s) {
+    async function activateShop(s) {
       currentShop = s;
       localStorage.setItem('pos_active_shop_id', s.id);
       document.getElementById('shop-auth-overlay').style.display = 'none';
 
-      // Initialize Dynamic Supabase Client
-      if (s.url && s.key && window.supabase) {
-        supabaseClient = window.supabase.createClient(s.url, s.key);
-      }
-
-      // Update UI Header
       document.getElementById('top-shop-name').innerText = s.name;
       const badge = document.getElementById('top-shop-badge');
       badge.innerText = s.id.toUpperCase();
       badge.className = `shop-badge ${s.badgeBg || 'bg-emerald-500/20 text-emerald-300'}`;
 
-      showCategories();
+      // Initialize Supabase Client
+      if (s.url && s.key && window.supabase) {
+        supabaseClient = window.supabase.createClient(s.url, s.key);
+        await syncCloudDataForShop(s.id);
+      } else {
+        // Fallback to local
+        loadLocalFallbackData();
+        showCategories();
+      }
     }
 
     function switchShop() {
@@ -503,7 +495,102 @@
       }
     }
 
-    // --- POS Main Functions ---
+    // --- Cloud Data Sync (Settings, Categories, Menu Items) ---
+    async function syncCloudDataForShop(shopId) {
+      if (!supabaseClient) return;
+
+      try {
+        // 1. Sync Shop Profile
+        const { data: shopData } = await supabaseClient
+          .from('shop_settings')
+          .select('*')
+          .eq('shop_id', shopId)
+          .single();
+
+        if (shopData) {
+          shop = {
+            nameAr: shopData.name_ar || defaultShop.nameAr,
+            nameEn: shopData.name_en || currentShop.name,
+            vatNo: shopData.vat_no || defaultShop.vatNo,
+            phone: shopData.phone || defaultShop.phone
+          };
+          printerMode = shopData.printer_mode || printerMode;
+        }
+
+        // 2. Sync Categories
+        const { data: catData } = await supabaseClient
+          .from('categories')
+          .select('*')
+          .eq('shop_id', shopId);
+
+        if (catData && catData.length > 0) {
+          categories = catData;
+        } else {
+          // Initialize defaults in cloud
+          categories = defaultCategories;
+          for (let c of defaultCategories) {
+            await supabaseClient.from('categories').upsert({
+              id: c.id,
+              shop_id: shopId,
+              name: c.name,
+              icon: c.icon,
+              img: c.img
+            });
+          }
+        }
+
+        // 3. Sync Menu Items
+        const { data: itemData } = await supabaseClient
+          .from('menu_items')
+          .select('*')
+          .eq('shop_id', shopId);
+
+        if (itemData && itemData.length > 0) {
+          items = itemData.map(i => ({
+            id: i.id,
+            name: i.name,
+            price: parseFloat(i.price),
+            catId: i.cat_id,
+            hasFlavor: i.has_flavor,
+            img: i.img
+          }));
+        } else {
+          // Initialize defaults in cloud
+          items = defaultItems;
+          for (let it of defaultItems) {
+            await supabaseClient.from('menu_items').upsert({
+              id: it.id,
+              shop_id: shopId,
+              name: it.name,
+              price: it.price,
+              cat_id: it.catId,
+              has_flavor: it.hasFlavor,
+              img: it.img
+            });
+          }
+        }
+
+        // Cache locally for offline safety
+        localStorage.setItem(`pos_shop_${shopId}`, JSON.stringify(shop));
+        localStorage.setItem(`pos_cats_${shopId}`, JSON.stringify(categories));
+        localStorage.setItem(`pos_items_${shopId}`, JSON.stringify(items));
+
+      } catch (err) {
+        console.warn("Cloud sync warning, fallback to cache:", err);
+        loadLocalFallbackData();
+      }
+
+      showCategories();
+    }
+
+    function loadLocalFallbackData() {
+      const shopId = currentShop ? currentShop.id : 'default';
+      shop = JSON.parse(localStorage.getItem(`pos_shop_${shopId}`)) || defaultShop;
+      categories = JSON.parse(localStorage.getItem(`pos_cats_${shopId}`)) || defaultCategories;
+      items = JSON.parse(localStorage.getItem(`pos_items_${shopId}`)) || defaultItems;
+    }
+
+    // --- POS UI & Billing ---
     function updateHeaderInfo() {
       const now = new Date();
       document.getElementById('current-date-time').innerText = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
@@ -673,6 +760,7 @@
       finalizeOrder('Mada/Card');
     }
 
+    // --- Order Finalization with Supabase Sync ---
     async function finalizeOrder(method) {
       closeModals();
       const grandTotal = parseFloat(document.getElementById('grand-total').innerText);
@@ -682,10 +770,11 @@
       const phone = document.getElementById('cust-phone').value.trim();
       const todayStr = new Date().toISOString().slice(0, 10);
       const timeStr = new Date().toLocaleTimeString();
+      const currentShopId = currentShop ? currentShop.id : 'shop1';
 
       const orderObj = {
         id: Date.now(),
-        shop_id: currentShop ? currentShop.id : 'default',
+        shop_id: currentShopId,
         date: todayStr,
         time: timeStr,
         token: token,
@@ -699,19 +788,20 @@
         status: 'pending'
       };
 
-      // 1. Local Persistence
+      // 1. Local Cache
       orderHistory.push(orderObj);
       localStorage.setItem('pos_orders_v2', JSON.stringify(orderHistory));
       lastCompletedOrder = orderObj;
 
-      // 2. Broadcast local event
+      // 2. Broadcast to local KDS
       kdsChannel.postMessage({ type: 'NEW_ORDER', order: orderObj });
 
       // 3. Supabase Cloud Sync
       if (supabaseClient) {
         try {
-          await supabaseClient.from('orders').insert([{
+          const { error } = await supabaseClient.from('orders').insert([{
             id: orderObj.id,
+            shop_id: currentShopId,
             token: orderObj.token,
             order_type: orderObj.type,
             customer_phone: orderObj.phone,
@@ -722,8 +812,16 @@
             payment_method: orderObj.paymentMethod,
             status: 'pending'
           }]);
+
+          if (error) {
+            console.error("Supabase Save Error:", error);
+            alert("Supabase Error: " + error.message);
+          } else {
+            console.log("Supabase Cloud Sync Successful!");
+          }
         } catch (err) {
-          console.error("Supabase Sync Error:", err);
+          console.error("Network Error:", err);
+          alert("നെറ്റ്‌വർക്ക് തകരാർ കാരണം ക്ലൗഡിലേക്ക് സിങ്ക് ആയില്ല!");
         }
       }
 
@@ -736,6 +834,7 @@
       handleOrderPrinting(orderObj);
     }
 
+    // --- ZATCA & Thermal Printing ---
     function getCustomerBillHTML(order) {
       let itemsRows = order.items.map(it => `
         <div class="receipt-row">
@@ -865,6 +964,7 @@
       setTimeout(() => window.print(), 200);
     }
 
+    // --- Reports ---
     function openDailyReportModal() {
       const todayStr = new Date().toISOString().slice(0, 10);
       const todaysOrders = orderHistory.filter(o => o.date === todayStr);
@@ -914,6 +1014,7 @@
       setTimeout(() => window.print(), 250);
     }
 
+    // --- Image Resize & Canvas ---
     function handleImageFileSelect(event) {
       const file = event.target.files[0];
       if (!file) return;
@@ -962,6 +1063,7 @@
       document.getElementById('item-remove-img-btn').style.display = 'none';
     }
 
+    // --- Settings Modal & Supabase Cloud Sync ---
     function openSettingsModal() {
       document.getElementById('set-shop-ar').value = shop.nameAr;
       document.getElementById('set-shop-en').value = shop.nameEn;
@@ -978,17 +1080,36 @@
     function savePrinterMode() {
       printerMode = document.getElementById('set-printer-mode').value;
       localStorage.setItem('pos_printer_mode', printerMode);
-      alert("പ്രിന്റർ മോഡ് സേവ് ചെയ്തു!");
+      saveShopProfile();
     }
 
-    function saveShopProfile() {
+    async function saveShopProfile() {
       shop.nameAr = document.getElementById('set-shop-ar').value.trim();
       shop.nameEn = document.getElementById('set-shop-en').value.trim();
       shop.vatNo = document.getElementById('set-vat-no').value.trim();
       shop.phone = document.getElementById('set-phone').value.trim();
-      localStorage.setItem('pos_shop', JSON.stringify(shop));
+      const shopId = currentShop ? currentShop.id : 'shop1';
+
+      localStorage.setItem(`pos_shop_${shopId}`, JSON.stringify(shop));
       updateHeaderInfo();
-      alert("ഷോപ്പ് വിവരങ്ങൾ സേവ് ചെയ്തു!");
+
+      if (supabaseClient) {
+        try {
+          const { error } = await supabaseClient.from('shop_settings').upsert({
+            shop_id: shopId,
+            name_ar: shop.nameAr,
+            name_en: shop.nameEn,
+            vat_no: shop.vatNo,
+            phone: shop.phone,
+            printer_mode: printerMode,
+            updated_at: new Date().toISOString()
+          });
+          if (error) alert("Supabase Save Error: " + error.message);
+          else alert("ഷോപ്പ് വിവരങ്ങൾ ക്ലൗഡിൽ സേവ് ചെയ്തു!");
+        } catch (err) {
+          console.error(err);
+        }
+      }
     }
 
     function renderCatDropdown() {
@@ -997,38 +1118,67 @@
       categories.forEach(c => sel.innerHTML += `<option value="${c.id}">${c.name}</option>`);
     }
 
-    function saveItemFromForm() {
+    // --- Add / Edit Item (Directly to Supabase Cloud) ---
+    async function saveItemFromForm() {
       const name = document.getElementById('item-name-input').value.trim();
       const price = parseFloat(document.getElementById('item-price-input').value);
       const catId = document.getElementById('item-cat-select').value;
       const hasFlavor = document.getElementById('item-spicy-checkbox').checked;
+      const shopId = currentShop ? currentShop.id : 'shop1';
 
       if (!name || isNaN(price)) return alert("ശരിയായ പേരും വിലയും നൽകുക!");
 
+      let targetItem = null;
+
       if (editingItemId) {
-        const item = items.find(i => i.id === editingItemId);
-        if (item) {
-          item.name = name;
-          item.price = price;
-          item.catId = catId;
-          item.hasFlavor = hasFlavor;
-          item.img = tempImageBase64;
+        targetItem = items.find(i => i.id === editingItemId);
+        if (targetItem) {
+          targetItem.name = name;
+          targetItem.price = price;
+          targetItem.catId = catId;
+          targetItem.hasFlavor = hasFlavor;
+          if (tempImageBase64) targetItem.img = tempImageBase64;
         }
       } else {
-        items.push({
+        targetItem = {
           id: Date.now(),
           name: name,
           price: price,
           catId: catId,
           hasFlavor: hasFlavor,
           img: tempImageBase64
-        });
+        };
+        items.push(targetItem);
       }
 
-      localStorage.setItem('pos_items_v4', JSON.stringify(items));
+      // 1. Local Cache
+      localStorage.setItem(`pos_items_${shopId}`, JSON.stringify(items));
       resetItemForm();
       renderSettingsTable();
       showCategories();
+
+      // 2. Supabase Cloud Sync
+      if (supabaseClient) {
+        try {
+          const { error } = await supabaseClient.from('menu_items').upsert({
+            id: targetItem.id,
+            shop_id: shopId,
+            name: targetItem.name,
+            price: targetItem.price,
+            cat_id: targetItem.catId,
+            has_flavor: targetItem.hasFlavor,
+            img: targetItem.img || null
+          });
+
+          if (error) {
+            alert("Supabase Item Error: " + error.message);
+          } else {
+            console.log("Item Cloud Synced!");
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      }
     }
 
     function startEditItem(id) {
@@ -1051,7 +1201,7 @@
         removeSelectedImage();
       }
 
-      document.getElementById('btn-save-item').innerText = "Update Item (സേവ് ചെയ്യുക)";
+      document.getElementById('btn-save-item').innerText = "Update Item (ക്ലൗഡിൽ സേവ് ചെയ്യുക)";
       document.getElementById('btn-cancel-edit').style.display = 'inline-block';
       document.getElementById('item-form-box').scrollIntoView({ behavior: 'smooth' });
     }
@@ -1088,66 +1238,25 @@
       });
     }
 
-    function deleteItem(id) {
-      if (confirm("ഈ ഐറ്റം ഒഴിവാക്കണോ?")) {
+    async function deleteItem(id) {
+      if (confirm("ഈ ഐറ്റം ക്ലൗഡിൽ നിന്നും പൂർണ്ണമായി ഒഴിവാക്കണോ?")) {
+        const shopId = currentShop ? currentShop.id : 'shop1';
         items = items.filter(i => i.id !== id);
-        localStorage.setItem('pos_items_v4', JSON.stringify(items));
+        localStorage.setItem(`pos_items_${shopId}`, JSON.stringify(items));
         renderSettingsTable();
         showCategories();
+
+        if (supabaseClient) {
+          try {
+            await supabaseClient.from('menu_items').delete().match({ id: id, shop_id: shopId });
+          } catch (err) {
+            console.error(err);
+          }
+        }
       }
     }
 
-    function exportBackupData() {
-      const backupObj = {
-        shop: shop,
-        categories: categories,
-        items: items,
-        printerMode: printerMode,
-        backupDate: new Date().toISOString()
-      };
-
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupObj, null, 2));
-      const downloadAnchor = document.createElement('a');
-      downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", `broast_pos_backup_${new Date().toISOString().slice(0,10)}.json`);
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      downloadAnchor.remove();
-    }
-
-    function importBackupData(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        try {
-          const parsed = JSON.parse(e.target.result);
-          if (parsed.items && parsed.categories) {
-            shop = parsed.shop || defaultShop;
-            categories = parsed.categories;
-            items = parsed.items;
-            printerMode = parsed.printerMode || 'combined';
-
-            localStorage.setItem('pos_shop', JSON.stringify(shop));
-            localStorage.setItem('pos_cats_v4', JSON.stringify(categories));
-            localStorage.setItem('pos_items_v4', JSON.stringify(items));
-            localStorage.setItem('pos_printer_mode', printerMode);
-
-            alert("ബാക്കപ്പ് വിജയകരമായി റീസ്റ്റോർ ചെയ്തു!");
-            openSettingsModal();
-            showCategories();
-          } else {
-            alert("തെറ്റായ ഫയൽ ഫോർമാറ്റ്!");
-          }
-        } catch (err) {
-          alert("ഫയൽ വായിക്കാൻ സാധിച്ചില്ല!");
-        }
-      };
-      reader.readAsText(file);
-    }
-
-    // Run Auth & Init
+    // Launch App
     initMultiShopAuth();
   </script>
 </body>
