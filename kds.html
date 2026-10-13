@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kitchen Display System (KDS) - Broasted</title>
+  <style>
+    * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 0; }
+    body { background: #0f172a; color: #f8fafc; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+    /* Top KDS Bar */
+    .kds-header {
+      background: #1e293b; padding: 12px 20px; display: flex; justify-content: space-between;
+      align-items: center; border-bottom: 2px solid #334155;
+    }
+    .kds-title { display: flex; align-items: center; gap: 12px; font-size: 20px; font-weight: bold; }
+    .status-badge { background: #16a34a; color: #fff; font-size: 12px; padding: 4px 10px; border-radius: 20px; }
+    .btn-sound-test { background: #334155; color: #fff; border: 1px solid #475569; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; }
+    .btn-sound-test:hover { background: #475569; }
+
+    /* Order Grid */
+    .orders-grid {
+      flex: 1; padding: 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px; overflow-y: auto; align-content: start;
+    }
+
+    /* Single Order Ticket Card */
+    .order-card {
+      background: #1e293b; border: 2px solid #334155; border-radius: 12px;
+      display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      animation: popIn 0.25s ease-out;
+    }
+    @keyframes popIn {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    /* Header of card */
+    .card-top {
+      background: #334155; padding: 10px 14px; display: flex; justify-content: space-between;
+      align-items: center; border-bottom: 1px solid #475569;
+    }
+    .card-token { font-size: 24px; font-weight: 900; color: #facc15; }
+    .timer-badge { font-family: monospace; font-size: 14px; font-weight: bold; padding: 3px 8px; border-radius: 4px; background: #0f172a; }
+    .timer-late { background: #dc2626 !important; color: #fff; }
+
+    .card-meta {
+      padding: 6px 14px; font-size: 13px; color: #94a3b8; display: flex; justify-content: space-between;
+      border-bottom: 1px dashed #334155; background: #1a2234;
+    }
+
+    /* Items body */
+    .card-items { flex: 1; padding: 12px 14px; max-height: 250px; overflow-y: auto; }
+    .kds-item-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 6px 0; border-bottom: 1px solid #283548; font-size: 16px;
+    }
+    .kds-item-name { font-weight: 700; color: #ffffff; }
+    .spicy-tag { color: #ef4444; font-weight: bold; font-size: 13px; margin-left: 4px; }
+    .kds-item-qty {
+      background: #facc15; color: #000; font-weight: 900; font-size: 18px;
+      padding: 2px 10px; border-radius: 6px;
+    }
+
+    /* Actions */
+    .card-actions { padding: 10px 14px; background: #1a2234; border-top: 1px solid #334155; }
+    .btn-done {
+      width: 100%; padding: 12px; background: #16a34a; color: #fff; font-size: 16px;
+      font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: 0.1s;
+    }
+    .btn-done:active { transform: scale(0.97); background: #15803d; }
+
+    /* Empty state */
+    .empty-state {
+      grid-column: 1 / -1; display: flex; flex-direction: column; justify-content: center;
+      align-items: center; height: 60vh; color: #64748b; font-size: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="kds-header">
+    <div class="kds-title">
+      <span>🍗 KITCHEN DISPLAY (KDS)</span>
+      <span class="status-badge" id="live-indicator">🟢 LIVE</span>
+    </div>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <span id="active-count" style="font-weight:bold; color:#facc15;">0 Orders Pending</span>
+      <button class="btn-sound-test" onclick="playBeepSound()">🔔 സൗണ്ട് ടെസ്റ്റ്</button>
+    </div>
+  </div>
+
+  <div class="orders-grid" id="kds-orders-container">
+    <div class="empty-state">
+      <div style="font-size: 50px; margin-bottom: 10px;">🧑‍🍳</div>
+      <div>പുതിയ ഓർഡറുകൾ ഒന്നും വന്നിട്ടില്ല (Waiting for orders...)</div>
+    </div>
+  </div>
+
+  <script>
+    // Live KDS Communication Channel
+    const kdsChannel = new BroadcastChannel('broast_pos_channel');
+    let activeOrders = JSON.parse(localStorage.getItem('kds_active_orders')) || [];
+
+    // Web Audio Synthesizer Beep (No MP3 files needed!)
+    function playBeepSound() {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Two-tone alert chime (High then higher)
+        const osc1 = audioCtx.createOscillator();
+        const gain1 = audioCtx.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+        gain1.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain1.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+        osc1.connect(gain1);
+        gain1.connect(audioCtx.destination);
+        osc1.start();
+        osc1.stop(audioCtx.currentTime + 0.2);
+
+        setTimeout(() => {
+          const osc2 = audioCtx.createOscillator();
+          const gain2 = audioCtx.createGain();
+          osc2.type = 'sine';
+          osc2.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
+          gain2.gain.setValueAtTime(0.4, audioCtx.currentTime);
+          gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+          osc2.connect(gain2);
+          gain2.connect(audioCtx.destination);
+          osc2.start();
+          osc2.stop(audioCtx.currentTime + 0.3);
+        }, 150);
+
+      } catch (err) {
+        console.log("Audio play error:", err);
+      }
+    }
+
+    // Listen for live orders from pos.html
+    kdsChannel.onmessage = function(event) {
+      if (event.data && event.data.type === 'NEW_ORDER') {
+        const newOrder = event.data.order;
+        // Avoid duplicate
+        if (!activeOrders.find(o => o.id === newOrder.id)) {
+          activeOrders.push(newOrder);
+          localStorage.setItem('kds_active_orders', JSON.stringify(activeOrders));
+          playBeepSound();
+          renderKdsGrid();
+        }
+      }
+    };
+
+    // Also sync if pos.html modified localStorage directly
+    window.addEventListener('storage', function(e) {
+      if (e.key === 'kds_active_orders') {
+        activeOrders = JSON.parse(e.newValue || '[]');
+        renderKdsGrid();
+      }
+    });
+
+    function markOrderDone(orderId) {
+      activeOrders = activeOrders.filter(o => o.id !== orderId);
+      localStorage.setItem('kds_active_orders', JSON.stringify(activeOrders));
+      renderKdsGrid();
+    }
+
+    function renderKdsGrid() {
+      const container = document.getElementById('kds-orders-container');
+      document.getElementById('active-count').innerText = `${activeOrders.length} Orders Pending`;
+
+      if (activeOrders.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div style="font-size: 50px; margin-bottom: 10px;">🧑‍🍳</div>
+            <div>പുതിയ ഓർഡറുകൾ ഒന്നും വന്നിട്ടില്ല (Waiting for orders...)</div>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = '';
+      const now = Date.now();
+
+      activeOrders.forEach(order => {
+        const elapsedSec = Math.floor((now - order.id) / 1000);
+        const mins = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
+        const secs = String(elapsedSec % 60).padStart(2, '0');
+        const isLate = elapsedSec > 600; // 10 minutes warning
+
+        let itemsHtml = order.items.map(it => {
+          const isSpicy = it.name.includes('Spicy');
+          return `
+            <div class="kds-item-row">
+              <div class="kds-item-name">
+                ${it.name}
+                ${isSpicy ? `<span class="spicy-tag">🌶️ SPICY</span>` : ''}
+              </div>
+              <div class="kds-item-qty">X ${it.qty}</div>
+            </div>
+          `;
+        }).join('');
+
+        const card = document.createElement('div');
+        card.className = 'order-card';
+        card.innerHTML = `
+          <div class="card-top">
+            <span class="card-token">${order.token}</span>
+            <span class="timer-badge ${isLate ? 'timer-late' : ''}" id="timer-${order.id}">⏱️ ${mins}:${secs}</span>
+          </div>
+          <div class="card-meta">
+            <span>${order.type}</span>
+            <span>${order.time}</span>
+          </div>
+          <div class="card-items">
+            ${itemsHtml}
+          </div>
+          <div class="card-actions">
+            <button class="btn-done" onclick="markOrderDone(${order.id})">✅ DONE (തയ്യാറായി)</button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // Refresh timers every second
+    setInterval(() => {
+      const now = Date.now();
+      activeOrders.forEach(order => {
+        const el = document.getElementById(`timer-${order.id}`);
+        if (el) {
+          const elapsedSec = Math.floor((now - order.id) / 1000);
+          const mins = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
+          const secs = String(elapsedSec % 60).padStart(2, '0');
+          el.innerText = `⏱️ ${mins}:${secs}`;
+          if (elapsedSec > 600) el.classList.add('timer-late');
+        }
+      });
+    }, 1000);
+
+    // Initial render
+    renderKdsGrid();
+  </script>
+</body>
+</html>
