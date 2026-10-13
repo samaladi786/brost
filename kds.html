@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kitchen Display System (KDS) - Multi-Shop</title>
+  <title>Kitchen Display System (KDS) - Pro Edition</title>
   <!-- Central Config & Supabase Client -->
   <script src="config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -41,64 +41,56 @@
     /* ================= TOP HEADER ================= */
     .kds-header {
       background: #1e293b; padding: 10px 20px; display: flex; justify-content: space-between;
-      align-items: center; border-bottom: 2px solid #334155;
+      align-items: center; border-bottom: 2px solid #334155; flex-wrap: wrap; gap: 10px;
     }
-    .kds-title-area { display: flex; align-items: center; gap: 12px; }
-    .shop-name-tag { font-size: 20px; font-weight: 800; color: #facc15; }
-    .status-badge { background: #16a34a; color: #fff; font-size: 11px; padding: 3px 8px; border-radius: 20px; font-weight: bold; }
-    
-    .filter-tabs { display: flex; gap: 8px; background: #0f172a; padding: 4px; border-radius: 8px; }
+    .kds-title-area { display: flex; align-items: center; gap: 10px; }
+    .shop-name-tag { font-size: 18px; font-weight: 800; color: #facc15; }
+    .live-badge { background: #16a34a; color: #fff; font-size: 11px; padding: 3px 8px; border-radius: 20px; font-weight: bold; }
+
+    /* Nav View Tabs */
+    .view-tabs { display: flex; gap: 6px; background: #0f172a; padding: 4px; border-radius: 8px; }
     .tab-btn {
       background: transparent; border: none; color: #94a3b8; padding: 6px 14px;
       border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px;
     }
     .tab-btn.active { background: #334155; color: #fff; }
 
-    .header-actions { display: flex; gap: 10px; align-items: center; }
+    .header-controls { display: flex; gap: 8px; align-items: center; }
+    .sound-select {
+      background: #0f172a; color: #f8fafc; border: 1px solid #475569; padding: 6px 10px;
+      border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer;
+    }
     .btn-top {
       background: #334155; color: #fff; border: 1px solid #475569; padding: 6px 12px;
       border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold;
     }
     .btn-switch { background: #ef4444; border-color: #dc2626; }
 
-    /* ================= ORDERS GRID ================= */
+    /* ================= LIVE ORDERS GRID ================= */
     .orders-grid {
       flex: 1; padding: 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
       gap: 16px; overflow-y: auto; align-content: start;
     }
 
     .order-card {
-      background: #1e293b; border: 2px solid #334155; border-radius: 12px;
+      background: #1e293b; border: 2px solid #f59e0b; border-radius: 12px;
       display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
       animation: popIn 0.25s ease-out;
     }
-    @keyframes popIn {
-      from { transform: scale(0.9); opacity: 0; }
-      to { transform: scale(1); opacity: 1; }
-    }
-
-    /* Status Themes */
-    .card-pending { border-color: #f59e0b; }
-    .card-pending .card-top { background: #78350f; }
-
-    .card-serving { border-color: #10b981; }
-    .card-serving .card-top { background: #064e3b; }
+    @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
     .card-top {
-      padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;
+      background: #78350f; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;
     }
-    .card-token { font-size: 22px; font-weight: 900; color: #fff; }
-    .status-pill {
-      font-size: 11px; font-weight: bold; padding: 3px 8px; border-radius: 4px; text-transform: uppercase;
-    }
-    .pill-pending { background: #f59e0b; color: #000; }
-    .pill-serving { background: #10b981; color: #fff; animation: pulse 1.5s infinite; }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+    .card-token { font-size: 24px; font-weight: 900; color: #fff; }
+    .timer-badge { font-family: monospace; font-size: 12px; font-weight: bold; padding: 3px 6px; border-radius: 4px; background: #0f172a; color: #facc15; }
+    .timer-late { background: #dc2626 !important; color: #fff; }
 
     .card-meta {
-      padding: 6px 14px; font-size: 12px; color: #94a3b8; display: flex; justify-content: space-between;
+      padding: 6px 14px; font-size: 12px; color: #cbd5e1; display: flex; justify-content: space-between;
       border-bottom: 1px dashed #334155; background: #1a2234;
     }
+    .meta-phone { color: #38bdf8; font-weight: bold; }
 
     .card-items { flex: 1; padding: 10px 14px; max-height: 250px; overflow-y: auto; }
     .kds-item-row {
@@ -113,15 +105,33 @@
     }
 
     .card-actions { padding: 10px 14px; background: #1a2234; border-top: 1px solid #334155; }
-    .btn-action {
-      width: 100%; padding: 10px; font-size: 15px; font-weight: bold; border: none;
-      border-radius: 8px; cursor: pointer; transition: 0.1s;
+    .btn-done-single {
+      width: 100%; padding: 12px; font-size: 16px; font-weight: bold; border: none;
+      border-radius: 8px; cursor: pointer; background: #16a34a; color: #fff; transition: 0.1s;
     }
-    .btn-serving { background: #f59e0b; color: #000; }
-    .btn-complete { background: #10b981; color: #fff; }
+    .btn-done-single:active { transform: scale(0.97); background: #15803d; }
 
-    .timer-badge { font-family: monospace; font-size: 12px; font-weight: bold; padding: 2px 6px; border-radius: 4px; background: #0f172a; }
-    .timer-late { background: #dc2626 !important; color: #fff; }
+    /* ================= HISTORY VIEW ================= */
+    #history-view {
+      display: none; flex: 1; flex-direction: column; padding: 16px; overflow-y: auto;
+    }
+    .history-toolbar {
+      display: flex; gap: 10px; margin-bottom: 14px; align-items: center;
+    }
+    .search-box {
+      flex: 1; max-width: 400px; padding: 10px 14px; background: #1e293b; border: 1px solid #475569;
+      border-radius: 8px; color: #fff; font-size: 14px;
+    }
+    .history-table {
+      width: 100%; border-collapse: collapse; background: #1e293b; border-radius: 8px; overflow: hidden;
+      font-size: 13px;
+    }
+    .history-table th, .history-table td { padding: 10px 14px; text-align: left; border-bottom: 1px solid #334155; }
+    .history-table th { background: #334155; color: #facc15; font-weight: bold; }
+    .btn-recall {
+      background: #0284c7; color: #fff; border: none; padding: 6px 12px; border-radius: 4px;
+      cursor: pointer; font-weight: bold; font-size: 12px;
+    }
 
     .empty-state {
       grid-column: 1 / -1; display: flex; flex-direction: column; justify-content: center;
@@ -154,23 +164,33 @@
   <div class="kds-header">
     <div class="kds-title-area">
       <span class="shop-name-tag" id="header-shop-name">KDS</span>
-      <span class="status-badge" id="live-indicator">🟢 LIVE</span>
+      <span class="live-badge" id="live-indicator">🟢 LIVE</span>
     </div>
 
-    <!-- Filter Tabs (All / Cooking / Serving) -->
-    <div class="filter-tabs">
-      <button class="tab-btn active" onclick="setKdsFilter('all', this)">All Orders</button>
-      <button class="tab-btn" onclick="setKdsFilter('pending', this)">🟡 Cooking</button>
-      <button class="tab-btn" onclick="setKdsFilter('serving', this)">🟢 Serving</button>
+    <!-- Live vs History Toggle -->
+    <div class="view-tabs">
+      <button class="tab-btn active" id="tab-live" onclick="switchView('live')">
+        🔥 ലൈവ് ഓർഡറുകൾ (<span id="live-count">0</span>)
+      </button>
+      <button class="tab-btn" id="tab-history" onclick="switchView('history')">
+        📜 കഴിഞ്ഞവ (History)
+      </button>
     </div>
 
-    <div class="header-actions">
-      <button class="btn-top" onclick="playBeepSound()">🔔 ടെസ്റ്റ് സൗണ്ട്</button>
+    <div class="header-controls">
+      <!-- Sound Selector -->
+      <select id="sound-type-select" class="sound-select" onchange="saveSoundPreference()">
+        <option value="chime">🔔 Classic Chime</option>
+        <option value="buzzer">📢 Loud Buzzer</option>
+        <option value="double_beep">⏱️ Double Beep</option>
+        <option value="mute">🔇 Mute (ശബ്ദം വേണ്ട)</option>
+      </select>
+      <button class="btn-top" onclick="triggerAlertSound()">🔊 ടെസ്റ്റ്</button>
       <button class="btn-top btn-switch" onclick="switchKdsShop()">🔄 Switch Branch</button>
     </div>
   </div>
 
-  <!-- ================= CARDS GRID ================= -->
+  <!-- ================= VIEW 1: LIVE ORDERS GRID ================= -->
   <div class="orders-grid" id="kds-orders-container">
     <div class="empty-state">
       <div style="font-size: 50px; margin-bottom: 10px;">🧑‍🍳</div>
@@ -178,54 +198,119 @@
     </div>
   </div>
 
+  <!-- ================= VIEW 2: ORDER HISTORY & SEARCH ================= -->
+  <div id="history-view">
+    <div class="history-toolbar">
+      <input type="text" id="history-search-input" class="search-box" 
+        placeholder="🔍 ടോക്കൺ നമ്പർ (#05) അല്ലെങ്കിൽ മൊബൈൽ നമ്പർ തിരയുക..." oninput="filterHistoryList()">
+      <span style="color:#94a3b8; font-size:13px;" id="history-count-text"></span>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>Token</th>
+            <th>Type</th>
+            <th>Customer Phone</th>
+            <th>Items</th>
+            <th>Time Ordered</th>
+            <th>Time Completed</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="history-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
   <script>
     let currentShop = null;
     let selectedPendingShop = null;
     let supabaseClient = null;
-    let activeOrders = [];
-    let currentFilter = 'all';
+    let liveOrders = [];
+    let historyOrders = [];
+    let currentView = 'live';
 
     const localChannel = new BroadcastChannel('broast_pos_channel');
 
-    // --- Audio Alert ---
-    function playBeepSound() {
+    // --- Audio Alert Synthesizer (Chime, Buzzer, Double Beep) ---
+    function triggerAlertSound() {
+      const mode = document.getElementById('sound-type-select').value;
+      if (mode === 'mute') return;
+
       try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc1 = audioCtx.createOscillator();
-        const gain1 = audioCtx.createGain();
-        osc1.type = 'sine';
-        osc1.frequency.setValueAtTime(587.33, audioCtx.currentTime);
-        gain1.gain.setValueAtTime(0.3, audioCtx.currentTime);
-        gain1.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
-        osc1.connect(gain1);
-        gain1.connect(audioCtx.destination);
-        osc1.start();
-        osc1.stop(audioCtx.currentTime + 0.2);
 
-        setTimeout(() => {
-          const osc2 = audioCtx.createOscillator();
-          const gain2 = audioCtx.createGain();
-          osc2.type = 'sine';
-          osc2.frequency.setValueAtTime(880, audioCtx.currentTime);
-          gain2.gain.setValueAtTime(0.4, audioCtx.currentTime);
-          gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-          osc2.connect(gain2);
-          gain2.connect(audioCtx.destination);
-          osc2.start();
-          osc2.stop(audioCtx.currentTime + 0.3);
-        }, 150);
+        if (mode === 'chime') {
+          // Classic 2-tone chime
+          const osc1 = audioCtx.createOscillator();
+          const gain1 = audioCtx.createGain();
+          osc1.type = 'sine';
+          osc1.frequency.setValueAtTime(587.33, audioCtx.currentTime);
+          gain1.gain.setValueAtTime(0.3, audioCtx.currentTime);
+          gain1.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+          osc1.connect(gain1); gain1.connect(audioCtx.destination);
+          osc1.start(); osc1.stop(audioCtx.currentTime + 0.25);
+
+          setTimeout(() => {
+            const osc2 = audioCtx.createOscillator();
+            const gain2 = audioCtx.createGain();
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(880, audioCtx.currentTime);
+            gain2.gain.setValueAtTime(0.4, audioCtx.currentTime);
+            gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
+            osc2.connect(gain2); gain2.connect(audioCtx.destination);
+            osc2.start(); osc2.stop(audioCtx.currentTime + 0.35);
+          }, 150);
+
+        } else if (mode === 'buzzer') {
+          // Loud Kitchen Buzzer (Sawtooth wave)
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+          gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+          osc.connect(gain); gain.connect(audioCtx.destination);
+          osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+
+        } else if (mode === 'double_beep') {
+          // Double Digital Beep
+          const playBeep = (delay) => {
+            setTimeout(() => {
+              const osc = audioCtx.createOscillator();
+              const gain = audioCtx.createGain();
+              osc.type = 'square';
+              osc.frequency.setValueAtTime(900, audioCtx.currentTime);
+              gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+              gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+              osc.connect(gain); gain.connect(audioCtx.destination);
+              osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+            }, delay);
+          };
+          playBeep(0);
+          playBeep(140);
+        }
       } catch (err) {
-        console.log("Audio alert error:", err);
+        console.warn("Audio Context Error:", err);
       }
     }
 
-    // --- Multi-Shop Auth Flow ---
+    function saveSoundPreference() {
+      const mode = document.getElementById('sound-type-select').value;
+      localStorage.setItem('kds_sound_mode', mode);
+    }
+
+    // --- Authentication & Shop Switching ---
     function initKdsAuth() {
+      const savedSound = localStorage.getItem('kds_sound_mode') || 'chime';
+      document.getElementById('sound-type-select').value = savedSound;
+
       const savedShopId = localStorage.getItem('kds_active_shop_id');
-      const shops = window.SHOPS_CONFIG || [];
+      const shops = window.SHOPS_CONFIG || [];[cite: 3]
 
       if (savedShopId && shops.length > 0) {
-        const found = shops.find(s => s.id === savedShopId);
+        const found = shops.find(s => s.id === savedShopId);[cite: 3]
         if (found) {
           activateKdsShop(found);
           return;
@@ -242,7 +327,7 @@
       pinBox.style.display = 'none';
       grid.innerHTML = '';
 
-      const shops = window.SHOPS_CONFIG || [];
+      const shops = window.SHOPS_CONFIG || [];[cite: 3]
       shops.forEach(s => {
         const card = document.createElement('div');
         card.className = 'shop-btn-card';
@@ -258,7 +343,7 @@
 
     function promptKdsPin(s) {
       selectedPendingShop = s;
-      document.getElementById('kds-pin-title').innerText = `${s.name} PIN നൽകുക:`;
+      document.getElementById('kds-pin-title').innerText = `${s.name} PIN നൽകുക:`;[cite: 3]
       document.getElementById('kds-pin-box').style.display = 'block';
       const input = document.getElementById('kds-pin-input');
       input.value = '';
@@ -276,9 +361,9 @@
 
     function verifyAndLoginKDS() {
       const pin = document.getElementById('kds-pin-input').value.trim();
-      const masterPin = window.MASTER_PIN || "0000";
+      const masterPin = window.MASTER_PIN || "0000";[cite: 3]
 
-      if (selectedPendingShop && (pin === selectedPendingShop.pin || pin === masterPin)) {
+      if (selectedPendingShop && (pin === selectedPendingShop.pin || pin === masterPin)) {[cite: 3]
         activateKdsShop(selectedPendingShop);
       } else {
         alert("തെറ്റായ PIN നമ്പർ! വീണ്ടും ശ്രമിക്കുക.");
@@ -291,16 +376,17 @@
       currentShop = s;
       localStorage.setItem('kds_active_shop_id', s.id);
       document.getElementById('kds-auth-overlay').style.display = 'none';
-      document.getElementById('header-shop-name').innerText = `🍗 ${s.name} (KDS)`;
+      document.getElementById('header-shop-name').innerText = `🍗 ${s.name} (KDS)`;[cite: 3]
 
-      // Load existing active orders from localStorage
-      activeOrders = JSON.parse(localStorage.getItem(`kds_orders_${s.id}`)) || [];
-      renderOrdersGrid();
+      // Load cache
+      liveOrders = JSON.parse(localStorage.getItem(`kds_live_${s.id}`)) || [];
+      historyOrders = JSON.parse(localStorage.getItem(`kds_history_${s.id}`)) || [];
+      renderLiveGrid();
 
-      // Connect to Shop-Specific Supabase
-      if (s.url && s.key && window.supabase) {
-        supabaseClient = window.supabase.createClient(s.url, s.key);
-        fetchSupabaseActiveOrders();
+      // Connect to Supabase
+      if (s.url && s.key && window.supabase) {[cite: 3]
+        supabaseClient = window.supabase.createClient(s.url, s.key);[cite: 3]
+        fetchSupabaseOrders();
         listenSupabaseRealtime();
       }
     }
@@ -315,22 +401,36 @@
     }
 
     // --- Supabase Sync & Realtime ---
-    async function fetchSupabaseActiveOrders() {
+    async function fetchSupabaseOrders() {
       if (!supabaseClient) return;
       try {
-        const { data, error } = await supabaseClient
+        // Fetch Live pending orders
+        const { data: pendingData } = await supabaseClient
           .from('orders')
           .select('*')
-          .in('status', ['pending', 'serving'])
+          .eq('status', 'pending')
           .order('id', { ascending: true });
 
-        if (data && !error) {
-          activeOrders = data;
-          saveLocalOrders();
-          renderOrdersGrid();
+        if (pendingData) {
+          liveOrders = pendingData;
+          saveLocalKdsState();
+          renderLiveGrid();
+        }
+
+        // Fetch Recent Completed Orders for History
+        const { data: doneData } = await supabaseClient
+          .from('orders')
+          .select('*')
+          .eq('status', 'completed')
+          .order('id', { ascending: false })
+          .limit(60);
+
+        if (doneData) {
+          historyOrders = doneData;
+          saveLocalKdsState();
         }
       } catch (err) {
-        console.error("Supabase fetch orders error:", err);
+        console.error("Supabase fetch error:", err);
       }
     }
 
@@ -338,67 +438,70 @@
       if (!supabaseClient) return;
 
       supabaseClient
-        .channel('kds-realtime')
+        .channel('kds-live-channel')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, payload => {
           const newOrder = payload.new;
-          if (!activeOrders.find(o => o.id === newOrder.id)) {
-            activeOrders.push(newOrder);
-            saveLocalOrders();
-            playBeepSound();
-            renderOrdersGrid();
+          if (newOrder.status === 'pending' && !liveOrders.find(o => o.id === newOrder.id)) {
+            liveOrders.push(newOrder);
+            saveLocalKdsState();
+            triggerAlertSound();
+            renderLiveGrid();
           }
         })
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, payload => {
           const updated = payload.new;
           if (updated.status === 'completed') {
-            activeOrders = activeOrders.filter(o => o.id !== updated.id);
-          } else {
-            const idx = activeOrders.findIndex(o => o.id === updated.id);
-            if (idx !== -1) activeOrders[idx] = updated;
+            liveOrders = liveOrders.filter(o => o.id !== updated.id);
+            if (!historyOrders.find(o => o.id === updated.id)) {
+              historyOrders.unshift(updated);
+            }
+          } else if (updated.status === 'pending') {
+            historyOrders = historyOrders.filter(o => o.id !== updated.id);
+            if (!liveOrders.find(o => o.id === updated.id)) {
+              liveOrders.push(updated);
+            }
           }
-          saveLocalOrders();
-          renderOrdersGrid();
+          saveLocalKdsState();
+          renderLiveGrid();
+          if (currentView === 'history') renderHistoryTable();
         })
         .subscribe();
     }
 
-    // --- Local Fallback Channel ---
+    // --- Local Fallback Broadcast ---
     localChannel.onmessage = function(e) {
       if (e.data && e.data.type === 'NEW_ORDER') {
         const newOrder = e.data.order;
         if (!currentShop || newOrder.shop_id === currentShop.id) {
-          if (!activeOrders.find(o => o.id === newOrder.id)) {
-            activeOrders.push(newOrder);
-            saveLocalOrders();
-            playBeepSound();
-            renderOrdersGrid();
+          if (!liveOrders.find(o => o.id === newOrder.id)) {
+            liveOrders.push(newOrder);
+            saveLocalKdsState();
+            triggerAlertSound();
+            renderLiveGrid();
           }
         }
       }
     };
 
-    function saveLocalOrders() {
+    function saveLocalKdsState() {
       if (currentShop) {
-        localStorage.setItem(`kds_orders_${currentShop.id}`, JSON.stringify(activeOrders));
+        localStorage.setItem(`kds_live_${currentShop.id}`, JSON.stringify(liveOrders));
+        localStorage.setItem(`kds_history_${currentShop.id}`, JSON.stringify(historyOrders));
       }
     }
 
-    // --- Status Progression (Pending -> Serving -> Completed) ---
-    async function advanceOrderStatus(orderId, nextStatus) {
-      const order = activeOrders.find(o => o.id === orderId);
+    // --- 1-Click Order Complete ---
+    async function completeOrderSingleClick(orderId) {
+      const order = liveOrders.find(o => o.id === orderId);
       if (!order) return;
 
-      if (nextStatus === 'serving') {
-        order.status = 'serving';
-        order.serving_at = new Date().toISOString();
-      } else if (nextStatus === 'completed') {
-        order.status = 'completed';
-        order.completed_at = new Date().toISOString();
-        activeOrders = activeOrders.filter(o => o.id !== orderId);
-      }
-
-      saveLocalOrders();
-      renderOrdersGrid();
+      // Move locally
+      order.status = 'completed';
+      order.completed_at = new Date().toLocaleTimeString();
+      liveOrders = liveOrders.filter(o => o.id !== orderId);
+      historyOrders.unshift(order);
+      saveLocalKdsState();
+      renderLiveGrid();
 
       // Cloud Update
       if (supabaseClient) {
@@ -406,38 +509,71 @@
           await supabaseClient
             .from('orders')
             .update({
-              status: order.status,
-              serving_at: order.serving_at || null,
-              completed_at: order.completed_at || null
+              status: 'completed',
+              completed_at: new Date().toISOString()
             })
             .eq('id', orderId);
         } catch (err) {
-          console.error("Supabase status update error:", err);
+          console.error("Supabase complete error:", err);
         }
       }
     }
 
-    // --- UI Rendering ---
-    function setKdsFilter(filter, btn) {
-      currentFilter = filter;
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      renderOrdersGrid();
+    // --- Recall Order from History back to Live ---
+    async function recallOrderBackToLive(orderId) {
+      const order = historyOrders.find(o => o.id === orderId);
+      if (!order) return;
+
+      order.status = 'pending';
+      historyOrders = historyOrders.filter(o => o.id !== orderId);
+      liveOrders.push(order);
+      saveLocalKdsState();
+      renderHistoryTable();
+      renderLiveGrid();
+
+      if (supabaseClient) {
+        try {
+          await supabaseClient
+            .from('orders')
+            .update({
+              status: 'pending',
+              completed_at: null
+            })
+            .eq('id', orderId);
+        } catch (err) {
+          console.error("Supabase recall error:", err);
+        }
+      }
+      alert(`${order.token} വീണ്ടും ലൈവ് കിച്ചനിലേക്ക് തിരികെ മാറ്റി!`);
     }
 
-    function renderOrdersGrid() {
-      const container = document.getElementById('kds-orders-container');
+    // --- UI View Switching (Live vs History) ---
+    function switchView(view) {
+      currentView = view;
+      document.getElementById('tab-live').classList.toggle('active', view === 'live');
+      document.getElementById('tab-history').classList.toggle('active', view === 'history');
 
-      let filtered = activeOrders;
-      if (currentFilter !== 'all') {
-        filtered = activeOrders.filter(o => (o.status || 'pending') === currentFilter);
+      if (view === 'live') {
+        document.getElementById('kds-orders-container').style.display = 'grid';
+        document.getElementById('history-view').style.display = 'none';
+        renderLiveGrid();
+      } else {
+        document.getElementById('kds-orders-container').style.display = 'none';
+        document.getElementById('history-view').style.display = 'flex';
+        renderHistoryTable();
       }
+    }
 
-      if (filtered.length === 0) {
+    // --- Render Live Orders Grid ---
+    function renderLiveGrid() {
+      const container = document.getElementById('kds-orders-container');
+      document.getElementById('live-count').innerText = liveOrders.length;
+
+      if (liveOrders.length === 0) {
         container.innerHTML = `
           <div class="empty-state">
             <div style="font-size: 50px; margin-bottom: 10px;">🧑‍🍳</div>
-            <div>ഓർഡറുകൾ ഒന്നും വന്നിട്ടില്ല (Waiting for orders...)</div>
+            <div>പെൻഡിങ് ഓർഡറുകൾ ഒന്നുമില്ല (All Orders Completed!)</div>
           </div>
         `;
         return;
@@ -446,14 +582,13 @@
       container.innerHTML = '';
       const now = Date.now();
 
-      filtered.forEach(order => {
-        const status = order.status || 'pending';
-        const isServing = status === 'serving';
-
+      liveOrders.forEach(order => {
         const elapsedSec = Math.floor((now - order.id) / 1000);
         const mins = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
         const secs = String(elapsedSec % 60).padStart(2, '0');
-        const isLate = elapsedSec > 600;
+        const isLate = elapsedSec > 600; // 10 minutes warning
+
+        const custPhone = order.customer_phone || order.phone || '';
 
         let itemsHtml = (order.items || []).map(it => {
           const isSpicy = it.name.includes('Spicy');
@@ -469,41 +604,80 @@
         }).join('');
 
         const card = document.createElement('div');
-        card.className = `order-card ${isServing ? 'card-serving' : 'card-pending'}`;
+        card.className = 'order-card';
         card.innerHTML = `
           <div class="card-top">
             <span class="card-token">${order.token}</span>
-            <span class="status-pill ${isServing ? 'pill-serving' : 'pill-pending'}">
-              ${isServing ? '🟢 SERVING' : '🟡 COOKING'}
-            </span>
+            <span class="timer-badge ${isLate ? 'timer-late' : ''}" id="timer-${order.id}">⏱️ ${mins}:${secs}</span>
           </div>
           <div class="card-meta">
-            <span>${order.type || 'Takeaway'}</span>
-            <span class="timer-badge ${isLate ? 'timer-late' : ''}" id="timer-${order.id}">⏱️ ${mins}:${secs}</span>
+            <span>${order.order_type || order.type || 'Takeaway'}</span>
+            ${custPhone ? `<span class="meta-phone">📞 ${custPhone}</span>` : `<span>${order.time || ''}</span>`}
           </div>
           <div class="card-items">
             ${itemsHtml}
           </div>
           <div class="card-actions">
-            ${!isServing ? `
-              <button class="btn-action btn-serving" onclick="advanceOrderStatus(${order.id}, 'serving')">
-                🔔 Ready / Serving (വിതരണത്തിന് റെഡി)
-              </button>
-            ` : `
-              <button class="btn-action btn-complete" onclick="advanceOrderStatus(${order.id}, 'completed')">
-                ✅ Complete / Delivered (നൽകി)
-              </button>
-            `}
+            <button class="btn-done-single" onclick="completeOrderSingleClick(${order.id})">
+              ✅ കംപ്ലീറ്റ് (Done)
+            </button>
           </div>
         `;
         container.appendChild(card);
       });
     }
 
-    // Refresh live timers every second
+    // --- Render History Table ---
+    function renderHistoryTable() {
+      const tbody = document.getElementById('history-table-body');
+      const searchVal = document.getElementById('history-search-input').value.toLowerCase().trim();
+
+      let list = historyOrders;
+      if (searchVal) {
+        list = list.filter(o => {
+          const tokenMatch = (o.token || '').toLowerCase().includes(searchVal);
+          const phoneMatch = (o.customer_phone || o.phone || '').includes(searchVal);
+          return tokenMatch || phoneMatch;
+        });
+      }
+
+      document.getElementById('history-count-text').innerText = `${list.length} കഴിഞ്ഞ ഓർഡറുകൾ`;
+      tbody.innerHTML = '';
+
+      if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#64748b; padding:20px;">ഓർഡറുകൾ ഒന്നും കണ്ടെത്തിയില്ല</td></tr>`;
+        return;
+      }
+
+      list.forEach(o => {
+        const itemsSummary = (o.items || []).map(it => `${it.name} (x${it.qty})`).join(', ');
+        const custPhone = o.customer_phone || o.phone || '-';
+
+        tbody.innerHTML += `
+          <tr>
+            <td><strong style="color:#facc15; font-size:15px;">${o.token}</strong></td>
+            <td>${o.order_type || o.type || '-'}</td>
+            <td style="color:#38bdf8;">${custPhone}</td>
+            <td style="max-width:250px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${itemsSummary}</td>
+            <td>${o.time || '-'}</td>
+            <td style="color:#10b981;">${o.completed_at || 'Done'}</td>
+            <td>
+              <button class="btn-recall" onclick="recallOrderBackToLive(${o.id})">↩️ Recall</button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function filterHistoryList() {
+      renderHistoryTable();
+    }
+
+    // Live Timers update every second
     setInterval(() => {
+      if (currentView !== 'live') return;
       const now = Date.now();
-      activeOrders.forEach(order => {
+      liveOrders.forEach(order => {
         const el = document.getElementById(`timer-${order.id}`);
         if (el) {
           const elapsedSec = Math.floor((now - order.id) / 1000);
