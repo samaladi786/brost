@@ -2,8 +2,8 @@
 <html lang="en" dir="ltr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kitchen Display System (KDS) - Bilingual Focus Edition</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Kitchen Display System (KDS) - Responsive Thermal Roll</title>
 
   <!-- PWA & Fonts -->
   <link rel="manifest" href="manifest.json">
@@ -18,7 +18,11 @@
 
   <style>
     * { box-sizing: border-box; font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 0; }
-    body { background: #0f172a; color: #f8fafc; height: 100vh; width: 100vw; display: flex; flex-direction: column; overflow: hidden; }
+    html, body {
+      background: #0f172a; color: #f8fafc; height: 100%; width: 100%;
+      overflow-x: hidden; position: relative;
+    }
+    body { display: flex; flex-direction: column; }
 
     /* RTL Layout Rules */
     body[dir="rtl"] { direction: rtl; }
@@ -27,23 +31,23 @@
     /* ================= 4-DIGIT PIN DIRECT LOCK SCREEN ================= */
     #pin-lock-overlay {
       position: fixed; inset: 0; background: #0f172a; z-index: 9999;
-      display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px;
+      display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 16px;
     }
     .pin-modal-card {
-      background: #1e293b; border: 1px solid #334155; border-radius: 20px; padding: 24px 20px;
-      max-width: 350px; width: 100%; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+      background: #1e293b; border: 1px solid #334155; border-radius: 18px; padding: 20px 16px;
+      max-width: 330px; width: 100%; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.6);
     }
-    .pin-dots-row { display: flex; justify-content: center; gap: 14px; margin: 14px 0 8px 0; }
+    .pin-dots-row { display: flex; justify-content: center; gap: 12px; margin: 12px 0 8px 0; }
     .pin-dot {
-      width: 18px; height: 18px; border-radius: 50%; border: 2px solid #475569; background: transparent; transition: all 0.15s ease;
+      width: 16px; height: 16px; border-radius: 50%; border: 2px solid #475569; background: transparent; transition: all 0.15s ease;
     }
     .pin-dot.filled { background: #f59e0b; border-color: #f59e0b; box-shadow: 0 0 10px #f59e0b; }
     .pin-error-text { color: #ef4444; font-size: 13px; font-weight: bold; min-height: 20px; margin-bottom: 4px; }
 
-    .numpad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 6px; }
+    .numpad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 6px; }
     .num-key {
-      background: #0f172a; border: 1px solid #334155; color: #f8fafc; font-size: 22px; font-weight: bold;
-      padding: 13px 0; border-radius: 12px; cursor: pointer; transition: 0.1s; user-select: none;
+      background: #0f172a; border: 1px solid #334155; color: #f8fafc; font-size: 20px; font-weight: bold;
+      padding: 12px 0; border-radius: 10px; cursor: pointer; transition: 0.1s; user-select: none;
       touch-action: manipulation;
     }
     .num-key:active { transform: scale(0.94); background: #334155; }
@@ -52,41 +56,50 @@
     /* Master Branch Picker */
     #master-branch-picker {
       display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 10000;
-      justify-content: center; align-items: center; padding: 20px;
+      justify-content: center; align-items: center; padding: 16px;
     }
 
-    /* ================= TOP HEADER ================= */
+    /* ================= TOP RESPONSIVE HEADER ================= */
     .kds-header {
-      background: #1e293b; padding: 8px 16px; display: flex; justify-content: space-between;
+      background: #1e293b; padding: 10px 12px; display: flex; justify-content: space-between;
       align-items: center; border-bottom: 2px solid #334155; flex-wrap: wrap; gap: 8px;
     }
-    .kds-title-area { display: flex; align-items: center; gap: 10px; }
-    .shop-name-tag { font-size: 17px; font-weight: 800; color: #facc15; }
-    .live-badge { background: #16a34a; color: #fff; font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: bold; }
+    .kds-title-area { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .shop-name-tag { font-size: 16px; font-weight: 800; color: #facc15; }
+    .live-badge { background: #16a34a; color: #fff; font-size: 10px; padding: 2px 7px; border-radius: 20px; font-weight: bold; }
 
-    .view-tabs { display: flex; gap: 6px; background: #0f172a; padding: 4px; border-radius: 8px; }
+    .view-tabs { display: flex; gap: 4px; background: #0f172a; padding: 3px; border-radius: 8px; }
     .tab-btn {
-      background: transparent; border: none; color: #94a3b8; padding: 6px 14px;
-      border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px;
+      background: transparent; border: none; color: #94a3b8; padding: 5px 10px;
+      border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px;
     }
     .tab-btn.active { background: #334155; color: #fff; }
 
     .header-controls { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
     .header-select {
-      background: #0f172a; color: #f8fafc; border: 1px solid #475569; padding: 6px 8px;
-      border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer;
+      background: #0f172a; color: #f8fafc; border: 1px solid #475569; padding: 5px 8px;
+      border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; max-width: 130px;
     }
     .btn-top {
-      background: #334155; color: #fff; border: 1px solid #475569; padding: 6px 12px;
-      border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold;
+      background: #334155; color: #fff; border: 1px solid #475569; padding: 5px 9px;
+      border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold;
     }
     .btn-lang { background: #475569; border-color: #64748b; font-weight: 800; }
     .btn-switch { background: #ef4444; border-color: #dc2626; }
 
-    /* ================= COMPACT ORDERS GRID (FIFO ORDERED) ================= */
+    /* ================= RESPONSIVE CARD GRID (FIFO) ================= */
     .orders-grid {
-      flex: 1; padding: 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-      gap: 12px; overflow-y: auto; align-content: start;
+      flex: 1; padding: 10px; display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      gap: 10px; overflow-y: auto; align-content: start;
+    }
+
+    @media (max-width: 500px) {
+      .orders-grid {
+        grid-template-columns: 1fr; /* Full width cards on mobile */
+        padding: 8px;
+        gap: 8px;
+      }
     }
 
     .order-card {
@@ -94,17 +107,13 @@
       display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.25);
       cursor: pointer; transition: transform 0.1s, border-color 0.15s; user-select: none;
     }
-    .order-card:active { transform: scale(0.97); }
+    .order-card:active { transform: scale(0.98); }
     .order-card:hover { border-color: #38bdf8; }
 
-    /* Priority / Age Indicators */
-    .card-top {
-      padding: 6px 10px; display: flex; justify-content: space-between; align-items: center;
-      background: #334155; color: #fff;
-    }
-    .card-card-priority-normal .card-top { background: #1e3a8a; }
-    .card-card-priority-warn .card-top { background: #b45309; }
-    .card-card-priority-urgent .card-top { background: #b91c1c; animation: pulseUrgent 1.5s infinite; }
+    /* Urgency Colors */
+    .card-priority-normal .card-top { background: #1e3a8a; }
+    .card-priority-warn .card-top { background: #b45309; }
+    .card-priority-urgent .card-top { background: #b91c1c; animation: pulseUrgent 1.5s infinite; }
 
     @keyframes pulseUrgent {
       0% { opacity: 1; }
@@ -112,6 +121,10 @@
       100% { opacity: 1; }
     }
 
+    .card-top {
+      padding: 6px 10px; display: flex; justify-content: space-between; align-items: center;
+      background: #334155; color: #fff;
+    }
     .card-token { font-size: 20px; font-weight: 900; color: #fff; }
     .timer-badge { font-family: monospace; font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 4px; background: rgba(0,0,0,0.4); color: #facc15; }
 
@@ -120,101 +133,117 @@
       border-bottom: 1px dashed #334155; background: #1a2234;
     }
 
-    .card-items-compact { padding: 8px 10px; flex: 1; max-height: 140px; overflow-y: hidden; }
+    .card-items-compact { padding: 8px 10px; flex: 1; max-height: 120px; overflow-y: hidden; }
     .compact-item-line {
       display: flex; justify-content: space-between; align-items: center;
       padding: 3px 0; border-bottom: 1px dotted #283548; font-size: 13px;
     }
-    .compact-item-name { font-weight: 700; color: #f8fafc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; }
+    .compact-item-name { font-weight: 700; color: #f8fafc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
     .compact-item-qty { background: #facc15; color: #000; font-weight: 900; font-size: 12px; padding: 1px 6px; border-radius: 4px; }
     .compact-more-tag { font-size: 10px; color: #38bdf8; text-align: center; margin-top: 4px; font-weight: bold; }
 
+    /* Card Action Footer with Quick Complete */
     .card-footer-action {
-      background: #0f172a; padding: 6px 10px; text-align: center; font-size: 11px;
-      font-weight: bold; color: #94a3b8; border-top: 1px solid #334155;
+      background: #0f172a; padding: 6px 10px; display: flex; justify-content: space-between;
+      align-items: center; border-top: 1px solid #334155; gap: 8px;
     }
+    .btn-card-quick-done {
+      background: #16a34a; color: #fff; border: none; padding: 6px 12px; border-radius: 6px;
+      font-weight: 900; font-size: 13px; cursor: pointer; transition: 0.1s;
+    }
+    .btn-card-quick-done:active { transform: scale(0.92); background: #15803d; }
+    .card-hint-text { font-size: 11px; color: #94a3b8; font-weight: bold; }
 
-    /* ================= ORDER FOCUS / DETAIL POP-UP MODAL ================= */
+    /* ================= 80MM THERMAL PAPER ROLL MODAL ================= */
     .modal-backdrop {
       display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85);
-      justify-content: center; align-items: center; z-index: 500; padding: 16px;
+      justify-content: center; align-items: center; z-index: 1000; padding: 12px;
     }
-    .focus-modal-card {
-      background: #1e293b; border: 2px solid #38bdf8; border-radius: 16px; width: 540px;
-      max-width: 95%; max-height: 92vh; display: flex; flex-direction: column; overflow: hidden;
-      box-shadow: 0 20px 45px rgba(0,0,0,0.8);
+    .thermal-receipt-roll {
+      background: #ffffff; color: #000000; width: 330px; max-width: 100%;
+      max-height: 86vh; display: flex; flex-direction: column; border-radius: 4px;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.8);
+      font-family: 'Cairo', monospace; border-top: 4px dashed #64748b; border-bottom: 4px dashed #64748b;
+      animation: rollSlideIn 0.2s ease-out;
     }
-    .focus-header {
-      background: #0f172a; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center;
-      border-bottom: 2px solid #334155;
-    }
-    .focus-token { font-size: 34px; font-weight: 900; color: #facc15; }
-    .focus-meta { font-size: 13px; color: #cbd5e1; }
-    
-    .focus-items-list {
-      flex: 1; overflow-y: auto; padding: 16px; max-height: 50vh;
-    }
-    .focus-item-row {
-      display: flex; justify-content: space-between; align-items: center; padding: 12px 10px;
-      border-bottom: 1px solid #334155; background: #1a2234; border-radius: 8px; margin-bottom: 8px;
-    }
-    .focus-item-title { font-size: 18px; font-weight: 800; color: #ffffff; }
-    .focus-item-sub { font-size: 12px; color: #94a3b8; margin-top: 2px; }
-    .focus-spicy-badge { background: #ef4444; color: #fff; font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 4px; margin-left: 4px; }
-    .focus-item-qty {
-      font-size: 24px; font-weight: 900; background: #facc15; color: #000;
-      padding: 4px 14px; border-radius: 8px; min-width: 60px; text-align: center;
+    @keyframes rollSlideIn {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
     }
 
-    .focus-modal-actions {
-      padding: 14px 18px; background: #0f172a; border-top: 1px solid #334155;
-      display: flex; gap: 10px;
+    .thermal-header {
+      padding: 12px 14px 6px 14px; text-align: center; border-bottom: 1px dashed #000;
     }
-    .btn-focus-back {
-      flex: 1; padding: 14px; background: #475569; color: #fff; border: none;
-      border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;
-    }
-    .btn-focus-done {
-      flex: 2; padding: 14px; background: #16a34a; color: #fff; border: none;
-      border-radius: 8px; font-size: 18px; font-weight: 900; cursor: pointer;
-    }
-    .btn-focus-done:active { transform: scale(0.98); background: #15803d; }
+    .receipt-token-big { font-size: 38px; font-weight: 900; line-height: 1.1; margin: 2px 0; color: #000; }
+    .receipt-divider { border-bottom: 1px dashed #000; margin: 6px 0; }
+    .receipt-row { display: flex; justify-content: space-between; font-size: 12px; margin: 2px 0; }
 
-    /* ================= CLOUD HISTORY VIEW (MULTI-DAY) ================= */
+    /* Scrollable Thermal Items */
+    .thermal-body {
+      flex: 1; overflow-y: auto; padding: 8px 14px;
+    }
+    .thermal-item-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 6px 0; border-bottom: 1px dotted #94a3b8;
+    }
+    .thermal-item-title { font-size: 15px; font-weight: 800; color: #000; }
+    .thermal-item-sub { font-size: 10px; color: #475569; }
+    .thermal-spicy-tag { background: #ef4444; color: #fff; font-size: 10px; font-weight: bold; padding: 1px 4px; border-radius: 3px; }
+    .thermal-item-qty {
+      font-size: 18px; font-weight: 900; background: #000; color: #fff;
+      padding: 2px 8px; border-radius: 4px; text-align: center;
+    }
+
+    .thermal-actions {
+      padding: 10px 14px; background: #f8fafc; border-top: 1px dashed #000;
+      display: flex; gap: 8px;
+    }
+    .btn-receipt-back {
+      flex: 1; padding: 11px; background: #64748b; color: #fff; border: none;
+      border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer;
+    }
+    .btn-receipt-complete {
+      flex: 2; padding: 11px; background: #16a34a; color: #fff; border: none;
+      border-radius: 6px; font-size: 16px; font-weight: 900; cursor: pointer;
+    }
+    .btn-receipt-complete:active { transform: scale(0.97); background: #15803d; }
+
+    /* ================= MULTI-DAY HISTORY VIEW ================= */
     #history-view {
-      display: none; flex: 1; flex-direction: column; padding: 16px; overflow-y: auto;
+      display: none; flex: 1; flex-direction: column; padding: 12px; overflow-y: auto;
     }
-    .history-toolbar { display: flex; gap: 10px; margin-bottom: 12px; align-items: center; flex-wrap: wrap; }
+    .history-toolbar { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; flex-wrap: wrap; }
     .date-picker-box {
-      background: #1e293b; color: #facc15; border: 1px solid #475569; padding: 8px 12px;
-      border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer;
+      background: #1e293b; color: #facc15; border: 1px solid #475569; padding: 7px 10px;
+      border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer;
     }
     .search-box {
-      flex: 1; max-width: 320px; padding: 8px 12px; background: #1e293b; border: 1px solid #475569;
-      border-radius: 8px; color: #fff; font-size: 13px;
+      flex: 1; min-width: 180px; padding: 7px 10px; background: #1e293b; border: 1px solid #475569;
+      border-radius: 8px; color: #fff; font-size: 12px;
     }
-    .history-table { width: 100%; border-collapse: collapse; background: #1e293b; border-radius: 8px; overflow: hidden; font-size: 13px; }
-    .history-table th, .history-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #334155; }
+    .history-table-container { width: 100%; overflow-x: auto; }
+    .history-table { width: 100%; border-collapse: collapse; background: #1e293b; border-radius: 8px; overflow: hidden; font-size: 12px; min-width: 580px; }
+    .history-table th, .history-table td { padding: 8px 10px; text-align: left; border-bottom: 1px solid #334155; }
     .history-table th { background: #334155; color: #facc15; font-weight: bold; }
     .btn-recall {
-      background: #0284c7; color: #fff; border: none; padding: 6px 12px; border-radius: 4px;
-      cursor: pointer; font-weight: bold; font-size: 12px;
+      background: #0284c7; color: #fff; border: none; padding: 5px 10px; border-radius: 4px;
+      cursor: pointer; font-weight: bold; font-size: 11px;
     }
 
     .empty-state {
       grid-column: 1 / -1; display: flex; flex-direction: column; justify-content: center;
-      align-items: center; height: 60vh; color: #64748b; font-size: 18px;
+      align-items: center; height: 50vh; color: #64748b; font-size: 16px; text-align: center;
     }
   </style>
 </head>
 <body>
 
-  <!-- ================= 4-DIGIT PIN LOCK OVERLAY ================= -->
+  <!-- ================= 4-DIGIT PIN DIRECT LOCK SCREEN ================= -->
   <div id="pin-lock-overlay">
     <div class="pin-modal-card">
-      <div style="font-size:36px; margin-bottom:4px;">🧑‍🍳</div>
-      <h2 style="color:#f8fafc; font-size:18px;" id="ui-kds-pin-title">KDS KITCHEN PIN</h2>
-      <p style="color:#94a3b8; font-size:12px; margin-top:2px;" id="ui-kds-pin-sub">Enter Shop PIN</p>
+      <div style="font-size:32px; margin-bottom:2px;">🧑‍🍳</div>
+      <h2 style="color:#f8fafc; font-size:17px;" id="ui-kds-pin-title">KDS KITCHEN PIN</h2>
+      <p style="color:#94a3b8; font-size:11px; margin-top:2px;" id="ui-kds-pin-sub">Enter Shop PIN</p>
       
       <div class="pin-dots-row">
         <div class="pin-dot" id="dot-0"></div>
@@ -235,7 +264,7 @@
         <button type="button" class="num-key" onclick="pressKey('7')">7</button>
         <button type="button" class="num-key" onclick="pressKey('8')">8</button>
         <button type="button" class="num-key" onclick="pressKey('9')">9</button>
-        <button type="button" class="num-key" onclick="clearPinInput()" style="font-size:13px; color:#94a3b8;" id="ui-kds-clear">CLEAR</button>
+        <button type="button" class="num-key" onclick="clearPinInput()" style="font-size:12px; color:#94a3b8;" id="ui-kds-clear">CLEAR</button>
         <button type="button" class="num-key" onclick="pressKey('0')">0</button>
         <button type="button" class="num-key backspace" onclick="pressBackspace()">⌫</button>
       </div>
@@ -244,29 +273,29 @@
 
   <!-- Master Branch Picker Modal -->
   <div id="master-branch-picker">
-    <div class="pin-modal-card" style="max-width:440px;">
-      <h3 style="color:#facc15;">🔑 MASTER KDS ACCESS</h3>
-      <p style="color:#94a3b8; font-size:12px; margin: 8px 0 16px 0;" id="ui-master-sub">Select Branch to Open:</p>
-      <div id="master-branches-container" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"></div>
-      <button onclick="document.getElementById('master-branch-picker').style.display='none'" class="btn-top" style="margin-top:14px; width:100%;" id="ui-master-cancel">Cancel</button>
+    <div class="pin-modal-card" style="max-width:400px;">
+      <h3 style="color:#facc15; font-size:16px;">🔑 MASTER KDS ACCESS</h3>
+      <p style="color:#94a3b8; font-size:11px; margin: 6px 0 12px 0;" id="ui-master-sub">Select Branch to Open:</p>
+      <div id="master-branches-container" style="display:grid; grid-template-columns:1fr 1fr; gap:8px;"></div>
+      <button onclick="document.getElementById('master-branch-picker').style.display='none'" class="btn-top" style="margin-top:12px; width:100%;" id="ui-master-cancel">Cancel</button>
     </div>
   </div>
 
-  <!-- ================= TOP HEADER ================= -->
+  <!-- ================= TOP RESPONSIVE HEADER ================= -->
   <div class="kds-header">
     <div class="kds-title-area">
       <span class="shop-name-tag" id="header-shop-name">🍗 KDS</span>
       <span class="live-badge" id="live-indicator">LIVE</span>
-      <span id="business-date-badge" style="font-size:11px; background:#0f172a; color:#facc15; padding:3px 8px; border-radius:6px; font-weight:bold;"></span>
+      <span id="business-date-badge" style="font-size:10px; background:#0f172a; color:#facc15; padding:2px 6px; border-radius:4px; font-weight:bold;"></span>
     </div>
 
     <!-- Live vs History Toggle -->
     <div class="view-tabs">
       <button class="tab-btn active" id="tab-live" onclick="switchView('live')">
-        🔥 <span id="ui-tab-live-text">Live Orders</span> (<span id="live-count">0</span>)
+        🔥 <span id="ui-tab-live-text">Live</span> (<span id="live-count">0</span>)
       </button>
       <button class="tab-btn" id="tab-history" onclick="switchView('history')">
-        📜 <span id="ui-tab-hist-text">History (Cloud)</span>
+        📜 <span id="ui-tab-hist-text">History</span>
       </button>
     </div>
 
@@ -281,57 +310,71 @@
 
       <!-- Sound Selector -->
       <select id="sound-type-select" class="header-select" onchange="saveSoundPreference()">
-        <option value="chime">🔔 Classic Chime</option>
-        <option value="buzzer">📢 Loud Buzzer</option>
-        <option value="double_beep">⏱️ Double Beep</option>
+        <option value="chime">🔔 Chime</option>
+        <option value="buzzer">📢 Buzzer</option>
+        <option value="double_beep">⏱️ Beep</option>
         <option value="mute">🔇 Mute</option>
       </select>
 
-      <button class="btn-top" onclick="triggerAlertSound()" id="ui-btn-test-sound">🔊 Test</button>
-      <button class="btn-top btn-switch" onclick="lockKDS()" id="ui-btn-logout">🔒 Logout</button>
+      <button class="btn-top" onclick="triggerAlertSound()" id="ui-btn-test-sound">🔊</button>
+      <button class="btn-top btn-switch" onclick="lockKDS()" id="ui-btn-logout">🔒</button>
     </div>
   </div>
 
-  <!-- ================= VIEW 1: COMPACT LIVE ORDERS GRID (FIFO) ================= -->
+  <!-- ================= VIEW 1: COMPACT ORDERS GRID (FIFO) ================= -->
   <div class="orders-grid" id="kds-orders-container"></div>
 
-  <!-- ================= POP-UP MODAL: ORDER DETAILS & COMPLETION ================= -->
-  <div class="modal-backdrop" id="order-detail-modal">
-    <div class="focus-modal-card">
-      <div class="focus-header">
-        <div>
-          <div class="focus-token" id="modal-token">#01</div>
-          <div class="focus-meta" id="modal-type-time">Takeaway | 00:00</div>
+  <!-- ================= VIEW 2: 80MM THERMAL RECEIPT POP-UP MODAL ================= -->
+  <div class="modal-backdrop" id="order-detail-modal" onclick="onModalBackdropClick(event)">
+    <div class="thermal-receipt-roll" id="thermal-receipt-container">
+      <div class="thermal-header">
+        <div style="font-size:12px; font-weight:bold;">*** KITCHEN SLIP / تذكرة المطبخ ***</div>
+        <div class="receipt-token-big" id="modal-token">#01</div>
+        <div class="receipt-divider"></div>
+        <div class="receipt-row">
+          <span>Type / النوع:</span>
+          <strong id="modal-type">Takeaway</strong>
         </div>
-        <div style="text-align: right;">
-          <div style="font-size: 16px; font-weight: bold; color: #38bdf8;" id="modal-phone"></div>
-          <div class="timer-badge" id="modal-timer" style="display:inline-block; margin-top:4px; font-size:14px; padding:4px 8px;">⏱️ 00:00</div>
+        <div class="receipt-row">
+          <span>Time / الوقت:</span>
+          <span id="modal-time">00:00</span>
+        </div>
+        <div class="receipt-row" id="modal-phone-row" style="display:none;">
+          <span>Customer Mob:</span>
+          <strong id="modal-phone" style="direction:ltr;"></strong>
+        </div>
+        <div class="receipt-divider"></div>
+        <div class="receipt-row" style="font-weight:bold;">
+          <span>ITEM / الصنف</span>
+          <span>QTY / العدد</span>
         </div>
       </div>
 
-      <div class="focus-items-list" id="modal-items-container"></div>
+      <!-- Scrollable Receipt Roll Items -->
+      <div class="thermal-body" id="modal-items-container"></div>
 
-      <div class="focus-modal-actions">
-        <button type="button" class="btn-focus-back" onclick="closeOrderModal()" id="ui-btn-modal-back">
-          ⬅️ Back (رجوع)
+      <!-- Thermal Bottom Actions -->
+      <div class="thermal-actions">
+        <button type="button" class="btn-receipt-back" onclick="closeOrderModal()" id="ui-btn-modal-back">
+          ⬅️ Back
         </button>
-        <button type="button" class="btn-focus-done" onclick="completeFocusedOrder()" id="ui-btn-modal-done">
-          ✅ Complete Order (إكمال)
+        <button type="button" class="btn-receipt-complete" onclick="completeFocusedOrder()" id="ui-btn-modal-done">
+          ✅ Complete (إكمال)
         </button>
       </div>
     </div>
   </div>
 
-  <!-- ================= VIEW 2: MULTI-DAY CLOUD HISTORY ================= -->
+  <!-- ================= VIEW 3: MULTI-DAY CLOUD HISTORY ================= -->
   <div id="history-view">
     <div class="history-toolbar">
       <input type="date" id="history-calendar-picker" class="date-picker-box" onchange="fetchHistoryFromCloud()">
       <input type="text" id="history-search-input" class="search-box" 
         placeholder="🔍 Search Token (#01) or Phone..." oninput="filterHistoryList()">
-      <button class="btn-top" onclick="fetchHistoryFromCloud()" style="background:#0284c7;" id="ui-btn-refresh-hist">🔄 Refresh Cloud</button>
-      <span style="color:#94a3b8; font-size:13px;" id="history-count-text"></span>
+      <button class="btn-top" onclick="fetchHistoryFromCloud()" style="background:#0284c7;" id="ui-btn-refresh-hist">🔄 Refresh</button>
+      <span style="color:#94a3b8; font-size:12px;" id="history-count-text"></span>
     </div>
-    <div style="overflow-x:auto;">
+    <div class="history-table-container">
       <table class="history-table">
         <thead>
           <tr>
@@ -378,7 +421,7 @@
         logout: "🔒 Logout",
         modalBack: "⬅️ Back (رجوع)",
         modalDone: "✅ Complete Order (إكمال)",
-        clickDetails: "👉 Click to open details",
+        clickSlip: "🔍 Open Receipt Slip",
         emptyKitchen: "All orders completed! Kitchen is clear.",
         refreshCloud: "🔄 Refresh Cloud",
         searchPlaceholder: "🔍 Search Token (#01) or Phone...",
@@ -389,7 +432,8 @@
         thDate: "Shift Date",
         thCompleted: "Time Completed",
         thAction: "Action",
-        recallBtn: "↩️ Recall"
+        recallBtn: "↩️ Recall",
+        quickDone: "✅ Done"
       },
       ar: {
         pinTitle: "رمز الدخول لشاشة المطبخ",
@@ -404,7 +448,7 @@
         logout: "🔒 خروج",
         modalBack: "⬅️ رجوع (Back)",
         modalDone: "✅ إكمال الطلب (Done)",
-        clickDetails: "👉 اضغط لعرض التفاصيل",
+        clickSlip: "🔍 عرض تذكرة الطلب",
         emptyKitchen: "تم إنجاز كافة الطلبات! المطبخ جاهز.",
         refreshCloud: "🔄 تحديث السحابة",
         searchPlaceholder: "🔍 بحث برقم الطلب (#01) أو الجوال...",
@@ -415,7 +459,8 @@
         thDate: "تاريخ الوردية",
         thCompleted: "وقت الإنجاز",
         thAction: "إجراء",
-        recallBtn: "↩️ استرجاع"
+        recallBtn: "↩️ استرجاع",
+        quickDone: "✅ جاهز"
       }
     };
 
@@ -440,8 +485,6 @@
       setText('btn-lang-toggle', t.langToggle);
       setText('ui-tab-live-text', t.liveTab);
       setText('ui-tab-hist-text', t.histTab);
-      setText('ui-btn-test-sound', t.testSound);
-      setText('ui-btn-logout', t.logout);
       setText('ui-btn-modal-back', t.modalBack);
       setText('ui-btn-modal-done', t.modalDone);
       setText('ui-btn-refresh-hist', t.refreshCloud);
@@ -547,7 +590,7 @@
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'btn-top';
-        btn.style.cssText = 'padding:14px; font-size:13px; background:#0f172a; border:1px solid #475569;';
+        btn.style.cssText = 'padding:12px; font-size:12px; background:#0f172a; border:1px solid #475569;';
         btn.innerText = `${s.name} (${s.pin})`;
         btn.onclick = () => {
           picker.style.display = 'none';
@@ -557,7 +600,7 @@
       });
     }
 
-    // --- LOAD DYNAMIC STATIONS ---
+    // --- DYNAMIC STATIONS LOADER ---
     async function loadDynamicStationsInKDS() {
       const select = document.getElementById('station-filter-select');
       if (!select || !currentShop) return;
@@ -704,7 +747,7 @@
       renderLiveGrid();
     }
 
-    // --- FIFO SORTED CLOUD FETCH ---
+    // --- FIFO FETCH FROM CLOUD ---
     async function fetchLiveOrdersFromCloud() {
       if (!supabaseClient || !currentShop) return;
       try {
@@ -756,8 +799,7 @@
           if (newOrder.shop_id === currentShop.id && newOrder.status === 'pending') {
             if (!liveOrders.find(o => String(o.id) === String(newOrder.id))) {
               liveOrders.push(newOrder);
-              // Maintain strict FIFO sorting
-              liveOrders.sort((a,b) => Number(a.id) - Number(b.id));
+              liveOrders.sort((a,b) => Number(a.id) - Number(b.id)); // Maintain FIFO
               saveLocalKdsState();
               triggerAlertSound();
               renderLiveGrid();
@@ -814,15 +856,14 @@
       }
     }
 
-    // --- RENDER COMPACT FIFO GRID ---
+    // --- RENDER COMPACT CARDS WITH QUICK COMPLETE BUTTON ---
     function renderLiveGrid() {
       const container = document.getElementById('kds-orders-container');
       if (!container) return;
       const now = Date.now();
       const t = kdsI18n[currentLang];
 
-      // Strict FIFO sort
-      liveOrders.sort((a, b) => Number(a.id) - Number(b.id));
+      liveOrders.sort((a, b) => Number(a.id) - Number(b.id)); // FIFO
 
       let displayOrders = liveOrders.map(order => {
         let rawItems = order.items || [];
@@ -844,7 +885,7 @@
       if (displayOrders.length === 0) {
         container.innerHTML = `
           <div class="empty-state">
-            <div style="font-size: 50px; margin-bottom: 10px;">🧑‍🍳</div>
+            <div style="font-size: 40px; margin-bottom: 8px;">🧑‍🍳</div>
             <div>${t.emptyKitchen}</div>
           </div>
         `;
@@ -859,13 +900,13 @@
         const mins = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
         const secs = String(elapsedSec % 60).padStart(2, '0');
 
-        let priorityClass = 'card-card-priority-normal';
-        if (elapsedSec > 600) priorityClass = 'card-card-priority-urgent';
-        else if (elapsedSec > 300) priorityClass = 'card-card-priority-warn';
+        let priorityClass = 'card-priority-normal';
+        if (elapsedSec > 600) priorityClass = 'card-priority-urgent';
+        else if (elapsedSec > 300) priorityClass = 'card-priority-warn';
 
         const custPhone = order.customer_phone || order.phone || '';
 
-        // Compact visible items (first 3)
+        // First 3 items for compact view
         const visibleItems = order.filteredItems.slice(0, 3);
         const remainingCount = order.filteredItems.length - 3;
 
@@ -882,7 +923,8 @@
 
         const card = document.createElement('div');
         card.className = `order-card ${priorityClass}`;
-        card.onclick = () => openOrderModal(order.id);
+        // Clicking card opens 80mm thermal roll popup
+        card.onclick = () => openThermalReceiptModal(order.id);
 
         card.innerHTML = `
           <div class="card-top">
@@ -897,25 +939,67 @@
             ${itemsCompactHtml}
           </div>
           <div class="card-footer-action">
-            ${t.clickDetails}
+            <span class="card-hint-text">${t.clickSlip}</span>
+            <button type="button" class="btn-card-quick-done" onclick="executeQuickComplete(event, ${order.id})">
+              ${t.quickDone}
+            </button>
           </div>
         `;
         container.appendChild(card);
       });
     }
 
-    // --- MODAL: OPEN, BACK & COMPLETE ---
-    function openOrderModal(orderId) {
+    // --- QUICK COMPLETE DIRECTLY FROM CARD ---
+    function executeQuickComplete(event, orderId) {
+      if (event) event.stopPropagation(); // Prevents opening the modal
+      completeOrderDirect(orderId);
+    }
+
+    async function completeOrderDirect(orderId) {
+      const order = liveOrders.find(o => String(o.id) === String(orderId));
+      if (!order) return;
+
+      order.status = 'completed';
+      order.completed_at = new Date().toLocaleTimeString();
+      liveOrders = liveOrders.filter(o => String(o.id) !== String(orderId));
+      historyOrders.unshift(order);
+      saveLocalKdsState();
+
+      if (currentlyFocusedOrderId && String(currentlyFocusedOrderId) === String(orderId)) {
+        closeOrderModal();
+      }
+
+      renderLiveGrid();
+
+      if (supabaseClient) {
+        try {
+          await supabaseClient
+            .from('orders')
+            .update({ status: 'completed', completed_at: new Date().toISOString() })
+            .eq('id', orderId);
+        } catch(e) {}
+      }
+    }
+
+    // --- 80MM THERMAL RECEIPT POPUP MODAL ---
+    function openThermalReceiptModal(orderId) {
       const order = liveOrders.find(o => String(o.id) === String(orderId));
       if (!order) return;
 
       currentlyFocusedOrderId = orderId;
-      document.getElementById('modal-token').innerText = order.token || 'Token';
-      document.getElementById('modal-type-time').innerText = `${order.order_type || 'Takeaway'} | ${order.business_date || ''} ${order.time || ''}`;
-      
+      document.getElementById('modal-token').innerText = order.token || '#01';
+      document.getElementById('modal-type').innerText = order.order_type || 'Takeaway';
+      document.getElementById('modal-time').innerText = `${order.business_date || ''} ${order.time || ''}`;
+
+      const phoneRow = document.getElementById('modal-phone-row');
       const phoneEl = document.getElementById('modal-phone');
       const phone = order.customer_phone || order.phone || '';
-      phoneEl.innerText = phone ? `📞 ${phone}` : '';
+      if (phone) {
+        phoneEl.innerText = phone;
+        phoneRow.style.display = 'flex';
+      } else {
+        phoneRow.style.display = 'none';
+      }
 
       const container = document.getElementById('modal-items-container');
       container.innerHTML = '';
@@ -934,15 +1018,15 @@
       items.forEach(it => {
         const isSpicy = (it.name || '').includes('Spicy') || (it.name || '').includes('حار');
         container.innerHTML += `
-          <div class="focus-item-row">
+          <div class="thermal-item-row">
             <div>
-              <div class="focus-item-title">
+              <div class="thermal-item-title">
                 ${it.name || ''}
-                ${isSpicy ? `<span class="focus-spicy-badge">🌶️ SPICY / حار</span>` : ''}
+                ${isSpicy ? `<span class="thermal-spicy-tag">🌶️ SPICY</span>` : ''}
               </div>
-              <div class="focus-item-sub">[${it.station || 'Main Kitchen'}]</div>
+              <div class="thermal-item-sub">[${it.station || 'Main Kitchen'}]</div>
             </div>
-            <div class="focus-item-qty">X ${it.qty || 1}</div>
+            <div class="thermal-item-qty">[ X ${it.qty || 1} ]</div>
           </div>
         `;
       });
@@ -955,31 +1039,19 @@
       document.getElementById('order-detail-modal').style.display = 'none';
     }
 
-    async function completeFocusedOrder() {
-      if (!currentlyFocusedOrderId) return;
-      const orderId = currentlyFocusedOrderId;
-      const order = liveOrders.find(o => String(o.id) === String(orderId));
-      if (!order) return;
-
-      order.status = 'completed';
-      order.completed_at = new Date().toLocaleTimeString();
-      liveOrders = liveOrders.filter(o => String(o.id) !== String(orderId));
-      historyOrders.unshift(order);
-      saveLocalKdsState();
-
-      closeOrderModal();
-      renderLiveGrid();
-
-      if (supabaseClient) {
-        try {
-          await supabaseClient
-            .from('orders')
-            .update({ status: 'completed', completed_at: new Date().toISOString() })
-            .eq('id', orderId);
-        } catch(e) {}
+    function onModalBackdropClick(event) {
+      if (event.target.id === 'order-detail-modal') {
+        closeOrderModal();
       }
     }
 
+    function completeFocusedOrder() {
+      if (currentlyFocusedOrderId) {
+        completeOrderDirect(currentlyFocusedOrderId);
+      }
+    }
+
+    // --- RECALL ORDER FROM HISTORY ---
     async function recallOrderBackToLive(orderId) {
       const order = historyOrders.find(o => String(o.id) === String(orderId));
       if (!order) return;
@@ -1042,7 +1114,7 @@
 
       if (list.length === 0) {
         const noFound = currentLang === 'ar' ? "لا توجد طلبات في هذا التاريخ" : "No orders found for this date";
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#64748b; padding:20px;">${noFound}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#64748b; padding:16px;">${noFound}</td></tr>`;
         return;
       }
 
@@ -1058,10 +1130,10 @@
 
         tbody.innerHTML += `
           <tr>
-            <td><strong style="color:#facc15; font-size:15px;">${o.token || '-'}</strong></td>
+            <td><strong style="color:#facc15; font-size:14px;">${o.token || '-'}</strong></td>
             <td>${o.order_type || '-'}</td>
             <td style="color:#38bdf8;">${custPhone}</td>
-            <td style="max-width:240px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${itemsSummary}</td>
+            <td style="max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${itemsSummary}</td>
             <td>${o.business_date || '-'}</td>
             <td style="color:#10b981;">${o.completed_at ? new Date(o.completed_at).toLocaleTimeString() : 'Done'}</td>
             <td>
@@ -1076,7 +1148,7 @@
       renderHistoryTable();
     }
 
-    // Elapsed live timers (FIFO live update)
+    // Elapsed live timers (FIFO update loop)
     setInterval(() => {
       const now = Date.now();
       liveOrders.forEach(order => {
@@ -1087,15 +1159,10 @@
 
         const el = document.getElementById(`timer-${order.id}`);
         if (el) el.innerText = `⏱️ ${mins}:${secs}`;
-
-        if (currentlyFocusedOrderId && String(currentlyFocusedOrderId) === String(order.id)) {
-          const modalTimer = document.getElementById('modal-timer');
-          if (modalTimer) modalTimer.innerText = `⏱️ ${mins}:${secs}`;
-        }
       });
     }, 1000);
 
-    // Keyboard listener
+    // Physical keyboard listener
     window.addEventListener('keydown', (e) => {
       const overlay = document.getElementById('pin-lock-overlay');
       if (overlay && overlay.style.display !== 'none') {
