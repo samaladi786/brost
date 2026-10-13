@@ -1,5 +1,5 @@
 // ==========================================================
-// POS CORE ENGINE - LIVE BILLING, PRINTING & OFFLINE SYNC
+// POS CORE ENGINE - BILLING, STATIONS, CRUD & PRINTING
 // ==========================================================
 
 const FALLBACK_SHOPS = [
@@ -23,9 +23,9 @@ try { kdsChannel = new BroadcastChannel('broast_pos_channel'); } catch(e) {}
 let shop = { nameAr: "مطعم البروستد الذهبي", nameEn: "Golden Broasted Restaurant", vatNo: "310123456700003", phone: "0551234567" };
 
 let kitchenStations = [
-  { id: "main_kitchen", name: "Main Kitchen", routing: "Both" },
-  { id: "broast_station", name: "Broast Station", routing: "Both" },
-  { id: "drinks_counter", name: "Drinks Counter", routing: "Display Only" }
+  { id: "main_kitchen", name: "Main Kitchen", routing: "Both", pin: "1111" },
+  { id: "broast_station", name: "Broast Station", routing: "Both", pin: "1001" },
+  { id: "drinks_counter", name: "Drinks Counter", routing: "Display Only", pin: "1002" }
 ];
 
 let categories = [
@@ -71,7 +71,7 @@ function updateNetworkStatus() {
 window.addEventListener('online', () => { updateNetworkStatus(); syncPendingOfflineOrders(); });
 window.addEventListener('offline', updateNetworkStatus);
 
-// --- Saudi 6:00 AM Restaurant Business Date ---
+// --- Saudi 6:00 AM Restaurant Cut-off Date ---
 function getSaudiBusinessDate() {
   const now = new Date();
   const saudiTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (3 * 3600000));
@@ -167,7 +167,7 @@ function openMasterBranchPicker() {
   });
 }
 
-// --- Session Activation & Offline Initialization ---
+// --- Session Activation & Instant Rendering ---
 async function activateShopSession(s) {
   currentShop = s;
   localStorage.setItem('pos_active_shop_id', s.id);
@@ -186,14 +186,14 @@ async function activateShopSession(s) {
   if (dateEl) dateEl.innerText = `📅 Shift: ${getSaudiBusinessDate()}`;
   updateNetworkStatus();
 
-  // 1. Immediately Load Local Persistence
+  // 1. Load Local Persistence Instantly
   loadLocalState(s.id);
 
   // 2. Render POS Interface Immediately
   showCategories();
   updateTokenDisplay();
 
-  // 3. Background Cloud Sync
+  // 3. Connect Supabase & Background Sync
   if (s.url && s.key && window.supabase) {
     supabaseClient = window.supabase.createClient(s.url, s.key);
     syncCloudData(s.id).then(() => {
@@ -464,7 +464,7 @@ function processCardPayment() {
   finalizeOrder('Mada/Card');
 }
 
-// --- Order Finalization with Clean SQL Mapping ---
+// --- Order Finalization strictly matching Supabase Schema ---
 async function finalizeOrder(method) {
   closeModals();
   const grandTotal = parseFloat(document.getElementById('grand-total').innerText);
@@ -476,7 +476,7 @@ async function finalizeOrder(method) {
   const timeStr = new Date().toLocaleTimeString();
   const shopId = currentShop ? currentShop.id : 'shop1';
 
-  // Rich Local Object (Retains time and rich attributes for UI and Printing)
+  // Rich Local Object
   const orderObj = {
     id: Date.now(),
     shop_id: shopId,
@@ -494,16 +494,16 @@ async function finalizeOrder(method) {
     status: 'pending'
   };
 
-  // 1. Save Locally Immediately
+  // 1. Immediately Save to Local Persistence
   orderHistory.unshift(orderObj);
   saveLocalState(shopId);
 
-  // 2. Broadcast to KDS
+  // 2. Broadcast Local Event to KDS
   if (kdsChannel) {
     try { kdsChannel.postMessage({ type: 'NEW_ORDER', order: orderObj }); } catch(e) {}
   }
 
-  // 3. Clean Supabase Payload (Matches SQL Schema Exactly!)
+  // 3. Exact Database Insert Payload (Strictly matching Supabase schema)
   const dbOrderPayload = {
     id: orderObj.id,
     shop_id: orderObj.shop_id,
@@ -528,10 +528,10 @@ async function finalizeOrder(method) {
       if (!error) {
         markSynced(orderObj.id);
       } else {
-        console.warn("Supabase order insert error:", error);
+        console.warn("Supabase insert notice:", error);
       }
     } catch (e) {
-      console.warn("Network insert failed, queued offline:", e);
+      console.warn("Saved locally, queued for sync:", e);
     }
   }
 
@@ -684,10 +684,11 @@ function renderQRIntoElement(elId, order) {
   }
 }
 
-// --- Kitchen Stations Management (Full CRUD) ---
+// --- Kitchen Stations Management (Full CRUD with Station PIN) ---
 async function saveKitchenStation() {
   const name = document.getElementById('new-station-name').value.trim();
   const routing = document.getElementById('new-station-routing').value;
+  const pin = document.getElementById('new-station-pin').value.trim() || '1111';
   const shopId = currentShop ? currentShop.id : 'shop1';
 
   if (!name) return alert("സ്റ്റേഷൻ പേര് നൽകുക!");
@@ -698,10 +699,11 @@ async function saveKitchenStation() {
     if (stObj) {
       stObj.name = name;
       stObj.routing = routing;
+      stObj.pin = pin;
     }
   } else {
     const id = name.toLowerCase().replace(/\s+/g, '_');
-    stObj = { id, name, routing, shop_id: shopId };
+    stObj = { id, name, routing, pin, shop_id: shopId };
     kitchenStations.push(stObj);
   }
 
@@ -724,7 +726,8 @@ function startEditStation(id) {
   document.getElementById('st-form-title').innerText = `കിച്ചൻ സ്റ്റേഷൻ എഡിറ്റ് ചെയ്യുക: "${st.name}"`;
   document.getElementById('new-station-name').value = st.name;
   document.getElementById('new-station-routing').value = st.routing || 'Both';
-  document.getElementById('btn-save-st').innerText = "Update Station";
+  document.getElementById('new-station-pin').value = st.pin || '1111';
+  document.getElementById('btn-save-st').innerText = "Update";
   document.getElementById('btn-cancel-st').style.display = 'inline-block';
 }
 
@@ -733,7 +736,8 @@ function resetStationForm() {
   document.getElementById('st-form-title').innerText = "🧑‍🍳 കിച്ചൻ സ്റ്റേഷൻ മാനേജ്‌മെന്റ് (Add / Edit Station):";
   document.getElementById('new-station-name').value = '';
   document.getElementById('new-station-routing').value = 'Both';
-  document.getElementById('btn-save-st').innerText = "Save Station";
+  document.getElementById('new-station-pin').value = '';
+  document.getElementById('btn-save-st').innerText = "Save";
   document.getElementById('btn-cancel-st').style.display = 'none';
 }
 
@@ -762,6 +766,7 @@ function renderStationsTable() {
       <tr>
         <td><strong>${st.name}</strong></td>
         <td>${st.routing || 'Both'}</td>
+        <td style="text-align:center; font-family:monospace; font-weight:bold; color:#f59e0b;">${st.pin || '1111'}</td>
         <td>
           <button onclick="startEditStation('${st.id}')" style="background:#0284c7; color:#fff; border:none; padding:2px 6px; border-radius:3px; cursor:pointer;">Edit</button>
           <button onclick="deleteStation('${st.id}')" style="background:#ef4444; color:#fff; border:none; padding:2px 6px; border-radius:3px; cursor:pointer;">Delete</button>
@@ -1043,7 +1048,7 @@ async function saveShopProfile() {
   }
 }
 
-// --- Physical Keyboard Listener ---
+// --- Keyboard Support ---
 window.addEventListener('keydown', (e) => {
   const overlay = document.getElementById('pin-lock-overlay');
   if (overlay && overlay.style.display !== 'none') {
