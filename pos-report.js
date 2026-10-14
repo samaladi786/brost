@@ -1,5 +1,5 @@
 // ==========================================================
-// POS REPORT ENGINE - SPLIT PAY, PETTY CASH, VOID & Z-CLOSE
+// POS REPORT ENGINE - SPLIT PAY, PETTY CASH, VOID & LOCAL SQLITE AUDIT
 // ==========================================================
 
 let cachedActiveReportOrders = [];
@@ -88,11 +88,27 @@ async function loadAndRenderReport() {
   const shopId = currentShop ? currentShop.id : 'shop1';
   const lang = localStorage.getItem('pos_lang') || 'en';
 
-  // 1. Fetch Local Orders
+  // 1. Fetch Local State Orders
   let dateOrders = orderHistory.filter(o => o.business_date === selectedDate);
   let datePetty = pettyCashHistory.filter(p => p.business_date === selectedDate);
 
-  // 2. Fetch Cloud Orders if Online
+  // 2. Fetch from Local SQLite Server if available
+  const serverIp = window.LOCAL_SERVER_IP || window.location.hostname || 'localhost';
+  try {
+    const srvRes = await fetch(`http://${serverIp}:3000/api/reports?shop_id=${shopId}&business_date=${selectedDate}`);
+    if (srvRes.ok) {
+      const srvOrders = await srvRes.json();
+      if (Array.isArray(srvOrders)) {
+        srvOrders.forEach(so => {
+          if (!dateOrders.find(lo => String(lo.id) === String(so.id))) {
+            dateOrders.push(so);
+          }
+        });
+      }
+    }
+  } catch(e) {}
+
+  // 3. Fetch Cloud Orders if Online
   if (supabaseClient && navigator.onLine) {
     try {
       const { data: cloudOrders } = await supabaseClient
@@ -125,7 +141,7 @@ async function loadAndRenderReport() {
     } catch (e) {}
   }
 
-  // 3. Apply Shift Filters
+  // 4. Apply Shift Filters
   let filteredOrders = [];
   let filteredPetty = [];
 
@@ -147,7 +163,7 @@ async function loadAndRenderReport() {
   cachedActiveReportOrders = filteredOrders;
   cachedActivePettyCash = filteredPetty;
 
-  // 4. Compute Financials (Excluding Void Orders from sales totals)
+  // 5. Compute Financials
   let totalCash = 0;
   let totalCard = 0;
   let totalVat = 0;
@@ -159,7 +175,7 @@ async function loadAndRenderReport() {
   filteredOrders.forEach(o => {
     if (o.status === 'void') {
       voidBillsCount += 1;
-      return; // Skip voided orders from sales revenue
+      return;
     }
 
     validBillsCount += 1;
@@ -169,7 +185,6 @@ async function loadAndRenderReport() {
     grandTotal += oTotal;
     totalVat += oVat;
 
-    // Handle Split vs Regular Payments
     if (o.payment_method === 'Split' && o.split_details) {
       totalCash += parseFloat(o.split_details.cash || 0);
       totalCard += parseFloat(o.split_details.card || 0);
@@ -192,16 +207,14 @@ async function loadAndRenderReport() {
     });
   });
 
-  // Calculate Total Petty Cash Deductions
   let totalPettyCash = 0;
   filteredPetty.forEach(p => {
     totalPettyCash += parseFloat(p.amount || 0);
   });
 
-  // Net Cash currently expected in the drawer
   const netCashInDrawer = totalCash - totalPettyCash;
 
-  // 5. Update KPI Cards & Breakdown
+  // 6. Update UI Cards
   const cashEl = document.getElementById('kpi-cash-val');
   if (cashEl) cashEl.innerText = totalCash.toFixed(2);
 
@@ -232,7 +245,6 @@ async function loadAndRenderReport() {
   const repVatEl = document.getElementById('rep-vat-display');
   if (repVatEl) repVatEl.innerText = `${totalVat.toFixed(2)} SAR`;
 
-  // 6. Populate Item Breakdown Table
   const itemsTbody = document.getElementById('rep-items-tbody');
   if (itemsTbody) {
     itemsTbody.innerHTML = '';
@@ -315,17 +327,25 @@ async function executeShiftClosing() {
     closing_note: `Shift #${currentShiftNo} Closed`
   };
 
-  // 1. Supabase Cloud Sync
+  // 1. Save to Local SQLite Server
+  const serverIp = window.LOCAL_SERVER_IP || window.location.hostname || 'localhost';
+  fetch(`http://${serverIp}:3000/api/closings/shift`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(shiftClosingRecord)
+  }).catch(() => {});
+
+  // 2. Supabase Cloud Sync
   if (supabaseClient && navigator.onLine) {
     try {
       await supabaseClient.from('shift_closings').insert([shiftClosingRecord]);
     } catch (e) {}
   }
 
-  // 2. Print Official Shift X-Report Slip
+  // 3. Print Official Shift X-Report Slip
   printShiftXReportSlip(shiftClosingRecord, shiftOrders, shiftPetty);
 
-  // 3. Increment Shift Number for Next Employee
+  // 4. Increment Shift Number
   currentShiftNo += 1;
   saveLocalState(shopId);
 
@@ -337,7 +357,7 @@ async function executeShiftClosing() {
   closeModals();
 }
 
-// --- Execute Full Day Z-Closing (Smart 5 AM - 6 AM Auto-Reset) ---
+// --- Execute Full Day Z-Closing ---
 async function executeZDailyClosing() {
   const shopId = currentShop ? currentShop.id : 'shop1';
   const bDate = getSaudiBusinessDate();
@@ -400,23 +420,31 @@ async function executeZDailyClosing() {
     closed_by: 'Manager'
   };
 
+  // 1. Save to Local SQLite Server
+  const serverIp = window.LOCAL_SERVER_IP || window.location.hostname || 'localhost';
+  fetch(`http://${serverIp}:3000/api/closings/daily`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(dailyClosingRecord)
+  }).catch(() => {});
+
+  // 2. Cloud Sync
   if (supabaseClient && navigator.onLine) {
     try {
       await supabaseClient.from('daily_closings').insert([dailyClosingRecord]);
     } catch (e) {}
   }
 
-  // 1. Print Official Z-Report Slip
+  // 3. Print Official Z-Report Slip
   printFullDayZReportSlip(dailyClosingRecord, dayOrders, dayPetty);
 
-  // 2. Smart Cut-off: Mark this business date as closed in localStorage
+  // 4. Mark this business date as closed in localStorage
   localStorage.setItem(`pos_last_closed_date_${shopId}`, bDate);
 
-  // 3. Reset Shift & Token for the next day
+  // 5. Reset Shift & Token
   currentShiftNo = 1;
   saveLocalState(shopId);
 
-  // 4. Update Header Business Date Badge immediately
   const dateBadge = document.getElementById('business-date-badge');
   if (dateBadge) dateBadge.innerText = `📅 Shift: ${getSaudiBusinessDate()}`;
   updateTokenDisplay();
