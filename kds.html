@@ -184,7 +184,7 @@
     .btn-card-quick-done:active { transform: scale(0.92); background: #15803d; }
     .card-hint-text { font-size: 10px; color: #94a3b8; font-weight: bold; }
 
-    /* ================= COMPACT THERMAL RECEIPT POPUP MODAL (FIXED SIZE) ================= */
+    /* ================= COMPACT THERMAL RECEIPT POPUP MODAL ================= */
     .modal-backdrop {
       display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85);
       justify-content: center; align-items: center; z-index: 1000; padding: 10px;
@@ -201,78 +201,37 @@
       to { transform: translateY(0); opacity: 1; }
     }
 
-    /* Compact Header */
-    .thermal-header {
-      padding: 8px 12px 4px 12px; text-align: center; border-bottom: 1px dashed #000;
-    }
+    .thermal-header { padding: 8px 12px 4px 12px; text-align: center; border-bottom: 1px dashed #000; }
     .thermal-header-sub { font-size: 11px; font-weight: bold; color: #475569; }
     .receipt-token-big { font-size: 24px; font-weight: 900; line-height: 1.1; margin: 2px 0; color: #000; }
     .receipt-divider { border-bottom: 1px dashed #000; margin: 4px 0; }
-    
-    .receipt-meta-compact {
-      display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; margin: 2px 0;
-    }
-    .receipt-row-title {
-      display: flex; justify-content: space-between; font-weight: 900; font-size: 11px; margin-top: 3px;
-    }
+    .receipt-meta-compact { display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; margin: 2px 0; }
+    .receipt-row-title { display: flex; justify-content: space-between; font-weight: 900; font-size: 11px; margin-top: 3px; }
 
-    /* High Density Scroll-Free Body (Fits 5-6 Items Easily) */
-    .thermal-body {
-      flex: 1; overflow-y: auto; padding: 4px 12px;
-    }
-    .thermal-item-row {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 3px 0; border-bottom: 1px dotted #cbd5e1;
-    }
+    .thermal-body { flex: 1; overflow-y: auto; padding: 4px 12px; }
+    .thermal-item-row { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; border-bottom: 1px dotted #cbd5e1; }
     .thermal-item-title { font-size: 13px; font-weight: 800; color: #000; line-height: 1.2; }
     .thermal-item-station { font-size: 9px; color: #64748b; margin-left: 4px; }
     .thermal-spicy-tag { background: #ef4444; color: #fff; font-size: 9px; font-weight: bold; padding: 1px 4px; border-radius: 3px; margin-left: 2px; }
-    .thermal-item-qty {
-      font-size: 14px; font-weight: 900; background: #000; color: #fff;
-      padding: 1px 6px; border-radius: 4px; text-align: center; min-width: 42px;
-    }
+    .thermal-item-qty { font-size: 14px; font-weight: 900; background: #000; color: #fff; padding: 1px 6px; border-radius: 4px; text-align: center; min-width: 42px; }
 
-    /* Slim Bottom Actions */
-    .thermal-actions {
-      padding: 6px 12px; background: #f8fafc; border-top: 1px dashed #000;
-      display: flex; gap: 6px;
-    }
-    .btn-receipt-back {
-      flex: 1; padding: 8px; background: #64748b; color: #fff; border: none;
-      border-radius: 5px; font-size: 12px; font-weight: bold; cursor: pointer;
-    }
-    .btn-receipt-complete {
-      flex: 2; padding: 8px; background: #16a34a; color: #fff; border: none;
-      border-radius: 5px; font-size: 14px; font-weight: 900; cursor: pointer;
-    }
+    .thermal-actions { padding: 6px 12px; background: #f8fafc; border-top: 1px dashed #000; display: flex; gap: 6px; }
+    .btn-receipt-back { flex: 1; padding: 8px; background: #64748b; color: #fff; border: none; border-radius: 5px; font-size: 12px; font-weight: bold; cursor: pointer; }
+    .btn-receipt-complete { flex: 2; padding: 8px; background: #16a34a; color: #fff; border: none; border-radius: 5px; font-size: 14px; font-weight: 900; cursor: pointer; }
     .btn-receipt-complete:active { transform: scale(0.97); background: #15803d; }
 
-    /* ================= MULTI-DAY CLOUD HISTORY VIEW ================= */
-    #history-view {
-      display: none; flex: 1; flex-direction: column; padding: 12px; overflow-y: auto;
-    }
+    /* ================= MULTI-DAY CLOUD & LOCAL HISTORY ================= */
+    #history-view { display: none; flex: 1; flex-direction: column; padding: 12px; overflow-y: auto; }
     .history-toolbar { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; flex-wrap: wrap; }
-    .date-picker-box {
-      background: #1e293b; color: #facc15; border: 1px solid #475569; padding: 7px 10px;
-      border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer;
-    }
-    .search-box {
-      flex: 1; min-width: 180px; padding: 7px 10px; background: #1e293b; border: 1px solid #475569;
-      border-radius: 8px; color: #fff; font-size: 12px;
-    }
+    .date-picker-box { background: #1e293b; color: #facc15; border: 1px solid #475569; padding: 7px 10px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer; }
+    .search-box { flex: 1; min-width: 180px; padding: 7px 10px; background: #1e293b; border: 1px solid #475569; border-radius: 8px; color: #fff; font-size: 12px; }
     .history-table-container { width: 100%; overflow-x: auto; }
     .history-table { width: 100%; border-collapse: collapse; background: #1e293b; border-radius: 8px; overflow: hidden; font-size: 12px; min-width: 580px; }
     .history-table th, .history-table td { padding: 8px 10px; text-align: left; border-bottom: 1px solid #334155; }
     .history-table th { background: #334155; color: #facc15; font-weight: bold; }
-    .btn-recall {
-      background: #0284c7; color: #fff; border: none; padding: 5px 10px; border-radius: 4px;
-      cursor: pointer; font-weight: bold; font-size: 11px;
-    }
+    .btn-recall { background: #0284c7; color: #fff; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px; }
 
-    .empty-state {
-      display: flex; flex-direction: column; justify-content: center;
-      align-items: center; height: 180px; color: #64748b; font-size: 13px; text-align: center;
-    }
+    .empty-state { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 180px; color: #64748b; font-size: 13px; text-align: center; }
   </style>
 </head>
 <body>
@@ -425,7 +384,7 @@
     </div>
   </div>
 
-  <!-- ================= VIEW 3: MULTI-DAY CLOUD HISTORY ================= -->
+  <!-- ================= VIEW 3: MULTI-DAY HISTORY ================= -->
   <div id="history-view">
     <div class="history-toolbar">
       <input type="date" id="history-calendar-picker" class="date-picker-box" onchange="fetchHistoryFromCloud()">
@@ -575,6 +534,7 @@
     let currentView = 'live';
     let currentStation = localStorage.getItem('kds_selected_station') || 'All';
     let currentlyFocusedOrderId = null;
+    let localWs = null;
 
     let localChannel = null;
     try {
@@ -730,6 +690,89 @@
       }
     }
 
+    // --- ULTRA-FAST LOCAL LAN WEBSOCKET CONNECTION ---
+    function initLocalKDSWebSocket() {
+      const serverIp = window.LOCAL_SERVER_IP || window.location.hostname || 'localhost';
+      const wsUrl = `ws://${serverIp}:3000`;
+
+      try {
+        if (localWs) { localWs.close(); }
+        localWs = new WebSocket(wsUrl);
+
+        localWs.onopen = () => {
+          console.log("⚡ KDS Connected to Local LAN Engine:", wsUrl);
+          const badge = document.getElementById('live-indicator');
+          if (badge) {
+            badge.innerText = "LOCAL LAN ⚡";
+            badge.style.background = "#0284c7";
+          }
+        };
+
+        localWs.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === 'NEW_ORDER') {
+              const newOrder = data.order;
+              if (!currentShop || newOrder.shop_id === currentShop.id) {
+                if (!liveOrders.find(o => String(o.id) === String(newOrder.id))) {
+                  liveOrders.push(newOrder);
+                  liveOrders.sort((a,b) => Number(a.id) - Number(b.id)); // FIFO
+                  saveLocalKdsState();
+                  triggerAlertSound();
+                  renderSplitWorkspace();
+                }
+              }
+            } else if (data.type === 'ORDER_COMPLETED') {
+              liveOrders = liveOrders.filter(o => String(o.id) !== String(data.orderId));
+              saveLocalKdsState();
+              renderSplitWorkspace();
+            } else if (data.type === 'ORDER_VOIDED') {
+              liveOrders = liveOrders.filter(o => String(o.id) !== String(data.orderId));
+              saveLocalKdsState();
+              renderSplitWorkspace();
+            }
+          } catch(e) {
+            console.error("LAN WS Parse Error:", e);
+          }
+        };
+
+        localWs.onclose = () => {
+          const badge = document.getElementById('live-indicator');
+          if (badge && !supabaseClient) {
+            badge.innerText = "OFFLINE";
+            badge.style.background = "#e11d48";
+          }
+          setTimeout(initLocalKDSWebSocket, 3500); // Auto reconnect
+        };
+      } catch(e) {
+        console.warn("WebSocket not supported or failed:", e);
+      }
+    }
+
+    // --- FETCH ACTIVE ORDERS FROM LOCAL SQLITE (WORKS OFFLINE) ---
+    async function fetchPendingFromLocalServer() {
+      if (!currentShop) return;
+      const serverIp = window.LOCAL_SERVER_IP || window.location.hostname || 'localhost';
+      try {
+        const res = await fetch(`http://${serverIp}:3000/api/orders/pending?shop_id=${currentShop.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data)) {
+            data.forEach(srvOrder => {
+              if (!liveOrders.find(o => String(o.id) === String(srvOrder.id))) {
+                liveOrders.push(srvOrder);
+              }
+            });
+            liveOrders.sort((a,b) => Number(a.id) - Number(b.id));
+            saveLocalKdsState();
+            renderSplitWorkspace();
+          }
+        }
+      } catch(err) {
+        console.log("Local SQLite fetch notice:", err.message);
+      }
+    }
+
     async function activateKdsShop(s) {
       currentShop = s;
       localStorage.setItem('kds_active_shop_id', s.id);
@@ -758,6 +801,10 @@
 
       applyKdsLanguage(currentLang);
 
+      // Start Local LAN Engine WebSocket & Fetch Pending from SQLite
+      initLocalKDSWebSocket();
+      await fetchPendingFromLocalServer();
+
       if (s.url && s.key && window.supabase) {
         supabaseClient = window.supabase.createClient(s.url, s.key);
         await loadDynamicStationsInKDS();
@@ -772,6 +819,7 @@
     function lockKDS() {
       currentShop = null;
       supabaseClient = null;
+      if (localWs) { localWs.close(); localWs = null; }
       localStorage.removeItem('kds_active_shop_id');
       clearPinInput();
       document.getElementById('pin-lock-overlay').style.display = 'flex';
@@ -838,7 +886,7 @@
       renderSplitWorkspace();
     }
 
-    // --- FIFO LIVE ORDERS FETCH ---
+    // --- FIFO LIVE ORDERS FETCH FROM CLOUD ---
     async function fetchLiveOrdersFromCloud() {
       if (!supabaseClient || !currentShop) return;
       try {
@@ -847,7 +895,7 @@
           .select('*')
           .eq('shop_id', currentShop.id)
           .eq('status', 'pending')
-          .order('id', { ascending: true }); // Strict FIFO order
+          .order('id', { ascending: true });
 
         if (data) {
           liveOrders = data;
@@ -1115,6 +1163,17 @@
       saveLocalKdsState();
       renderSplitWorkspace();
 
+      // Sync to Local SQLite Server
+      const serverIp = window.LOCAL_SERVER_IP || window.location.hostname || 'localhost';
+      overdueIds.forEach(id => {
+        fetch(`http://${serverIp}:3000/api/orders/complete`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        }).catch(() => {});
+      });
+
+      // Sync to Cloud
       if (supabaseClient) {
         try {
           await supabaseClient
@@ -1147,6 +1206,15 @@
 
       renderSplitWorkspace();
 
+      // Notify Local SQLite Engine & Broadcast to Counter/KDS
+      const serverIp = window.LOCAL_SERVER_IP || window.location.hostname || 'localhost';
+      fetch(`http://${serverIp}:3000/api/orders/complete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: orderId })
+      }).catch(err => console.log("Local complete sync err:", err));
+
+      // Notify Supabase Cloud
       if (supabaseClient) {
         try {
           await supabaseClient
@@ -1342,7 +1410,6 @@
         const el = document.getElementById(`timer-${order.id}`);
         if (el) el.innerText = `⏱️ ${mins}:${secs}`;
       });
-      // Re-evaluate tray segregation
       if (currentView === 'live') {
         renderSplitWorkspace();
       }
