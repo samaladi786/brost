@@ -11,6 +11,9 @@ window.STAFF_DELETE_LIMIT_DAYS = 2;
 // എക്സ്റ്റേണൽ റിപ്പോർട്ട് പോർട്ടൽ ലിങ്ക്
 window.GLOBAL_REPORT_PORTAL_URL = "https://samaladi786.github.io/aladi/";
 
+// കമ്പ്യൂട്ടറിന്റെ ലോക്കൽ സെർവർ IP (LAN / Offline SQLite Sync)
+window.LOCAL_SERVER_IP = "192.168.100.90";
+
 // ഷോപ്പുകളുടെ കോൺഫിഗറേഷൻ
 window.SHOPS_CONFIG = [
   {
@@ -25,20 +28,4 @@ window.SHOPS_CONFIG = [
     badgeBg: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
     logo: 'shop1.png'
   }
-  
-  // ഭാവിയിൽ രണ്ടാമതൊരു ഷോപ്പ് വരുമ്പോൾ താഴെ ഇതേപോലെ കോമയിട്ട് ചേർത്താൽ മതിയാകും:
-  /*
-  ,{
-    id: 'shop2',
-    name: 'BURGER HOUSE',
-    tagline: 'BURGER POS',
-    url: 'https://xxxxxx.supabase.co',
-    key: 'sb_publishable_xxxxxx',
-    pin: '2222',
-    themeGradient: 'from-amber-950 via-slate-900 to-orange-950',
-    accentColor: 'text-amber-400',
-    badgeBg: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
-    logo: 'shop2.png'
-  }
-  */
 ];
