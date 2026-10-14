@@ -1,5 +1,5 @@
 // ==========================================================
-// POS CORE ENGINE - BILINGUAL, SPLIT PAY, STICKY PILLS & VOID
+// POS CORE ENGINE - BILINGUAL, SPLIT PAY, STICKY PILLS & LOCAL SQLITE SYNC
 // ==========================================================
 
 const FALLBACK_SHOPS = [
@@ -256,11 +256,10 @@ function getSaudiBusinessDate() {
     prevDate.setDate(prevDate.getDate() - 1);
     const prevDateStr = formatDateYMD(prevDate);
 
-    // Smart Cut-off: If early Z-close was already executed between 5:00 and 6:00 AM
     if (lastClosedDate === prevDateStr) {
-      targetDate = new Date(y, m, d); // Advance to new business day immediately
+      targetDate = new Date(y, m, d);
     } else {
-      targetDate = prevDate; // Remain in previous business date
+      targetDate = prevDate;
     }
   }
 
@@ -372,15 +371,11 @@ async function activateShopSession(s) {
   if (dateEl) dateEl.innerText = `📅 Shift: ${getSaudiBusinessDate()}`;
   updateNetworkStatus();
 
-  // Load Local Persistence
   loadLocalState(s.id);
-
-  // Apply Language & Render
   applyLanguage(currentLang);
   renderCategoryPills();
   updateTokenDisplay();
 
-  // Connect Supabase Cloud Sync
   if (s.url && s.key && window.supabase) {
     supabaseClient = window.supabase.createClient(s.url, s.key);
     syncCloudData(s.id).then(() => {
@@ -638,7 +633,7 @@ function updateCartUI() {
   document.getElementById('grand-total').innerText = total.toFixed(2) + " SAR";
 }
 
-// --- PAYMENT HANDLING (CASH, CARD, SPLIT) ---
+// --- PAYMENT HANDLING ---
 function openCashPaymentModal() {
   if (cart.length === 0) return alert(currentLang === 'ar' ? "السلة فارغة!" : "Cart is empty!");
   const total = parseFloat(document.getElementById('grand-total').innerText);
@@ -661,7 +656,6 @@ function processCardPayment() {
   finalizeOrder('Mada/Card');
 }
 
-// Split Payment Modal Logic
 function openSplitPaymentModal() {
   if (cart.length === 0) return alert(currentLang === 'ar' ? "السلة فارغة!" : "Cart is empty!");
   const total = parseFloat(document.getElementById('grand-total').innerText);
@@ -693,7 +687,23 @@ function finalizeSplitOrder() {
   finalizeOrder('Split', { cash: cashVal, card: cardVal });
 }
 
-// --- ORDER FINALIZATION STRICTLY MAPPED TO SUPABASE ---
+// --- LOCAL SQLITE SERVER SYNC HELPER ---
+async function syncOrderToLocalServer(order) {
+  const serverIp = window.LOCAL_SERVER_IP || window.location.hostname || 'localhost';
+  try {
+    const res = await fetch(`http://${serverIp}:3000/api/orders`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(order)
+    });
+    const result = await res.json();
+    console.log("💾 Permanently written to Local SQLite Engine:", result);
+  } catch (err) {
+    console.warn("⚠️ Local Server offline or unreachable:", err.message);
+  }
+}
+
+// --- ORDER FINALIZATION (LOCAL SQLITE + LAN WEBSOCKET + SUPABASE) ---
 async function finalizeOrder(method, splitDetails = null) {
   closeModals();
   const grandTotal = parseFloat(document.getElementById('grand-total').innerText);
@@ -726,16 +736,19 @@ async function finalizeOrder(method, splitDetails = null) {
     status: 'pending'
   };
 
-  // 1. Immediately Save to Local Persistence
+  // 1. Immediately Save to Browser Persistence
   orderHistory.unshift(orderObj);
   saveLocalState(shopId);
 
-  // 2. KDS Broadcast via BroadcastChannel
+  // 2. Write to Permanent Local SQLite Database & Push 0.01s to KDS via Local Server
+  syncOrderToLocalServer(orderObj);
+
+  // 3. Fallback Local BroadcastChannel
   if (kdsChannel) {
     try { kdsChannel.postMessage({ type: 'NEW_ORDER', order: orderObj }); } catch(e) {}
   }
 
-  // 3. Supabase Insert Payload
+  // 4. Supabase Cloud Sync
   const dbOrderPayload = {
     id: orderObj.id,
     shop_id: orderObj.shop_id,
@@ -843,6 +856,14 @@ async function voidOrder(orderId) {
   const shopId = currentShop ? currentShop.id : 'shop1';
   saveLocalState(shopId);
 
+  // Sync Void Status to Local SQLite Server
+  const serverIp = window.LOCAL_SERVER_IP || window.location.hostname || 'localhost';
+  fetch(`http://${serverIp}:3000/api/orders/void`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id: order.id })
+  }).catch(() => {});
+
   // Notify KDS
   if (kdsChannel) {
     try { kdsChannel.postMessage({ type: 'ORDER_VOIDED', orderId: order.id }); } catch(e) {}
@@ -889,6 +910,14 @@ async function recordPettyCash() {
   saveLocalState(shopId);
   closeModals();
 
+  // Save to Local SQLite Server
+  const serverIp = window.LOCAL_SERVER_IP || window.location.hostname || 'localhost';
+  fetch(`http://${serverIp}:3000/api/petty-cash`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(pettyObj)
+  }).catch(() => {});
+
   if (supabaseClient && navigator.onLine) {
     try {
       await supabaseClient.from('petty_cash').insert([pettyObj]);
@@ -898,7 +927,6 @@ async function recordPettyCash() {
   alert(currentLang === 'ar' ? `تم تسجيل سحب مبلغ ${amt.toFixed(2)} SAR من الدرج.` : `Drawer Cash-Out of ${amt.toFixed(2)} SAR recorded.`);
 }
 
-// --- FUTURE ACCOUNTS MODULE LINK ---
 function openAccountsModule() {
   if (typeof window.ACCOUNTS_URL !== 'undefined' && window.ACCOUNTS_URL) {
     window.location.href = window.ACCOUNTS_URL;
